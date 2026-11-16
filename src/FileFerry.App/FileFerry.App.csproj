@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Android-only: no other TFMs.-->
+    <TargetFramework>net10.0-android</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <UseMaui>true</UseMaui>
+    <SingleProject>true</SingleProject>
+    <RootNamespace>FileFerry.App</RootNamespace>
+
+    <!-- Brand: FileFerry; "Nextcloud" is forbidden in id/name.-->
+    <ApplicationTitle>FileFerry</ApplicationTitle>
+    <ApplicationId>arpa.home.fileferry</ApplicationId>
+    <ApplicationDisplayVersion>0.1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>1</ApplicationVersion>
+
+    <!-- min Android 8.0: stable SAF persisted-URIs, WorkManager without legacy constraints.-->
+    <SupportedOSPlatformVersion>26</SupportedOSPlatformVersion>
+    <TargetPlatformVersion>36</TargetPlatformVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Fonts: the SDK does not glob Resources/Fonts automatically — the icon TTF is registered explicitly.-->
+    <MauiFont Include="Resources/Fonts/*.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--.NET 8+: UseMaui no longer pulls packages implicitly (MA002) — pin versions explicitly.-->
+    <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.110" />
+    <PackageReference Include="Xamarin.AndroidX.Collection.Ktx" Version="1.6.0.1" />
+    <PackageReference Include="Xamarin.AndroidX.Lifecycle.Process" Version="2.11.0.1" />
+    <PackageReference Include="Xamarin.AndroidX.Lifecycle.Runtime.Ktx" Version="2.11.0.1" />
+    <PackageReference Include="Xamarin.AndroidX.Lifecycle.Runtime.Ktx.Android" Version="2.11.0.1" />
+    <PackageReference Include="Xamarin.AndroidX.Lifecycle.ViewModel.Ktx" Version="2.11.0.1" />
+    <PackageReference Include="Xamarin.AndroidX.Lifecycle.ViewModelSavedState" Version="2.11.0.1" />
+    <PackageReference Include="Xamarin.AndroidX.Lifecycle.ViewModelSavedState.Android" Version="2.11.0.1" />
+    <PackageReference Include="Xamarin.AndroidX.SavedState.SavedState.Ktx" Version="1.5.0.1" />
+    <PackageReference Include="Xamarin.AndroidX.Work.Runtime" Version="2.12.0" />
+
+    <!-- Composition Root sees the three adapter assemblies; Core knows nothing of App.-->
+    <ProjectReference Include="..\FileFerry.Core\FileFerry.Core.csproj" />
+    <ProjectReference Include="..\FileFerry.Client\FileFerry.Client.csproj" />
+    <ProjectReference Include="..\FileFerry.Data\FileFerry.Data.csproj" />
+  </ItemGroup>
+
+</Project>

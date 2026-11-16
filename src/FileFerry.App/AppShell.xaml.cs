@@ -1,0 +1,73 @@
+using FileFerry.App.Pages;
+
+namespace FileFerry.App;
+
+/// <summary>
+/// Application Shell stack: flyout items live in XAML; modal routes
+/// are registered here.
+/// </summary>
+public sealed partial class AppShell : Shell
+{
+    public AppShell()
+    {
+        InitializeComponent();
+        Routing.RegisterRoute(WelcomeRoute, typeof(WelcomePage));
+        Routing.RegisterRoute(LoginRoute, typeof(Pages.LoginPage));
+        Routing.RegisterRoute(PairWizardRoute, typeof(Pages.PairWizardPage));
+        Routing.RegisterRoute(PairDetailsRoute, typeof(Pages.PairDetailsPage));
+        Routing.RegisterRoute(ConflictsRoute, typeof(Pages.ConflictsPage));
+        Routing.RegisterRoute(StashRoute, typeof(Pages.StashPage));
+        Routing.RegisterRoute(LogRoute, typeof(Pages.LogPage));
+        Routing.RegisterRoute(AboutRoute, typeof(Pages.AboutPage));
+    }
+
+    /// <summary>
+    /// Route of the welcome screen — first launch with no account yet.
+    /// </summary>
+    public const string WelcomeRoute = "welcome";
+
+    /// <summary>
+    /// Route of the Login Flow v2 WebView screen (modal over the welcome screen).
+    /// </summary>
+    public const string LoginRoute = "login";
+
+    /// <summary>
+    /// Route of the add-pair wizard — adding a pair (modal over the pair list).
+    /// </summary>
+    public const string PairWizardRoute = "pair/add";
+
+    /// <summary>
+    /// Route of the pair details — one pair's details (query <c>?id=&lt;guid&gt;</c>).
+    /// </summary>
+    public const string PairDetailsRoute = "pair/details";
+
+    /// <summary>
+    /// Route of the conflicts screen — a pair's conflicts (query <c>?id=&lt;guid&gt;</c>).
+    /// </summary>
+    public const string ConflictsRoute = "pair/conflicts";
+
+    /// <summary>
+    /// Route of the trash buffer screen — a pair's deletion stash (query <c>?id=&lt;guid&gt;</c>).
+    /// </summary>
+    public const string StashRoute = "pair/stash";
+
+    /// <summary>
+    /// Route of the global log — global event log.
+    /// </summary>
+    public const string LogRoute = "log";
+
+    /// <summary>
+    /// Route of the about screen — logotype, version, disclaimers and links.
+    /// </summary>
+    public const string AboutRoute = "about";
+
+    /// <summary>
+    /// Absolute flyout route to the settings screen (the account chip leads here).
+    /// </summary>
+    public const string SettingsRoute = "//settings";
+
+    /// <summary>
+    /// Absolute route of the main pair list tab (a successful login resets the stack here).
+    /// </summary>
+    public const string PairListRoute = "//pairlist";
+}

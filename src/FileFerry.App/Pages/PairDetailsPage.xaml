@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage
+    x:Class="FileFerry.App.Pages.PairDetailsPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:conv="clr-namespace:FileFerry.App.Converters"
+    xmlns:res="clr-namespace:FileFerry.App.Resources"
+    xmlns:tok="clr-namespace:FileFerry.App"
+    xmlns:vm="clr-namespace:FileFerry.App.ViewModels"
+    x:DataType="vm:PairDetailsViewModel"
+    Title="{Binding HeaderTitle}">
+    <!-- Pair details: run status + pause; section navigation; event journal; settings; destructive actions.-->
+    <ScrollView Padding="{x:Static tok:DesignTokens.ScreenPadding}">
+        <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.SectionSpacing}">
+
+            <!-- local folder (meta line)-->
+            <Label
+                Text="{Binding LocalLine}"
+                Style="{StaticResource Caption13}"
+                TextColor="{DynamicResource TextSecondary}" />
+
+            <!-- run status card-->
+            <Border BackgroundColor="{DynamicResource Surface}" Padding="{x:Static tok:DesignTokens.Space16}">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="{x:Static tok:DesignTokens.RadiusControl}" />
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space8}">
+                    <Label Text="{x:Static res:AppStrings.DetailsLastRunTitle}" Style="{StaticResource Body15Strong}" />
+                    <Label Text="{Binding LastRunLine}" Style="{StaticResource Body15}" />
+                    <Label
+                        Text="{Binding LastRunDetail}"
+                        Style="{StaticResource Caption13}"
+                        TextColor="{DynamicResource TextSecondary}" />
+                    <Label
+                        Text="{Binding NextRunLine}"
+                        Style="{StaticResource Caption13}"
+                        TextColor="{DynamicResource TextSecondary}" />
+                    <!-- active run: "File 24 of 210" + cancel-->
+                    <VerticalStackLayout
+                        Spacing="{x:Static tok:DesignTokens.Space4}"
+                        IsVisible="{Binding IsRunActive}">
+                        <Label Text="{Binding RunProgressText}" Style="{StaticResource Body15}" />
+                        <ProgressBar
+                            Progress="{Binding RunRatio}"
+                            IsVisible="{Binding RunDeterminate}" />
+                        <Button
+                            Text="{x:Static res:AppStrings.CancelRun}"
+                            Command="{Binding CancelRunCommand}"
+                            Style="{StaticResource TextButton}"
+                            HorizontalOptions="Start" />
+                    </VerticalStackLayout>
+                    <HorizontalStackLayout Spacing="{x:Static tok:DesignTokens.Space12}">
+                        <Switch
+                            IsToggled="{Binding PauseSync, Mode=TwoWay}"
+                            SemanticProperties.Description="{x:Static res:AppStrings.DetailsPauseSwitch}" />
+                        <Label
+                            Text="{x:Static res:AppStrings.DetailsPauseSwitch}"
+                            Style="{StaticResource Body15}"
+                            VerticalOptions="Center" />
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- section nav: Conflicts → the conflicts screen (Warning-event counter)-->
+            <Border BackgroundColor="{DynamicResource Surface}" Padding="{x:Static tok:DesignTokens.Space16}">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="{x:Static tok:DesignTokens.RadiusControl}" />
+                </Border.StrokeShape>
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding OpenConflictsCommand}" />
+                </Border.GestureRecognizers>
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="{x:Static tok:DesignTokens.Space12}">
+                    <Label
+                        Text="{x:Static tok:GlyphMapping.Merge}"
+                        Style="{StaticResource IconGlyph24}"
+                        TextColor="{DynamicResource StatusWarning}"
+                        VerticalOptions="Center" />
+                    <Label
+                        Grid.Column="1"
+                        Text="{x:Static res:AppStrings.DetailsConflictsTitle}"
+                        Style="{StaticResource Body15}"
+                        VerticalOptions="Center" />
+                    <Label
+                        Grid.Column="2"
+                        Text="{Binding ConflictsLine}"
+                        Style="{StaticResource Caption13}"
+                        TextColor="{DynamicResource TextSecondary}"
+                        VerticalOptions="Center" />
+                </Grid>
+            </Border>
+
+            <!-- section nav: deletion stash → the trash-buffer screen (count + TTL)-->
+            <Border BackgroundColor="{DynamicResource Surface}" Padding="{x:Static tok:DesignTokens.Space16}">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="{x:Static tok:DesignTokens.RadiusControl}" />
+                </Border.StrokeShape>
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding OpenStashCommand}" />
+                </Border.GestureRecognizers>
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="{x:Static tok:DesignTokens.Space12}">
+                    <Label
+                        Text="{x:Static tok:GlyphMapping.RestoreFromTrash}"
+                        Style="{StaticResource IconGlyph24}"
+                        TextColor="{DynamicResource TextSecondary}"
+                        VerticalOptions="Center" />
+                    <VerticalStackLayout Grid.Column="1" Spacing="{x:Static tok:DesignTokens.Space4}">
+                        <Label Text="{x:Static res:AppStrings.DetailsStashTitle}" Style="{StaticResource Body15}" />
+                        <Label
+                            Text="{Binding StashLine}"
+                            Style="{StaticResource Caption13}"
+                            TextColor="{DynamicResource TextSecondary}" />
+                    </VerticalStackLayout>
+                    <Label
+                        Grid.Column="2"
+                        Text="{x:Static tok:GlyphMapping.ChevronRight}"
+                        Style="{StaticResource IconGlyph24}"
+                        TextColor="{DynamicResource TextDisabled}"
+                        VerticalOptions="Center" />
+                </Grid>
+            </Border>
+
+            <!-- pair journal: latest events of the last run-->
+            <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space8}">
+                <Label Text="{x:Static res:AppStrings.DetailsLogTitle}" Style="{StaticResource Body15Strong}" />
+                <Label
+                    Text="{x:Static res:AppStrings.DetailsLogEmpty}"
+                    Style="{StaticResource Caption13}"
+                    TextColor="{DynamicResource TextSecondary}"
+                    IsVisible="{Binding ShowLogEmpty}" />
+                <VerticalStackLayout
+                    Spacing="{x:Static tok:DesignTokens.Space4}"
+                    BindableLayout.ItemsSource="{Binding Journal}">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="vm:JournalEventRow">
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{x:Static tok:DesignTokens.Space8}">
+                                <Label
+                                    Text="{Binding Time}"
+                                    Style="{StaticResource Caption13}"
+                                    TextColor="{DynamicResource TextDisabled}" />
+                                <Label
+                                    Grid.Column="1"
+                                    Text="{Binding Text}"
+                                    Style="{StaticResource Caption13}"
+                                    TextColor="{Binding ColorToken, Converter={x:Static conv:TokenColorConverter.Instance}}" />
+                            </Grid>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+
+            <!-- pair settings: interval (tap → sheet)-->
+            <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space8}">
+                <Label Text="{x:Static res:AppStrings.DetailsSettingsTitle}" Style="{StaticResource Body15Strong}" />
+                <Border BackgroundColor="{DynamicResource Surface}" Padding="{x:Static tok:DesignTokens.Space16}">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="{x:Static tok:DesignTokens.RadiusControl}" />
+                    </Border.StrokeShape>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding ChangeIntervalCommand}" />
+                    </Border.GestureRecognizers>
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{x:Static tok:DesignTokens.Space8}">
+                        <Label Text="{x:Static res:AppStrings.DetailsIntervalTitle}" Style="{StaticResource Body15}" />
+                        <Label
+                            Grid.Column="1"
+                            Text="{Binding IntervalValue}"
+                            Style="{StaticResource Caption13}"
+                            TextColor="{DynamicResource PrimaryText}"
+                            VerticalOptions="Center" />
+                    </Grid>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- actions (no Filled on this screen — only Tonal/Text/Destructive)-->
+            <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space8}">
+                <Button
+                    Text="{x:Static res:AppStrings.SyncNowAction}"
+                    Style="{StaticResource TonalButton}"
+                    Command="{Binding SyncNowCommand}" />
+                <Button
+                    Text="{x:Static res:AppStrings.DetailsChangeFolder}"
+                    Style="{StaticResource TextButton}"
+                    Command="{Binding ChangeFolderCommand}" />
+                <Button
+                    Text="{x:Static res:AppStrings.DetailsDeletePair}"
+                    Style="{StaticResource DestructiveButton}"
+                    Command="{Binding DeleteCommand}" />
+            </VerticalStackLayout>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

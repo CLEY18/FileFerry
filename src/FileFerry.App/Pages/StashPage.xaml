@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage
+    x:Class="FileFerry.App.Pages.StashPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:res="clr-namespace:FileFerry.App.Resources"
+    xmlns:tok="clr-namespace:FileFerry.App"
+    xmlns:vm="clr-namespace:FileFerry.App.ViewModels"
+    x:DataType="vm:StashViewModel"
+    Title="{x:Static res:AppStrings.DetailsStashTitle}">
+    <!-- Trash buffer screen: deletion copies with TTL progress; "Restore" action; reassuring EmptyState.-->
+    <Grid Padding="{x:Static tok:DesignTokens.ScreenPadding}">
+        <CollectionView
+            ItemsSource="{Binding Items}"
+            SelectionMode="None"
+            VerticalScrollBarVisibility="Never">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="vm:StashRow">
+                    <Border
+                        BackgroundColor="{DynamicResource Surface}"
+                        Padding="{x:Static tok:DesignTokens.Space16}"
+                        Margin="{StaticResource CardBottomMargin}"
+                        SemanticProperties.Description="{Binding SemanticDescription}">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="{x:Static tok:DesignTokens.RadiusControl}" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space8}">
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{x:Static tok:DesignTokens.Space8}">
+                                <Label
+                                    Text="{x:Static tok:GlyphMapping.RestoreFromTrash}"
+                                    Style="{StaticResource IconGlyph24}"
+                                    TextColor="{DynamicResource TextSecondary}"
+                                    VerticalOptions="Center" />
+                                <Label
+                                    Grid.Column="1"
+                                    Text="{Binding OriginText}"
+                                    Style="{StaticResource Body15Strong}"
+                                    LineBreakMode="TailTruncation"
+                                    VerticalOptions="Center" />
+                            </Grid>
+                            <Label
+                                Text="{Binding DeletedText}"
+                                Style="{StaticResource Caption13}"
+                                TextColor="{DynamicResource TextSecondary}" />
+                            <Label
+                                Text="{Binding ExpiresText}"
+                                Style="{StaticResource Caption13}"
+                                TextColor="{DynamicResource StatusWarning}" />
+                            <!-- elapsed-TTL bar ("TTL progress")-->
+                            <ProgressBar
+                                Progress="{Binding Progress}"
+                                ProgressColor="{DynamicResource StatusWarning}"
+                                HeightRequest="{x:Static tok:DesignTokens.Space4}" />
+                            <Button
+                                Text="{x:Static res:AppStrings.StashRestore}"
+                                Style="{StaticResource TextButton}"
+                                Command="{Binding RestoreCommand}"
+                                CommandParameter="{Binding .}"
+                                HorizontalOptions="Start" />
+                        </VerticalStackLayout>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+
+            <CollectionView.EmptyView>
+                <VerticalStackLayout
+                    Spacing="{x:Static tok:DesignTokens.Space12}"
+                    Padding="{x:Static tok:DesignTokens.Space24}"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Center">
+                    <Label
+                        Text="{x:Static tok:GlyphMapping.RestoreFromTrash}"
+                        Style="{StaticResource IconEmptyState}"
+                        HorizontalOptions="Center" />
+                    <Label
+                        Text="{x:Static res:AppStrings.StashEmptyTitle}"
+                        Style="{StaticResource Heading20}"
+                        HorizontalOptions="Center"
+                        HorizontalTextAlignment="Center" />
+                    <Label
+                        Text="{x:Static res:AppStrings.StashEmptyBody}"
+                        Style="{StaticResource Body15}"
+                        TextColor="{DynamicResource TextSecondary}"
+                        HorizontalOptions="Center"
+                        HorizontalTextAlignment="Center" />
+                </VerticalStackLayout>
+            </CollectionView.EmptyView>
+        </CollectionView>
+    </Grid>
+</ContentPage>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage
+    x:Class="FileFerry.App.Pages.LogPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:conv="clr-namespace:FileFerry.App.Converters"
+    xmlns:res="clr-namespace:FileFerry.App.Resources"
+    xmlns:tok="clr-namespace:FileFerry.App"
+    xmlns:vm="clr-namespace:FileFerry.App.ViewModels"
+    x:DataType="vm:LogViewModel"
+    Title="{x:Static res:AppStrings.SettingsLogTitle}">
+    <!-- Global log: filter chips on top; 13 Caption rows; no autoscroll.-->
+    <Grid Padding="{x:Static tok:DesignTokens.ScreenPadding}" RowDefinitions="Auto,*" RowSpacing="{x:Static tok:DesignTokens.Space12}">
+
+        <HorizontalStackLayout
+            Grid.Row="0"
+            Spacing="{x:Static tok:DesignTokens.Space8}"
+            BindableLayout.ItemsSource="{Binding Filters}">
+            <BindableLayout.ItemTemplate>
+                <DataTemplate x:DataType="vm:LogFilterChip">
+                    <Border
+                        Padding="{x:Static tok:DesignTokens.Space12}, {x:Static tok:DesignTokens.Space8}"
+                        BackgroundColor="{Binding BackgroundToken, Converter={x:Static conv:TokenColorConverter.Instance}}">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="{x:Static tok:DesignTokens.RadiusChip}" />
+                        </Border.StrokeShape>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding SelectCommand}" />
+                        </Border.GestureRecognizers>
+                        <Label
+                            Text="{Binding Label}"
+                            Style="{StaticResource Body15}"
+                            TextColor="{Binding TextToken, Converter={x:Static conv:TokenColorConverter.Instance}}" />
+                    </Border>
+                </DataTemplate>
+            </BindableLayout.ItemTemplate>
+        </HorizontalStackLayout>
+
+        <CollectionView
+            Grid.Row="1"
+            ItemsSource="{Binding Items}"
+            SelectionMode="None"
+            VerticalScrollBarVisibility="Never">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="vm:LogRow">
+                    <!-- formatting: 12:04 · Projects · message; monospace is not needed-->
+                    <Grid
+                        ColumnDefinitions="Auto,*,*"
+                        ColumnSpacing="{x:Static tok:DesignTokens.Space8}"
+                        MinimumHeightRequest="{x:Static tok:DesignTokens.Space24}"
+                        SemanticProperties.Description="{Binding SemanticDescription}">
+                        <Label
+                            Text="{Binding Time}"
+                            Style="{StaticResource Caption13}"
+                            TextColor="{DynamicResource TextDisabled}"
+                            VerticalOptions="Center" />
+                        <Label
+                            Grid.Column="1"
+                            Text="{Binding PairName}"
+                            Style="{StaticResource Caption13}"
+                            TextColor="{DynamicResource TextSecondary}"
+                            LineBreakMode="TailTruncation"
+                            VerticalOptions="Center" />
+                        <Label
+                            Grid.Column="2"
+                            Text="{Binding Text}"
+                            Style="{StaticResource Caption13}"
+                            TextColor="{Binding ColorToken, Converter={x:Static conv:TokenColorConverter.Instance}}"
+                            LineBreakMode="TailTruncation"
+                            VerticalOptions="Center" />
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+
+            <CollectionView.EmptyView>
+                <Label
+                    Text="{x:Static res:AppStrings.DetailsLogEmpty}"
+                    Style="{StaticResource Body15}"
+                    TextColor="{DynamicResource TextSecondary}"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Center" />
+            </CollectionView.EmptyView>
+        </CollectionView>
+    </Grid>
+</ContentPage>

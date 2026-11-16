@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+    <!--
+      Color tokens — light and dark variants — the only place where hex literals live.
+      Light values sit under the token names, dark ones under the Dark suffix;
+      ThemeService resolves "token → value" by (palette, mode) and rewrites the token names
+      in resources, so the UI consumes only token names via DynamicResource.
+      AppThemeColor does not exist as a XAML type in MAUI 10 — a deliberate deviation.
+      "≈" values are derived, pending verification against a live Nextcloud.
+  -->
+
+    <!-- light-->
+    <Color x:Key="Primary">#0082C9</Color> <!-- dark: run the AA contrast check, use #33A1DC if needed-->
+    <Color x:Key="PrimaryHover">#1CAFFF</Color>
+    <Color x:Key="PrimaryText">#006AA3</Color>
+    <Color x:Key="OnPrimary">#FFFFFF</Color>
+    <Color x:Key="PrimaryContainer">#E1F0FA</Color>
+    <Color x:Key="Background">#FFFFFF</Color>
+    <Color x:Key="Surface">#F5F5F5</Color>
+    <Color x:Key="SurfaceVariant">#EDEDED</Color>
+    <Color x:Key="TextPrimary">#333333</Color>
+    <Color x:Key="TextSecondary">#666666</Color>
+    <Color x:Key="TextDisabled">#888888</Color>
+    <Color x:Key="Border">#CAC4D0</Color>
+    <Color x:Key="Selected">#ECECEC</Color>
+    <Color x:Key="StatusSuccess">#2D7B41</Color>
+    <Color x:Key="StatusError">#E9322D</Color>
+    <Color x:Key="StatusWarning">#FFA000</Color>
+    <Color x:Key="StatusInfo">#0082C9</Color>
+    <Color x:Key="StatusWarningContainer">#FFF4DE</Color> <!-- ≈ warning-toned chip background-->
+    <Color x:Key="StatusErrorContainer">#FCE9E8</Color> <!-- ≈ error-toned chip background-->
+
+    <!-- dark (Dark- variants; ones missing are marked ≈)-->
+    <Color x:Key="PrimaryDark">#0082C9</Color>
+    <Color x:Key="PrimaryHoverDark">#1CAFFF</Color>
+    <Color x:Key="PrimaryTextDark">#4FB3E8</Color> <!-- ≈ link color on dark-->
+    <Color x:Key="OnPrimaryDark">#FFFFFF</Color>
+    <Color x:Key="PrimaryContainerDark">#113D55</Color>
+    <Color x:Key="BackgroundDark">#181818</Color>
+    <Color x:Key="SurfaceDark">#232323</Color>
+    <Color x:Key="SurfaceVariantDark">#2E2E2E</Color>
+    <Color x:Key="TextPrimaryDark">#FFFFFF</Color>
+    <Color x:Key="TextSecondaryDark">#B3B3B3</Color>
+    <Color x:Key="TextDisabledDark">#808080</Color> <!-- ≈ 50% white-->
+    <Color x:Key="BorderDark">#4C4C4C</Color>
+    <Color x:Key="SelectedDark">#333333</Color> <!-- ≈-->
+    <Color x:Key="StatusSuccessDark">#4CAF50</Color>
+    <Color x:Key="StatusErrorDark">#EF5350</Color>
+    <Color x:Key="StatusWarningDark">#FFB300</Color>
+    <Color x:Key="StatusInfoDark">#33A1DC</Color> <!-- ≈ NC semantics-->
+    <Color x:Key="StatusWarningContainerDark">#4A3413</Color> <!-- ≈ warning tone on dark-->
+    <Color x:Key="StatusErrorContainerDark">#4A2322</Color> <!-- ≈ error tone on dark-->
+</ResourceDictionary>

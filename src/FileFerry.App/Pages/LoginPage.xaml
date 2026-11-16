@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage
+    x:Class="FileFerry.App.Pages.LoginPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:res="clr-namespace:FileFerry.App.Resources"
+    xmlns:tok="clr-namespace:FileFerry.App"
+    xmlns:vm="clr-namespace:FileFerry.App.ViewModels"
+    x:DataType="vm:LoginViewModel"
+    Shell.NavBarIsVisible="False"
+    Title="{Binding Title}">
+    <!-- Welcome screen WebView: fullscreen; TopAppBar "Sign in on <host>" + close button; poll runs in the background.-->
+    <Grid RowDefinitions="Auto,*">
+        <Grid
+            Padding="{x:Static tok:DesignTokens.Space16}"
+            ColumnDefinitions="*,Auto"
+            HeightRequest="{x:Static tok:DesignTokens.TopAppBarHeight}"
+            BackgroundColor="{DynamicResource Surface}">
+            <Label
+                Text="{Binding Title}"
+                Style="{StaticResource Heading20}"
+                LineBreakMode="TailTruncation"
+                VerticalOptions="Center" />
+            <Button
+                Grid.Column="1"
+                Text="{x:Static res:AppStrings.LoginClose}"
+                Style="{StaticResource TextButton}"
+                Command="{Binding CloseCommand}" />
+        </Grid>
+
+        <WebView
+            Grid.Row="1"
+            Source="{Binding LoginUrl}"
+            HorizontalOptions="Fill"
+            VerticalOptions="Fill" />
+
+        <VerticalStackLayout
+            Grid.Row="1"
+            Spacing="{x:Static tok:DesignTokens.Space8}"
+            Padding="{x:Static tok:DesignTokens.Space16}"
+            BackgroundColor="{DynamicResource Background}"
+            IsVisible="{Binding IsWaiting}"
+            HorizontalOptions="Center"
+            VerticalOptions="End">
+            <ActivityIndicator IsRunning="True" HorizontalOptions="Center" />
+            <Label
+                Text="{x:Static res:AppStrings.LoginWaiting}"
+                Style="{StaticResource Caption13}"
+                HorizontalTextAlignment="Center" />
+            <Label
+                Text="{Binding ErrorText}"
+                Style="{StaticResource Caption13}"
+                TextColor="{DynamicResource StatusError}"
+                HorizontalTextAlignment="Center" />
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

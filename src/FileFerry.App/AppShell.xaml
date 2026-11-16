@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell
+    x:Class="FileFerry.App.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:pages="clr-namespace:FileFerry.App.Pages"
+    xmlns:res="clr-namespace:FileFerry.App.Resources"
+    FlyoutBehavior="Flyout">
+    <!-- Stack main Pair List; the drawer leads to Settings; the welcome screen registers as a route in code.-->
+    <FlyoutItem Title="{x:Static res:AppStrings.PairListTitle}">
+        <ShellContent Route="pairlist" ContentTemplate="{DataTemplate pages:PairListPage}" />
+    </FlyoutItem>
+    <FlyoutItem Title="{x:Static res:AppStrings.SettingsTitle}">
+        <ShellContent Route="settings" ContentTemplate="{DataTemplate pages:SettingsPage}" />
+    </FlyoutItem>
+</Shell>

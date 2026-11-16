@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage
+    x:Class="FileFerry.App.Pages.PairWizardPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:conv="clr-namespace:FileFerry.App.Converters"
+    xmlns:res="clr-namespace:FileFerry.App.Resources"
+    xmlns:tok="clr-namespace:FileFerry.App"
+    xmlns:vm="clr-namespace:FileFerry.App.ViewModels"
+    x:DataType="vm:PairWizardViewModel"
+    Title="{x:Static res:AppStrings.WizardTitle}">
+    <!-- Add-pair wizard: 3-dot stepper on top; one section per step; a single Filled button at the bottom.-->
+    <Grid
+        Padding="{x:Static tok:DesignTokens.ScreenPadding}"
+        RowDefinitions="Auto,Auto,Auto,*,Auto"
+        RowSpacing="{x:Static tok:DesignTokens.Space12}">
+
+        <!-- 3-step indicator (dots) + a11y caption-->
+        <HorizontalStackLayout
+            Grid.Row="0"
+            Spacing="{x:Static tok:DesignTokens.Space8}"
+            HorizontalOptions="Center"
+            SemanticProperties.Description="{Binding StepCaption}">
+            <BoxView
+                WidthRequest="{x:Static tok:DesignTokens.Space8}"
+                HeightRequest="{x:Static tok:DesignTokens.Space8}"
+                CornerRadius="{x:Static tok:DesignTokens.Space4}"
+                Color="{DynamicResource Primary}"
+                VerticalOptions="Center"
+                Opacity="{Binding Dot1Opacity}" />
+            <BoxView
+                WidthRequest="{x:Static tok:DesignTokens.Space8}"
+                HeightRequest="{x:Static tok:DesignTokens.Space8}"
+                CornerRadius="{x:Static tok:DesignTokens.Space4}"
+                Color="{DynamicResource Primary}"
+                VerticalOptions="Center"
+                Opacity="{Binding Dot2Opacity}" />
+            <BoxView
+                WidthRequest="{x:Static tok:DesignTokens.Space8}"
+                HeightRequest="{x:Static tok:DesignTokens.Space8}"
+                CornerRadius="{x:Static tok:DesignTokens.Space4}"
+                Color="{DynamicResource Primary}"
+                VerticalOptions="Center"
+                Opacity="{Binding Dot3Opacity}" />
+        </HorizontalStackLayout>
+
+        <!-- inline error (folder-list/network failure)-->
+        <Label
+            Grid.Row="1"
+            Text="{Binding ErrorText}"
+            Style="{StaticResource Caption13}"
+            TextColor="{DynamicResource StatusError}"
+            IsVisible="{Binding ErrorText, Converter={x:Static conv:HasTextConverter.Instance}}" />
+
+        <!-- step 1: breadcrumbs + "Up"-->
+        <Grid
+            Grid.Row="2"
+            ColumnDefinitions="*,Auto"
+            IsVisible="{Binding IsStep1}">
+            <Label
+                Text="{Binding Breadcrumb}"
+                Style="{StaticResource Caption13}"
+                LineBreakMode="TailTruncation"
+                VerticalOptions="Center" />
+            <Button
+                Grid.Column="1"
+                Text="{x:Static res:AppStrings.WizardUp}"
+                Style="{StaticResource TextButton}"
+                Command="{Binding UpCommand}"
+                IsVisible="{Binding CanGoUp}" />
+        </Grid>
+
+        <ActivityIndicator
+            Grid.Row="3"
+            IsRunning="{Binding IsBusy}"
+            IsVisible="{Binding IsBusy}"
+            HorizontalOptions="Center"
+            VerticalOptions="Start" />
+
+        <!-- step 1: folder list-->
+        <CollectionView
+            Grid.Row="3"
+            ItemsSource="{Binding Folders}"
+            IsVisible="{Binding IsStep1}"
+            SelectionMode="None"
+            VerticalScrollBarVisibility="Never">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="vm:RemoteBrowserRow">
+                    <Grid
+                        ColumnDefinitions="Auto,*,Auto"
+                        ColumnSpacing="{x:Static tok:DesignTokens.Space12}"
+                        MinimumHeightRequest="{x:Static tok:DesignTokens.ListRowHeight}"
+                        BackgroundColor="Transparent">
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding OpenCommand}" CommandParameter="{Binding .}" />
+                        </Grid.GestureRecognizers>
+                        <Label
+                            Text="{x:Static tok:GlyphMapping.Folder}"
+                            Style="{StaticResource IconGlyph24}"
+                            TextColor="{DynamicResource TextSecondary}"
+                            VerticalOptions="Center" />
+                        <Label
+                            Grid.Column="1"
+                            Text="{Binding Name}"
+                            Style="{StaticResource Body15}"
+                            LineBreakMode="TailTruncation"
+                            VerticalOptions="Center" />
+                        <Label
+                            Grid.Column="2"
+                            Text="{x:Static tok:GlyphMapping.ChevronRight}"
+                            Style="{StaticResource IconGlyph24}"
+                            TextColor="{DynamicResource TextDisabled}"
+                            VerticalOptions="Center" />
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- step 2: SAF pick of the local folder-->
+        <VerticalStackLayout
+            Grid.Row="3"
+            Spacing="{x:Static tok:DesignTokens.Space16}"
+            IsVisible="{Binding IsStep2}"
+            VerticalOptions="Center">
+            <Label
+                Text="{x:Static tok:GlyphMapping.Folder}"
+                Style="{StaticResource IconEmptyState}"
+                HorizontalOptions="Center" />
+            <Button
+                Text="{x:Static res:AppStrings.WizardPickLocalButton}"
+                Style="{StaticResource TonalButton}"
+                Command="{Binding PickLocalCommand}" />
+            <Label
+                Text="{x:Static res:AppStrings.WizardPickLocalHint}"
+                Style="{StaticResource Caption13}"
+                TextColor="{DynamicResource TextSecondary}"
+                HorizontalTextAlignment="Center" />
+            <!-- card for the chosen folder-->
+            <Border
+                BackgroundColor="{DynamicResource Surface}"
+                Padding="{x:Static tok:DesignTokens.Space16}"
+                IsVisible="{Binding HasLocal}">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="{x:Static tok:DesignTokens.RadiusControl}" />
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space4}">
+                    <Label Text="{Binding Local.DisplayName}" Style="{StaticResource Body15Strong}" />
+                    <Label
+                        Text="{Binding Local.TreeUri}"
+                        Style="{StaticResource Caption13}"
+                        TextColor="{DynamicResource TextSecondary}"
+                        LineBreakMode="TailTruncation" />
+                </VerticalStackLayout>
+            </Border>
+        </VerticalStackLayout>
+
+        <!-- step 3: schedule chips + direction/conflicts (informational) + Wi-Fi-->
+        <VerticalStackLayout
+            Grid.Row="3"
+            Spacing="{x:Static tok:DesignTokens.SectionSpacing}"
+            IsVisible="{Binding IsStep3}"
+            VerticalOptions="Center">
+            <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space8}">
+                <Label Text="{x:Static res:AppStrings.WizardScheduleTitle}" Style="{StaticResource Body15Strong}" />
+                <HorizontalStackLayout
+                    Spacing="{x:Static tok:DesignTokens.Space8}"
+                    BindableLayout.ItemsSource="{Binding Schedules}">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ChoiceOption">
+                            <Border
+                                Padding="{x:Static tok:DesignTokens.Space12}, {x:Static tok:DesignTokens.Space8}"
+                                BackgroundColor="{Binding BackgroundToken, Converter={x:Static conv:TokenColorConverter.Instance}}">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="{x:Static tok:DesignTokens.RadiusChip}" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding SelectCommand}" />
+                                </Border.GestureRecognizers>
+                                <Label
+                                    Text="{Binding Label}"
+                                    Style="{StaticResource Body15}"
+                                    TextColor="{Binding TextToken, Converter={x:Static conv:TokenColorConverter.Instance}}" />
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </HorizontalStackLayout>
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space4}">
+                <Label Text="{x:Static res:AppStrings.WizardDirectionTitle}" Style="{StaticResource Body15Strong}" />
+                <Label Text="{x:Static res:AppStrings.WizardDirectionInfo}" Style="{StaticResource Caption13}" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space4}">
+                <Label Text="{x:Static res:AppStrings.WizardConflictTitle}" Style="{StaticResource Body15Strong}" />
+                <Label Text="{x:Static res:AppStrings.WizardConflictInfo}" Style="{StaticResource Caption13}" />
+            </VerticalStackLayout>
+
+            <HorizontalStackLayout Spacing="{x:Static tok:DesignTokens.Space12}">
+                <Switch
+                    IsToggled="{Binding WifiOnly}"
+                    SemanticProperties.Description="{x:Static res:AppStrings.WizardWifiOnly}" />
+                <Label
+                    Text="{x:Static res:AppStrings.WizardWifiOnly}"
+                    Style="{StaticResource Body15}"
+                    VerticalOptions="Center" />
+            </HorizontalStackLayout>
+        </VerticalStackLayout>
+
+        <!-- the screen's single Filled action: "Choose this folder" → "Next" → "Create pair"-->
+        <Button
+            Grid.Row="4"
+            Text="{Binding PrimaryText}"
+            Style="{StaticResource PrimaryButton}"
+            Command="{Binding PrimaryCommand}"
+            IsEnabled="{Binding PrimaryEnabled}" />
+    </Grid>
+</ContentPage>

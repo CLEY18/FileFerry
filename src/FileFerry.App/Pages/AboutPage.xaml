@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage
+    x:Class="FileFerry.App.Pages.AboutPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:res="clr-namespace:FileFerry.App.Resources"
+    xmlns:tok="clr-namespace:FileFerry.App"
+    xmlns:vm="clr-namespace:FileFerry.App.ViewModels"
+    x:DataType="vm:AboutViewModel"
+    Title="{x:Static res:AppStrings.SettingsAboutTitle}">
+    <!-- About screen: mark + tagline + version; the trademark disclaimer; three links.-->
+    <ScrollView Padding="{x:Static tok:DesignTokens.ScreenPadding}">
+        <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space16}" VerticalOptions="Center">
+
+            <Label Text="{x:Static res:AppStrings.AppDisplayName}" Style="{StaticResource Heading20}" HorizontalOptions="Center" />
+            <Label
+                Text="{x:Static res:AppStrings.AboutTagline}"
+                Style="{StaticResource Body15}"
+                TextColor="{DynamicResource TextSecondary}"
+                HorizontalOptions="Center"
+                HorizontalTextAlignment="Center" />
+            <Label
+                Text="{Binding VersionLine}"
+                Style="{StaticResource Caption13}"
+                TextColor="{DynamicResource TextDisabled}"
+                HorizontalOptions="Center" />
+
+            <!-- mandatory trademark disclaimer-->
+            <Border BackgroundColor="{DynamicResource Surface}" Padding="{x:Static tok:DesignTokens.Space16}">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="{x:Static tok:DesignTokens.RadiusControl}" />
+                </Border.StrokeShape>
+                <Label
+                    Text="{x:Static res:AppStrings.AboutDisclaimer}"
+                    Style="{StaticResource Caption13}"
+                    TextColor="{DynamicResource TextSecondary}" />
+            </Border>
+
+            <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space4}">
+                <Button
+                    Text="{x:Static res:AppStrings.AboutSource}"
+                    Style="{StaticResource TextButton}"
+                    Command="{Binding SourceCommand}"
+                    HorizontalOptions="Start" />
+                <Button
+                    Text="{x:Static res:AppStrings.AboutBugs}"
+                    Style="{StaticResource TextButton}"
+                    Command="{Binding BugsCommand}"
+                    HorizontalOptions="Start" />
+                <Button
+                    Text="{x:Static res:AppStrings.SettingsPrivacyTitle}"
+                    Style="{StaticResource TextButton}"
+                    Command="{Binding PrivacyCommand}"
+                    HorizontalOptions="Start" />
+            </VerticalStackLayout>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

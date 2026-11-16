@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools">
+    <!-- Network is what the app is for; camera/microphone/location are not declared at all.-->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Settings screen: "ignore battery optimization" request for reliable background runs.-->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <!--
+      FGS of dataSync type only during an active transfer. WorkManager keeps
+      its own SystemForegroundService — merge foregroundServiceType into it; Android 14+
+      requires both the type and a separate permission.
+-->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!--
+      Cleartext HTTP — a narrow domain-suffix exception in network_security_config:
+      local name suffixes only (home.arpa/local/lan/...), not global.
+      Platform limitation: NSC cannot white-list IP literals.
+-->
+    <application android:networkSecurityConfig="@xml/network_security_config">
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="dataSync"
+            tools:node="merge" />
+    </application>
+</manifest>

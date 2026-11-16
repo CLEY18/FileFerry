@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AppDisplayName" xml:space="preserve"><value>FileFerry</value></data>
+  <data name="PairListTitle" xml:space="preserve"><value>Sync folders</value></data>
+  <data name="PairListEmptyTitle" xml:space="preserve"><value>No folder pairs yet</value></data>
+  <data name="PairListEmptyBody" xml:space="preserve"><value>Add your first folder pair to start syncing</value></data>
+  <data name="WelcomeTitle" xml:space="preserve"><value>Welcome to FileFerry</value></data>
+  <data name="WelcomeSubtitle" xml:space="preserve"><value>Sync folders with your own server</value></data>
+  <data name="WelcomeHostHint" xml:space="preserve"><value>Server address: hostname or IP</value></data>
+  <data name="WelcomeConnect" xml:space="preserve"><value>Connect</value></data>
+  <data name="WelcomeManualIp" xml:space="preserve"><value>Enter the IP manually</value></data>
+  <data name="SettingsTitle" xml:space="preserve"><value>Settings</value></data>
+  <data name="ErrorHostInvalid" xml:space="preserve"><value>The server address doesn't look valid. Check it and try again.</value></data>
+  <data name="ErrorSessionExpired" xml:space="preserve"><value>The sign-in session has expired. Start connecting again.</value></data>
+  <data name="HelpTitle" xml:space="preserve"><value>Need help?</value></data>
+  <data name="HelpBody" xml:space="preserve"><value>If the server isn't found by name, enable private DNS in your Wi-Fi settings or enter the address manually — as an IP, e.g. 192.0.2.1.</value></data>
+  <data name="HelpOk" xml:space="preserve"><value>Got it</value></data>
+  <data name="LoginClose" xml:space="preserve"><value>Close</value></data>
+  <data name="LoginTitle" xml:space="preserve"><value>Sign in</value></data>
+  <data name="LoginTitleFormat" xml:space="preserve"><value>Sign in to {0}</value></data>
+  <data name="LoginWaiting" xml:space="preserve"><value>Waiting for confirmation in the window…</value></data>
+  <data name="StatusIdle" xml:space="preserve"><value>Waiting</value></data>
+  <data name="StatusSyncing" xml:space="preserve"><value>Syncing…</value></data>
+  <data name="StatusSuccess" xml:space="preserve"><value>Synced</value></data>
+  <data name="StatusConflict" xml:space="preserve"><value>Conflict</value></data>
+  <data name="ChipConflictMany" xml:space="preserve"><value>conflicts</value></data>
+  <data name="ChipConflictFew" xml:space="preserve"><value>conflicts</value></data>
+  <data name="ChipConflictOne" xml:space="preserve"><value>conflict</value></data>
+  <data name="StatusErrorChip" xml:space="preserve"><value>Error</value></data>
+  <data name="StatusOffline" xml:space="preserve"><value>Server unavailable</value></data>
+  <data name="AccountChipEmpty" xml:space="preserve"><value>No server connected</value></data>
+  <data name="PairCardLocalPrefix" xml:space="preserve"><value>Device files</value></data>
+  <data name="PairListAdd" xml:space="preserve"><value>Add a pair</value></data>
+  <data name="CardActionPause" xml:space="preserve"><value>Pause</value></data>
+  <data name="CardActionResume" xml:space="preserve"><value>Resume</value></data>
+  <data name="CardActionDelete" xml:space="preserve"><value>Delete</value></data>
+  <data name="DeletePairTitle" xml:space="preserve"><value>Delete this pair?</value></data>
+  <data name="DeletePairBody" xml:space="preserve"><value>The pair settings will be removed. Files on your device and server stay untouched.</value></data>
+  <data name="DeletePairAccept" xml:space="preserve"><value>Delete</value></data>
+  <data name="DialogCancel" xml:space="preserve"><value>Cancel</value></data>
+        <data name="SyncNowAction" xml:space="preserve"><value>Sync now</value></data>
+  <data name="PendingSectionTitle" xml:space="preserve"><value>Still in development</value></data>
+  <data name="PendingSectionBody" xml:space="preserve"><value>{0} will appear in one of the upcoming builds.</value></data>
+  <data name="WizardTitle" xml:space="preserve"><value>New folder pair</value></data>
+  <data name="WizardRootCrumb" xml:space="preserve"><value>Storage root</value></data>
+  <data name="WizardStepOf" xml:space="preserve"><value>Step {0} of 3</value></data>
+  <data name="WizardUp" xml:space="preserve"><value>Up</value></data>
+  <data name="WizardChooseThisFolder" xml:space="preserve"><value>Choose this folder</value></data>
+  <data name="WizardNext" xml:space="preserve"><value>Next</value></data>
+  <data name="WizardCreatePair" xml:space="preserve"><value>Create pair</value></data>
+  <data name="WizardNoAccountTitle" xml:space="preserve"><value>No server connected</value></data>
+  <data name="WizardNoAccountBody" xml:space="preserve"><value>Connect your server on the welcome screen first.</value></data>
+  <data name="WizardLoadFailed" xml:space="preserve"><value>Couldn't open the folder. {0}</value></data>
+  <data name="WizardIncomplete" xml:space="preserve"><value>Some steps are still empty — go back and choose the folders.</value></data>
+  <data name="WizardPickLocalButton" xml:space="preserve"><value>Choose a device folder</value></data>
+  <data name="WizardPickLocalHint" xml:space="preserve"><value>FileFerry will only see files inside the chosen folder.</value></data>
+  <data name="WizardScheduleTitle" xml:space="preserve"><value>Sync schedule</value></data>
+  <data name="WizardDirectionTitle" xml:space="preserve"><value>Direction</value></data>
+  <data name="WizardDirectionInfo" xml:space="preserve"><value>Two-way sync (fixed in v1)</value></data>
+  <data name="WizardConflictTitle" xml:space="preserve"><value>Conflicts</value></data>
+  <data name="WizardConflictInfo" xml:space="preserve"><value>Keep both versions</value></data>
+  <data name="WizardWifiOnly" xml:space="preserve"><value>Wi-Fi/LAN only</value></data>
+  <data name="Schedule15" xml:space="preserve"><value>15 min</value></data>
+  <data name="Schedule30" xml:space="preserve"><value>30 min</value></data>
+  <data name="Schedule60" xml:space="preserve"><value>1 hr</value></data>
+  <data name="ScheduleManual" xml:space="preserve"><value>Manually</value></data>
+  <data name="DetailsLastRunTitle" xml:space="preserve"><value>Last sync</value></data>
+  <data name="DetailsNeverRun" xml:space="preserve"><value>Not synced yet</value></data>
+  <data name="DetailsEventsCount" xml:space="preserve"><value>{0} events</value></data>
+  <data name="DetailsDurationLabel" xml:space="preserve"><value>Duration: {0}</value></data>
+  <data name="DetailsNextAt" xml:space="preserve"><value>Next at {0}</value></data>
+  <data name="DetailsNextPaused" xml:space="preserve"><value>Paused</value></data>
+  <data name="DetailsNextManual" xml:space="preserve"><value>Manually only</value></data>
+  <data name="DetailsPauseSwitch" xml:space="preserve"><value>Pause sync</value></data>
+  <data name="DetailsConflictsTitle" xml:space="preserve"><value>Conflicts</value></data>
+  <data name="DetailsStashTitle" xml:space="preserve"><value>Trash buffer</value></data>
+  <data name="DetailsStashNote" xml:space="preserve"><value>kept for {0} days</value></data>
+  <data name="DetailsLogTitle" xml:space="preserve"><value>Pair log</value></data>
+  <data name="DetailsLogEmpty" xml:space="preserve"><value>No events yet</value></data>
+  <data name="DetailsSettingsTitle" xml:space="preserve"><value>Pair settings</value></data>
+  <data name="DetailsIntervalTitle" xml:space="preserve"><value>Sync interval</value></data>
+  <data name="DetailsChangeFolder" xml:space="preserve"><value>Change device folder</value></data>
+  <data name="DetailsDeletePair" xml:space="preserve"><value>Delete pair</value></data>
+  <data name="DetailsDeletePairBody" xml:space="preserve"><value>The pair settings will be removed. Files on your device and server stay untouched; deleted copies remain in the trash buffer for 30 days.</value></data>
+  <data name="DetailsGoneBody" xml:space="preserve"><value>This pair has already been deleted.</value></data>
+  <data name="OutcomeRunning" xml:space="preserve"><value>In progress…</value></data>
+  <data name="OutcomePartial" xml:space="preserve"><value>Partially applied</value></data>
+  <data name="OutcomeFailed" xml:space="preserve"><value>Sync failed</value></data>
+  <data name="OutcomeCancelled" xml:space="preserve"><value>Cancelled</value></data>
+  <data name="ConflictsEmptyTitle" xml:space="preserve"><value>No conflicts</value></data>
+  <data name="ConflictsEmptyBody" xml:space="preserve"><value>All changes were applied. If a conflict appears, we keep both versions and show them here.</value></data>
+  <data name="ConflictKeptBoth" xml:space="preserve"><value>Both versions kept</value></data>
+  <data name="ConflictKeepServer" xml:space="preserve"><value>Keep server version</value></data>
+  <data name="ConflictKeepLocal" xml:space="preserve"><value>Keep local version</value></data>
+  <data name="StashEmptyTitle" xml:space="preserve"><value>Trash buffer is empty</value></data>
+  <data name="StashEmptyBody" xml:space="preserve"><value>Deleted files will be kept safely here for 30 days.</value></data>
+  <data name="StashRestore" xml:space="preserve"><value>Restore</value></data>
+  <data name="StashExpiresIn" xml:space="preserve"><value>Deletes in {0}</value></data>
+  <data name="StashDeletedAt" xml:space="preserve"><value>Deleted {0}</value></data>
+  <data name="RtNow" xml:space="preserve"><value>just now</value></data>
+  <data name="RtMinAgo" xml:space="preserve"><value>{0} min ago</value></data>
+  <data name="RtHourAgo" xml:space="preserve"><value>{0} hr ago</value></data>
+  <data name="RtDayAgo" xml:space="preserve"><value>{0} days ago</value></data>
+  <data name="DurSec" xml:space="preserve"><value>{0} s</value></data>
+  <data name="DurMinSec" xml:space="preserve"><value>{0} min {1} s</value></data>
+  <data name="DurHourMin" xml:space="preserve"><value>{0} hr {1} min</value></data>
+  <data name="ShortDays" xml:space="preserve"><value>{0} days</value></data>
+  <data name="ShortHours" xml:space="preserve"><value>{0} hr</value></data>
+  <data name="ShortMinutes" xml:space="preserve"><value>{0} min</value></data>
+  <data name="SettingsThemeTitle" xml:space="preserve"><value>Theme</value></data>
+  <data name="ThemeNextcloudLabel" xml:space="preserve"><value>Nextcloud</value></data>
+  <data name="ThemeDynamicLabel" xml:space="preserve"><value>Dynamic</value></data>
+  <data name="SettingsDefaultIntervalTitle" xml:space="preserve"><value>Default interval</value></data>
+  <data name="SettingsWifiOnlyTitle" xml:space="preserve"><value>LAN only</value></data>
+  <data name="SettingsWifiOnlyHint" xml:space="preserve"><value>New pairs start out syncing only over the local network.</value></data>
+  <data name="SettingsBatteryTitle" xml:space="preserve"><value>Battery optimization</value></data>
+  <data name="BatteryIgnored" xml:space="preserve"><value>Background is reliable — optimization is off</value></data>
+  <data name="BatteryNotIgnored" xml:space="preserve"><value>The system may delay background syncs</value></data>
+  <data name="BatteryOpen" xml:space="preserve"><value>Allow background mode</value></data>
+  <data name="SettingsAccountTitle" xml:space="preserve"><value>Account</value></data>
+  <data name="AccountLogout" xml:space="preserve"><value>Sign out</value></data>
+  <data name="LogoutTitle" xml:space="preserve"><value>Sign out of the account?</value></data>
+  <data name="LogoutBody" xml:space="preserve"><value>The server session and the pair settings will be removed from this device. Files on the server and on the device stay untouched.</value></data>
+  <data name="SettingsLogTitle" xml:space="preserve"><value>Sync log</value></data>
+  <data name="SettingsAboutTitle" xml:space="preserve"><value>About the app</value></data>
+  <data name="SettingsPrivacyTitle" xml:space="preserve"><value>Privacy</value></data>
+  <data name="AboutTagline" xml:space="preserve"><value>Folder sync with your own server</value></data>
+  <data name="AboutVersion" xml:space="preserve"><value>Version {0}</value></data>
+  <data name="AboutDisclaimer" xml:space="preserve"><value>FileFerry is not affiliated with, endorsed by, or connected to Nextcloud GmbH. Nextcloud is a registered trademark of Nextcloud GmbH.</value></data>
+  <data name="AboutSource" xml:space="preserve"><value>Source code</value></data>
+  <data name="AboutBugs" xml:space="preserve"><value>Bug report</value></data>
+  <data name="LogFilterAll" xml:space="preserve"><value>All</value></data>
+  <data name="LogFilterErrors" xml:space="preserve"><value>Errors</value></data>
+  <data name="SyncForegroundTitle" xml:space="preserve"><value>Syncing…</value></data>
+  <data name="SyncForegroundDefaultBody" xml:space="preserve"><value>FileFerry is syncing your folders</value></data>
+  <data name="SyncChannelName" xml:space="preserve"><value>Background sync</value></data>
+  <data name="SyncProgressFormat" xml:space="preserve"><value>File {0} of {1}</value></data>
+  <data name="SyncPreparing" xml:space="preserve"><value>Preparing…</value></data>
+    <data name="RunCancelling" xml:space="preserve"><value>Cancelling…</value></data>
+  <data name="StashRestoreConfirmFormat" xml:space="preserve"><value>Put “{0}” back into the folder? The copy will stay in the trash until its retention ends.</value></data>
+  <data name="StashRestoreDoneTitle" xml:space="preserve"><value>Restored</value></data>
+    <data name="StashRestoreFailedTitle" xml:space="preserve"><value>Could not restore</value></data>
+  <data name="CancelRun" xml:space="preserve"><value>Cancel sync</value></data>
+  <data name="StashRestoreDoneBody" xml:space="preserve"><value>The file is back in the folder — the next sync will upload it.</value></data>
+  <data name="DetailsGoneTitle" xml:space="preserve"><value>Pair not found</value></data>
+  <data name="EventRunStarted" xml:space="preserve"><value>Sync started.</value></data>
+  <data name="EventRunCancelled" xml:space="preserve"><value>Sync cancelled — the next sync catches up.</value></data>
+  <data name="EventResumeStopped" xml:space="preserve"><value>Resuming the interrupted sync · journal steps: {0}</value></data>
+  <data name="EventConflictDetected" xml:space="preserve"><value>Conflict {0} — both versions kept</value></data>
+  <data name="EventPlanSummary" xml:space="preserve"><value>Plan · operations: {0}</value></data>
+  <data name="EventAppliedBaseline" xml:space="preserve"><value>Applied {0} operations — reference state updated</value></data>
+  <data name="EventRunStopped" xml:space="preserve"><value>Sync stopped · {0} — applied changes are kept; the next sync replans</value></data>
+  <data name="EventRunFailed" xml:space="preserve"><value>Sync failed · {0}</value></data>
+  <data name="EventFailScope" xml:space="preserve"><value>Pair folder unavailable · {0}</value></data>
+  <data name="EventFailProbe" xml:space="preserve"><value>Server unreachable · {0}</value></data>
+  <data name="EventFailMaintenance" xml:space="preserve"><value>Server in maintenance mode — sync deferred · {0}</value></data>
+  <data name="EventFailLocalScan" xml:space="preserve"><value>Local scan failed · {0}</value></data>
+  <data name="EventFailRemoteScan" xml:space="preserve"><value>Remote scan failed · {0}</value></data>
+  <data name="EventFailPlanner" xml:space="preserve"><value>Planner halted the sync · {0}</value></data>
+  <data name="EventStashPurged" xml:space="preserve"><value>Expired trash copies purged · {0}</value></data>
+  <data name="EventRaw" xml:space="preserve"><value>{0}</value></data>
+  <data name="ErrorAuthExpired" xml:space="preserve"><value>Session expired — sign in again</value></data>
+  <data name="ErrorServerGone" xml:space="preserve"><value>Server unavailable</value></data>
+  <data name="ErrorNetwork" xml:space="preserve"><value>Network unavailable</value></data>
+  <data name="ErrorNotFound" xml:space="preserve"><value>Not found</value></data>
+  <data name="ErrorStorageFull" xml:space="preserve"><value>Out of storage space</value></data>
+  <data name="ErrorPermissionLost" xml:space="preserve"><value>Access lost — re-grant folder access</value></data>
+  <data name="ErrorConflict" xml:space="preserve"><value>State conflict</value></data>
+  <data name="ErrorUnknown" xml:space="preserve"><value>Unknown error</value></data>
+</root>

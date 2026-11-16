@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AppDisplayName" xml:space="preserve"><value>FileFerry</value></data>
+  <data name="PairListTitle" xml:space="preserve"><value>Пари синхронізації</value></data>
+  <data name="PairListEmptyTitle" xml:space="preserve"><value>Немає жодної пари</value></data>
+  <data name="PairListEmptyBody" xml:space="preserve"><value>Додайте першу пару папок, щоб почати синхронізацію</value></data>
+  <data name="WelcomeTitle" xml:space="preserve"><value>Вітаємо у FileFerry</value></data>
+  <data name="WelcomeSubtitle" xml:space="preserve"><value>Синхронізуйте папки з власним сервером</value></data>
+  <data name="WelcomeHostHint" xml:space="preserve"><value>Адреса сервера: ім'я або IP</value></data>
+  <data name="WelcomeConnect" xml:space="preserve"><value>Підключитися</value></data>
+  <data name="WelcomeManualIp" xml:space="preserve"><value>Ввести IP вручну</value></data>
+  <data name="SettingsTitle" xml:space="preserve"><value>Налаштування</value></data>
+  <data name="ErrorHostInvalid" xml:space="preserve"><value>Адреса сервера виглядає недійсною. Перевірте її й спробуйте ще раз.</value></data>
+  <data name="ErrorSessionExpired" xml:space="preserve"><value>Сесію входу вичерпано. Почніть підключення спочатку.</value></data>
+  <data name="HelpTitle" xml:space="preserve"><value>Потрібна допомога?</value></data>
+  <data name="HelpBody" xml:space="preserve"><value>Якщо сервер не знаходиться за іменем, увімкніть приватний DNS у Wi-Fi або введіть адресу вручну — у форматі IP, наприклад 192.0.2.1.</value></data>
+  <data name="HelpOk" xml:space="preserve"><value>Зрозуміло</value></data>
+  <data name="LoginClose" xml:space="preserve"><value>Закрити</value></data>
+  <data name="LoginTitle" xml:space="preserve"><value>Вхід</value></data>
+  <data name="LoginTitleFormat" xml:space="preserve"><value>Вхід на {0}</value></data>
+  <data name="LoginWaiting" xml:space="preserve"><value>Очікуємо підтвердження у вікні…</value></data>
+  <data name="StatusIdle" xml:space="preserve"><value>Очікує</value></data>
+  <data name="StatusSyncing" xml:space="preserve"><value>Синхронізує…</value></data>
+  <data name="StatusSuccess" xml:space="preserve"><value>Синхронізовано</value></data>
+  <data name="StatusConflict" xml:space="preserve"><value>Конфлікт</value></data>
+  <data name="ChipConflictMany" xml:space="preserve"><value>конфліктів</value></data>
+  <data name="ChipConflictFew" xml:space="preserve"><value>конфлікти</value></data>
+  <data name="ChipConflictOne" xml:space="preserve"><value>конфлікт</value></data>
+  <data name="StatusErrorChip" xml:space="preserve"><value>Помилка</value></data>
+  <data name="StatusOffline" xml:space="preserve"><value>Сервер недоступний</value></data>
+  <data name="AccountChipEmpty" xml:space="preserve"><value>Сервер не підключено</value></data>
+  <data name="PairCardLocalPrefix" xml:space="preserve"><value>Файли пристрою</value></data>
+  <data name="PairListAdd" xml:space="preserve"><value>Додати пару</value></data>
+  <data name="CardActionPause" xml:space="preserve"><value>Пауза</value></data>
+  <data name="CardActionResume" xml:space="preserve"><value>Відновити</value></data>
+  <data name="CardActionDelete" xml:space="preserve"><value>Видалити</value></data>
+  <data name="DeletePairTitle" xml:space="preserve"><value>Видалити пару?</value></data>
+  <data name="DeletePairBody" xml:space="preserve"><value>Налаштування пари буде видалено. Файли на пристрої та сервері залишаться.</value></data>
+  <data name="DeletePairAccept" xml:space="preserve"><value>Видалити</value></data>
+  <data name="DialogCancel" xml:space="preserve"><value>Скасувати</value></data>
+        <data name="SyncNowAction" xml:space="preserve"><value>Синхронізувати зараз</value></data>
+  <data name="PendingSectionTitle" xml:space="preserve"><value>Розділ у розробці</value></data>
+  <data name="PendingSectionBody" xml:space="preserve"><value>{0} з'явиться в одній із наступних збірок.</value></data>
+  <data name="WizardTitle" xml:space="preserve"><value>Нова пара папок</value></data>
+  <data name="WizardRootCrumb" xml:space="preserve"><value>Корінь сховища</value></data>
+  <data name="WizardStepOf" xml:space="preserve"><value>Крок {0} із 3</value></data>
+  <data name="WizardUp" xml:space="preserve"><value>Вгору</value></data>
+  <data name="WizardChooseThisFolder" xml:space="preserve"><value>Вибрати цю папку</value></data>
+  <data name="WizardNext" xml:space="preserve"><value>Далі</value></data>
+  <data name="WizardCreatePair" xml:space="preserve"><value>Створити пару</value></data>
+  <data name="WizardNoAccountTitle" xml:space="preserve"><value>Сервер не підключено</value></data>
+  <data name="WizardNoAccountBody" xml:space="preserve"><value>Спочатку підключіть сервер на екрані вітання.</value></data>
+  <data name="WizardLoadFailed" xml:space="preserve"><value>Не вдалося відкрити папку. {0}</value></data>
+  <data name="WizardIncomplete" xml:space="preserve"><value>Не всі кроки заповнено — поверніться й виберіть папки.</value></data>
+  <data name="WizardPickLocalButton" xml:space="preserve"><value>Вибрати папку на пристрої</value></data>
+  <data name="WizardPickLocalHint" xml:space="preserve"><value>FileFerry бачитиме файли лише у вибраній папці.</value></data>
+  <data name="WizardScheduleTitle" xml:space="preserve"><value>Розклад синхронізації</value></data>
+  <data name="WizardDirectionTitle" xml:space="preserve"><value>Напрямок</value></data>
+  <data name="WizardDirectionInfo" xml:space="preserve"><value>Двостороння синхронізація (у v1 фіксовано)</value></data>
+  <data name="WizardConflictTitle" xml:space="preserve"><value>Конфлікти</value></data>
+  <data name="WizardConflictInfo" xml:space="preserve"><value>Зберігати обидві версії</value></data>
+  <data name="WizardWifiOnly" xml:space="preserve"><value>Тільки Wi-Fi/LAN</value></data>
+  <data name="Schedule15" xml:space="preserve"><value>15 хв</value></data>
+  <data name="Schedule30" xml:space="preserve"><value>30 хв</value></data>
+  <data name="Schedule60" xml:space="preserve"><value>1 год</value></data>
+  <data name="ScheduleManual" xml:space="preserve"><value>Вручну</value></data>
+  <data name="DetailsLastRunTitle" xml:space="preserve"><value>Остання синхронізація</value></data>
+  <data name="DetailsNeverRun" xml:space="preserve"><value>Ще не синхронізовано</value></data>
+  <data name="DetailsEventsCount" xml:space="preserve"><value>Подій: {0}</value></data>
+  <data name="DetailsDurationLabel" xml:space="preserve"><value>Тривалість: {0}</value></data>
+  <data name="DetailsNextAt" xml:space="preserve"><value>Наступна о {0}</value></data>
+  <data name="DetailsNextPaused" xml:space="preserve"><value>На паузі</value></data>
+  <data name="DetailsNextManual" xml:space="preserve"><value>Лише вручну</value></data>
+  <data name="DetailsPauseSwitch" xml:space="preserve"><value>Призупинити синхронізацію</value></data>
+  <data name="DetailsConflictsTitle" xml:space="preserve"><value>Конфлікти</value></data>
+  <data name="DetailsStashTitle" xml:space="preserve"><value>Сховище видалень</value></data>
+  <data name="DetailsStashNote" xml:space="preserve"><value>зберігаються {0} днів</value></data>
+  <data name="DetailsLogTitle" xml:space="preserve"><value>Журнал пари</value></data>
+  <data name="DetailsLogEmpty" xml:space="preserve"><value>Подій ще не було</value></data>
+  <data name="DetailsSettingsTitle" xml:space="preserve"><value>Налаштування пари</value></data>
+  <data name="DetailsIntervalTitle" xml:space="preserve"><value>Інтервал синхронізації</value></data>
+  <data name="DetailsChangeFolder" xml:space="preserve"><value>Оновити локальну папку</value></data>
+  <data name="DetailsDeletePair" xml:space="preserve"><value>Видалити пару</value></data>
+  <data name="DetailsDeletePairBody" xml:space="preserve"><value>Налаштування пари буде видалено. Файли на пристрої та сервері залишаться, копії видалень — у сховищі ще 30 днів.</value></data>
+  <data name="DetailsGoneBody" xml:space="preserve"><value>Цю пару вже видалено.</value></data>
+  <data name="OutcomeRunning" xml:space="preserve"><value>Триває…</value></data>
+  <data name="OutcomePartial" xml:space="preserve"><value>Частково виконано</value></data>
+  <data name="OutcomeFailed" xml:space="preserve"><value>Збій синхронізації</value></data>
+  <data name="OutcomeCancelled" xml:space="preserve"><value>Скасовано</value></data>
+  <data name="ConflictsEmptyTitle" xml:space="preserve"><value>Конфліктів немає</value></data>
+  <data name="ConflictsEmptyBody" xml:space="preserve"><value>Усі зміни застосовано. Якщо виникне конфлікт, ми збережемо обидві версії й покажемо їх тут.</value></data>
+  <data name="ConflictKeptBoth" xml:space="preserve"><value>Збережено обидві версії</value></data>
+  <data name="ConflictKeepServer" xml:space="preserve"><value>Залишити серверну</value></data>
+  <data name="ConflictKeepLocal" xml:space="preserve"><value>Залишити локальну</value></data>
+  <data name="StashEmptyTitle" xml:space="preserve"><value>Сховище порожнє</value></data>
+  <data name="StashEmptyBody" xml:space="preserve"><value>Видалені файли надійно зберігатимуться тут 30 днів.</value></data>
+  <data name="StashRestore" xml:space="preserve"><value>Відновити</value></data>
+  <data name="StashExpiresIn" xml:space="preserve"><value>Видалиться через {0}</value></data>
+  <data name="StashDeletedAt" xml:space="preserve"><value>Видалено {0}</value></data>
+  <data name="RtNow" xml:space="preserve"><value>щойно</value></data>
+  <data name="RtMinAgo" xml:space="preserve"><value>{0} хв тому</value></data>
+  <data name="RtHourAgo" xml:space="preserve"><value>{0} год тому</value></data>
+  <data name="RtDayAgo" xml:space="preserve"><value>{0} дн тому</value></data>
+  <data name="DurSec" xml:space="preserve"><value>{0} с</value></data>
+  <data name="DurMinSec" xml:space="preserve"><value>{0} хв {1} с</value></data>
+  <data name="DurHourMin" xml:space="preserve"><value>{0} год {1} хв</value></data>
+  <data name="ShortDays" xml:space="preserve"><value>{0} дн</value></data>
+  <data name="ShortHours" xml:space="preserve"><value>{0} год</value></data>
+  <data name="ShortMinutes" xml:space="preserve"><value>{0} хв</value></data>
+  <data name="SettingsThemeTitle" xml:space="preserve"><value>Тема</value></data>
+  <data name="ThemeNextcloudLabel" xml:space="preserve"><value>Nextcloud</value></data>
+  <data name="ThemeDynamicLabel" xml:space="preserve"><value>Динамічна</value></data>
+  <data name="SettingsDefaultIntervalTitle" xml:space="preserve"><value>Інтервал за замовчуванням</value></data>
+  <data name="SettingsWifiOnlyTitle" xml:space="preserve"><value>Тільки LAN</value></data>
+  <data name="SettingsWifiOnlyHint" xml:space="preserve"><value>Нові пари спочатку синхронізуються лише через локальну мережу.</value></data>
+  <data name="SettingsBatteryTitle" xml:space="preserve"><value>Оптимізація батареї</value></data>
+  <data name="BatteryIgnored" xml:space="preserve"><value>Фоновий режим надійний — оптимізацію вимкнено</value></data>
+  <data name="BatteryNotIgnored" xml:space="preserve"><value>Система може затримувати фонові синхронізації</value></data>
+  <data name="BatteryOpen" xml:space="preserve"><value>Дозволити фоновий режим</value></data>
+  <data name="SettingsAccountTitle" xml:space="preserve"><value>Акаунт</value></data>
+  <data name="AccountLogout" xml:space="preserve"><value>Вийти</value></data>
+  <data name="LogoutTitle" xml:space="preserve"><value>Вийти з акаунта?</value></data>
+  <data name="LogoutBody" xml:space="preserve"><value>Сесію сервера буде видалено з пристрою разом з налаштуваннями пар. Файли на сервері та пристрої залишаться.</value></data>
+  <data name="SettingsLogTitle" xml:space="preserve"><value>Журнал синхронізації</value></data>
+  <data name="SettingsAboutTitle" xml:space="preserve"><value>Про додаток</value></data>
+  <data name="SettingsPrivacyTitle" xml:space="preserve"><value>Приватність</value></data>
+  <data name="AboutTagline" xml:space="preserve"><value>Синхронізація папок із вашим власним сервером</value></data>
+  <data name="AboutVersion" xml:space="preserve"><value>Версія {0}</value></data>
+  <data name="AboutDisclaimer" xml:space="preserve"><value>FileFerry не пов'язаний із Nextcloud GmbH, не є її продуктом і нею не підтримується. Nextcloud — зареєстрований торговий знак Nextcloud GmbH.</value></data>
+  <data name="AboutSource" xml:space="preserve"><value>Вихідний код</value></data>
+  <data name="AboutBugs" xml:space="preserve"><value>Звіт про помилку</value></data>
+  <data name="LogFilterAll" xml:space="preserve"><value>Усе</value></data>
+  <data name="LogFilterErrors" xml:space="preserve"><value>Помилки</value></data>
+  <data name="SyncForegroundTitle" xml:space="preserve"><value>Синхронізація…</value></data>
+  <data name="SyncForegroundDefaultBody" xml:space="preserve"><value>FileFerry синхронізує папки</value></data>
+  <data name="SyncChannelName" xml:space="preserve"><value>Фонові синхронізації</value></data>
+  <data name="SyncProgressFormat" xml:space="preserve"><value>Файл {0} із {1}</value></data>
+  <data name="SyncPreparing" xml:space="preserve"><value>Підготовка…</value></data>
+    <data name="RunCancelling" xml:space="preserve"><value>Скасовуємо…</value></data>
+  <data name="StashRestoreConfirmFormat" xml:space="preserve"><value>Повернути «{0}» назад у теку? Копія лишиться у сховищі до кінця терміну.</value></data>
+  <data name="StashRestoreDoneTitle" xml:space="preserve"><value>Повернуто</value></data>
+    <data name="StashRestoreFailedTitle" xml:space="preserve"><value>Не вдалося повернути</value></data>
+  <data name="CancelRun" xml:space="preserve"><value>Скасувати синхронізацію</value></data>
+  <data name="StashRestoreDoneBody" xml:space="preserve"><value>Файл знову в теці — наступна синхронізація надішле його на сервер.</value></data>
+  <data name="DetailsGoneTitle" xml:space="preserve"><value>Пару не знайдено</value></data>
+  <data name="EventRunStarted" xml:space="preserve"><value>Синхронізацію розпочато.</value></data>
+  <data name="EventRunCancelled" xml:space="preserve"><value>Синхронізацію скасовано — наступна дожене.</value></data>
+  <data name="EventResumeStopped" xml:space="preserve"><value>Відновлення перерваної синхронізації · записів журналу: {0}</value></data>
+  <data name="EventConflictDetected" xml:space="preserve"><value>Конфлікт {0} — обидві версії збережено</value></data>
+  <data name="EventPlanSummary" xml:space="preserve"><value>План · операцій: {0}</value></data>
+  <data name="EventAppliedBaseline" xml:space="preserve"><value>Застосовано операцій: {0} — еталонний стан оновлено</value></data>
+  <data name="EventRunStopped" xml:space="preserve"><value>Синхронізацію зупинено · {0} — застосоване збережено, наступна синхронізація складе новий план</value></data>
+  <data name="EventRunFailed" xml:space="preserve"><value>Збій синхронізації · {0}</value></data>
+  <data name="EventFailScope" xml:space="preserve"><value>Не відкрито середовище пари · {0}</value></data>
+  <data name="EventFailProbe" xml:space="preserve"><value>Сервер недоступний · {0}</value></data>
+  <data name="EventFailMaintenance" xml:space="preserve"><value>Сервер у режимі обслуговування — синхронізацію відкладено · {0}</value></data>
+  <data name="EventFailLocalScan" xml:space="preserve"><value>Збій локального сканування · {0}</value></data>
+  <data name="EventFailRemoteScan" xml:space="preserve"><value>Збій серверного сканування · {0}</value></data>
+  <data name="EventFailPlanner" xml:space="preserve"><value>Планувальник зупинив синхронізацію · {0}</value></data>
+  <data name="EventStashPurged" xml:space="preserve"><value>Прострочені копії сховища видалено · {0}</value></data>
+  <data name="EventRaw" xml:space="preserve"><value>{0}</value></data>
+  <data name="ErrorAuthExpired" xml:space="preserve"><value>Сесію втрачено — потрібен новий вхід</value></data>
+  <data name="ErrorServerGone" xml:space="preserve"><value>Сервер недоступний</value></data>
+  <data name="ErrorNetwork" xml:space="preserve"><value>Мережа недоступна</value></data>
+  <data name="ErrorNotFound" xml:space="preserve"><value>Запис не знайдено</value></data>
+  <data name="ErrorStorageFull" xml:space="preserve"><value>Немає місця для збереження</value></data>
+  <data name="ErrorPermissionLost" xml:space="preserve"><value>Доступ втрачено — потрібна повторна згода</value></data>
+  <data name="ErrorConflict" xml:space="preserve"><value>Конфлікт стану</value></data>
+  <data name="ErrorUnknown" xml:space="preserve"><value>Невідома помилка</value></data>
+</root>

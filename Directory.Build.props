@@ -1,0 +1,13 @@
+<Project>
+  <!-- Shared properties for all solution projects (structure, code rules).-->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Clean code: any warning = error (fail-fast).-->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <!-- Stable assembly GUIDs for incremental and reproducible builds.-->
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+</Project>

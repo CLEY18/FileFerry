@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage
+    x:Class="FileFerry.App.Pages.PairListPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:res="clr-namespace:FileFerry.App.Resources"
+    xmlns:tok="clr-namespace:FileFerry.App"
+    xmlns:views="clr-namespace:FileFerry.App.Views"
+    xmlns:vm="clr-namespace:FileFerry.App.ViewModels"
+    x:DataType="vm:PairListViewModel"
+    Title="{x:Static res:AppStrings.AppDisplayName}">
+    <!-- Pair list: account dns chip → PairCard list (pull-to-refresh) → FAB; EmptyState.-->
+    <Grid Padding="{x:Static tok:DesignTokens.ScreenPadding}" RowDefinitions="Auto,*">
+
+        <!-- account chip: tap → account screen-->
+        <HorizontalStackLayout
+            Grid.Row="0"
+            Spacing="{x:Static tok:DesignTokens.Space8}"
+            Padding="{x:Static tok:DesignTokens.Space4}"
+            HorizontalOptions="Start">
+            <HorizontalStackLayout.GestureRecognizers>
+                <TapGestureRecognizer Command="{Binding AccountCommand}" />
+            </HorizontalStackLayout.GestureRecognizers>
+            <Label
+                Text="{x:Static tok:GlyphMapping.Dns}"
+                Style="{StaticResource IconGlyph20}"
+                TextColor="{DynamicResource TextSecondary}"
+                VerticalOptions="Center" />
+            <Label
+                Text="{Binding AccountLabel}"
+                Style="{StaticResource Caption13}"
+                VerticalOptions="Center" />
+        </HorizontalStackLayout>
+
+        <!-- pull-to-refresh = "check and sync everything" (the actual run is queued to the engine)-->
+        <RefreshView
+            Grid.Row="1"
+            IsRefreshing="{Binding IsBusy}"
+            Command="{Binding RefreshCommand}">
+            <CollectionView
+                ItemsSource="{Binding Items}"
+                SelectionMode="None"
+                VerticalScrollBarVisibility="Never">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="vm:PairListItem">
+                        <!-- PairCard Surface, radius 8; tap → details; long-press → context menu-->
+                        <Border
+                            BackgroundColor="{DynamicResource Surface}"
+                            Padding="{x:Static tok:DesignTokens.Space16}"
+                            Margin="{StaticResource CardBottomMargin}"
+                            SemanticProperties.Description="{Binding SemanticDescription}">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="{x:Static tok:DesignTokens.RadiusControl}" />
+                            </Border.StrokeShape>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding TapCommand}" CommandParameter="{Binding .}" />
+                            </Border.GestureRecognizers>
+                            <!-- long-press => native context menu (FlyoutBase.ContextFlyout, Android)-->
+                            <FlyoutBase.ContextFlyout>
+                                <MenuFlyout>
+                                    <MenuFlyoutItem
+                                        Text="{Binding MenuPauseLabel}"
+                                        Command="{Binding PauseCommand}"
+                                        CommandParameter="{Binding .}" />
+                                    <MenuFlyoutItem
+                                        Text="{x:Static res:AppStrings.SyncNowAction}"
+                                        Command="{Binding SyncNowCommand}"
+                                        CommandParameter="{Binding .}" />
+                                    <MenuFlyoutItem
+                                        Text="{x:Static res:AppStrings.CardActionDelete}"
+                                        Command="{Binding DeleteCommand}"
+                                        CommandParameter="{Binding .}" />
+                                </MenuFlyout>
+                            </FlyoutBase.ContextFlyout>
+                            <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space4}">
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{x:Static tok:DesignTokens.Space8}">
+                                    <Label
+                                        Text="{Binding RemotePath}"
+                                        Style="{StaticResource Body15Strong}"
+                                        LineBreakMode="TailTruncation"
+                                        VerticalOptions="Center" />
+                                    <Label
+                                        Grid.Column="1"
+                                        Text="{x:Static tok:GlyphMapping.MoreVert}"
+                                        Style="{StaticResource IconGlyph24}"
+                                        TextColor="{DynamicResource TextSecondary}">
+                                        <Label.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding MenuCommand}" CommandParameter="{Binding .}" />
+                                        </Label.GestureRecognizers>
+                                    </Label>
+                                </Grid>
+                                <Label Text="{Binding LocalSummary}" Style="{StaticResource Caption13}" />
+                                <views:SyncStatusBadge
+                                    State="{Binding Status}"
+                                    Text="{Binding StatusText}"
+                                    HorizontalOptions="Start" />
+                                <!-- progress bar — only during a run; fed by the live run feed-->
+                                <ProgressBar
+                                    Progress="{Binding Progress}"
+                                    ProgressColor="{DynamicResource Primary}"
+                                    HeightRequest="{x:Static tok:DesignTokens.Space4}"
+                                    IsVisible="{Binding IsSyncing}" />
+                                <Label
+                                    Text="{Binding ProgressText}"
+                                    Style="{StaticResource Caption13}"
+                                    TextColor="{DynamicResource TextSecondary}"
+                                    IsVisible="{Binding IsSyncing}" />
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+
+                <!-- EmptyState-->
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout
+                        Spacing="{x:Static tok:DesignTokens.Space12}"
+                        Padding="{x:Static tok:DesignTokens.Space24}"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center">
+                        <Label
+                            Text="{x:Static tok:GlyphMapping.Folder}"
+                            Style="{StaticResource IconEmptyState}"
+                            HorizontalOptions="Center" />
+                        <Label
+                            Text="{x:Static res:AppStrings.PairListEmptyTitle}"
+                            Style="{StaticResource Heading20}"
+                            HorizontalOptions="Center"
+                            HorizontalTextAlignment="Center"
+                            SemanticProperties.HeadingLevel="Level1" />
+                        <Label
+                            Text="{x:Static res:AppStrings.PairListEmptyBody}"
+                            Style="{StaticResource Body15}"
+                            TextColor="{DynamicResource TextSecondary}"
+                            HorizontalOptions="Center"
+                            HorizontalTextAlignment="Center" />
+                        <Button
+                            Text="{x:Static res:AppStrings.PairListAdd}"
+                            Style="{StaticResource TonalButton}"
+                            Command="{Binding AddCommand}"
+                            HorizontalOptions="Center" />
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+            </CollectionView>
+        </RefreshView>
+
+        <Button
+            Grid.Row="1"
+            Style="{StaticResource FabButton}"
+            Text="{x:Static tok:GlyphMapping.Add}"
+            Command="{Binding AddCommand}"
+            Margin="{x:Static tok:DesignTokens.FabMargin}"
+            HorizontalOptions="End"
+            VerticalOptions="End"
+            SemanticProperties.Description="{x:Static res:AppStrings.PairListAdd}" />
+    </Grid>
+</ContentPage>

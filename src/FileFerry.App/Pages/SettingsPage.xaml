@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage
+    x:Class="FileFerry.App.Pages.SettingsPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:conv="clr-namespace:FileFerry.App.Converters"
+    xmlns:res="clr-namespace:FileFerry.App.Resources"
+    xmlns:tok="clr-namespace:FileFerry.App"
+    xmlns:vm="clr-namespace:FileFerry.App.ViewModels"
+    x:DataType="vm:SettingsViewModel"
+    Title="{x:Static res:AppStrings.SettingsTitle}">
+    <!-- Settings screen: theme · pair defaults · battery · account · log/privacy/about.-->
+    <ScrollView Padding="{x:Static tok:DesignTokens.ScreenPadding}">
+        <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.SectionSpacing}">
+
+            <!-- palette segment (Nextcloud / Dynamic; light/dark follow the system)-->
+            <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space8}">
+                <Label Text="{x:Static res:AppStrings.SettingsThemeTitle}" Style="{StaticResource Body15Strong}" />
+                <HorizontalStackLayout
+                    Spacing="{x:Static tok:DesignTokens.Space8}"
+                    BindableLayout.ItemsSource="{Binding Themes}">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ThemeChip">
+                            <Border
+                                Padding="{x:Static tok:DesignTokens.Space12}, {x:Static tok:DesignTokens.Space8}"
+                                BackgroundColor="{Binding BackgroundToken, Converter={x:Static conv:TokenColorConverter.Instance}}">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="{x:Static tok:DesignTokens.RadiusChip}" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding SelectCommand}" />
+                                </Border.GestureRecognizers>
+                                <Label
+                                    Text="{Binding Label}"
+                                    Style="{StaticResource Body15}"
+                                    TextColor="{Binding TextToken, Converter={x:Static conv:TokenColorConverter.Instance}}" />
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </HorizontalStackLayout>
+            </VerticalStackLayout>
+
+            <!-- defaults for new pairs-->
+            <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space8}">
+                <Border BackgroundColor="{DynamicResource Surface}" Padding="{x:Static tok:DesignTokens.Space16}">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="{x:Static tok:DesignTokens.RadiusControl}" />
+                    </Border.StrokeShape>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding ChangeDefaultIntervalCommand}" />
+                    </Border.GestureRecognizers>
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{x:Static tok:DesignTokens.Space8}">
+                        <Label Text="{x:Static res:AppStrings.SettingsDefaultIntervalTitle}" Style="{StaticResource Body15}" />
+                        <Label
+                            Grid.Column="1"
+                            Text="{Binding DefaultIntervalText}"
+                            Style="{StaticResource Caption13}"
+                            TextColor="{DynamicResource PrimaryText}"
+                            VerticalOptions="Center" />
+                    </Grid>
+                </Border>
+                <Border BackgroundColor="{DynamicResource Surface}" Padding="{x:Static tok:DesignTokens.Space16}">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="{x:Static tok:DesignTokens.RadiusControl}" />
+                    </Border.StrokeShape>
+                    <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space4}">
+                        <HorizontalStackLayout Spacing="{x:Static tok:DesignTokens.Space12}">
+                            <Switch
+                                IsToggled="{Binding WifiOnlyDefault, Mode=TwoWay}"
+                                SemanticProperties.Description="{x:Static res:AppStrings.SettingsWifiOnlyTitle}" />
+                            <Label
+                                Text="{x:Static res:AppStrings.SettingsWifiOnlyTitle}"
+                                Style="{StaticResource Body15}"
+                                VerticalOptions="Center" />
+                        </HorizontalStackLayout>
+                        <Label
+                            Text="{x:Static res:AppStrings.SettingsWifiOnlyHint}"
+                            Style="{StaticResource Caption13}"
+                            TextColor="{DynamicResource TextSecondary}" />
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- battery: status + system request (fact + action)-->
+            <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space4}">
+                <Label Text="{x:Static res:AppStrings.SettingsBatteryTitle}" Style="{StaticResource Body15Strong}" />
+                <Label
+                    Text="{Binding BatteryStatusText}"
+                    Style="{StaticResource Caption13}"
+                    TextColor="{DynamicResource TextSecondary}" />
+                <Button
+                    Text="{x:Static res:AppStrings.BatteryOpen}"
+                    Style="{StaticResource TextButton}"
+                    Command="{Binding BatteryCommand}"
+                    HorizontalOptions="Start" />
+            </VerticalStackLayout>
+
+            <!-- account: host·user + logout (pair cascade warned in the dialog)-->
+            <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space4}">
+                <Label Text="{x:Static res:AppStrings.SettingsAccountTitle}" Style="{StaticResource Body15Strong}" />
+                <Label
+                    Text="{Binding AccountLine}"
+                    Style="{StaticResource Body15}"
+                    TextColor="{DynamicResource TextSecondary}" />
+                <Button
+                    Text="{x:Static res:AppStrings.AccountLogout}"
+                    Style="{StaticResource DestructiveButton}"
+                    Command="{Binding LogoutCommand}"
+                    HorizontalOptions="Start" />
+            </VerticalStackLayout>
+
+            <!-- navigation: log · privacy · about-->
+            <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space8}">
+                <Button
+                    Text="{x:Static res:AppStrings.SettingsLogTitle}"
+                    Style="{StaticResource TextButton}"
+                    Command="{Binding OpenLogCommand}"
+                    HorizontalOptions="Start" />
+                <Button
+                    Text="{x:Static res:AppStrings.SettingsPrivacyTitle}"
+                    Style="{StaticResource TextButton}"
+                    Command="{Binding PrivacyCommand}"
+                    HorizontalOptions="Start" />
+                <Button
+                    Text="{x:Static res:AppStrings.SettingsAboutTitle}"
+                    Style="{StaticResource TextButton}"
+                    Command="{Binding OpenAboutCommand}"
+                    HorizontalOptions="Start" />
+            </VerticalStackLayout>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
