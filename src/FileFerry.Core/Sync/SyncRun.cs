@@ -311,13 +311,25 @@ public sealed class SyncRun
 
     /// <summary>
     /// Final run-log write. Written without <c>ct</c>: the log must survive the run's
-    /// cancellation, otherwise the "Journal" screen wouldn't show "Cancelled".
+    /// cancellation, otherwise the "Journal" screen wouldn't show "Cancelled". A write that the
+    /// storage rejects degrades here: the run-log is presentation data, so neither a lost row nor
+    /// a throwing repository may replace the stage error or the report the caller acts on —
+    /// an escaping exception would also reach the scheduler as a crash to retry.
     /// </summary>
-    private Task SaveRunAsync(
-        Guid runId, Guid pairId, DateTimeOffset startedAt, SyncRunOutcome outcome, List<SyncEvent> events) =>
-        _state.SaveRunLogAsync(
-            new SyncRunLog(runId, pairId, startedAt, _clock.UtcNow, outcome, events.ToArray()),
-            CancellationToken.None);
+    private async Task SaveRunAsync(
+        Guid runId, Guid pairId, DateTimeOffset startedAt, SyncRunOutcome outcome, List<SyncEvent> events)
+    {
+        try
+        {
+            await _state.SaveRunLogAsync(
+                new SyncRunLog(runId, pairId, startedAt, _clock.UtcNow, outcome, events.ToArray()),
+                CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            // the log may be lost; the outcome may not
+        }
+    }
 
     /// <summary>
     /// Journal event timed by <see cref="IClock"/>: only the kind + phrase parameters;

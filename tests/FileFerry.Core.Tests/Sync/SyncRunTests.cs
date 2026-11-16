@@ -212,6 +212,33 @@ public sealed class SyncRunTests
     }
 
     [Fact]
+    public async Task JournalStorageFails_FailureStage_StageErrorStillDecidesTheRun()
+    {
+        // the run-log is presentation data: storage that rejects the failure record must not
+        // replace the failure — the caller and the scheduler act on the stage error
+        await SeedLocalAsync("a.txt", "A");
+        _probe.Response = Result<ServerStatus, SyncError>.Failure(
+            SyncError.Of(ErrorKind.ServerGone, "status.php did not respond"));
+
+        var result = await Engine(state: new UnjournalingState(_state)).RunAsync(_pair.Id, CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorKind.ServerGone, result.Error.Kind);
+    }
+
+    [Fact]
+    public async Task JournalStorageFails_CompletedRun_StillReportsSuccess()
+    {
+        await SeedLocalAsync("docs/a.txt", "A");
+
+        var result = await Engine(state: new UnjournalingState(_state)).RunAsync(_pair.Id, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(SyncRunOutcome.Success, result.Value.Outcome);
+        Assert.Contains("a.txt", await NamesOnRemoteAsync("sync/docs")); // the sync itself happened
+    }
+
+    [Fact]
     public async Task PermanentStepFailure_SeedsAppliedToBaseline_NextRunReplansOnlyRemainder()
     {
         await SeedLocalAsync("docs/z.txt", "Z");
@@ -233,11 +260,11 @@ public sealed class SyncRunTests
         Assert.Contains("z.txt", await NamesOnRemoteAsync("sync/docs"));
     }
 
-    private SyncRun Engine(IEnumerable<IOperationHandler>? handlers = null) =>
+    private SyncRun Engine(IEnumerable<IOperationHandler>? handlers = null, ISyncStateRepository? state = null) =>
         new(
             _scopes,
             new SyncPlanner(new MergePlanner(new KeepBothStrategy(), _stash), _stash),
-            _state,
+            state ?? _state,
             _stash,
             _clock,
             handlers);
@@ -366,5 +393,33 @@ public sealed class SyncRunTests
             inner.MoveAsync(from, to, ct);
 
         public Task<Result<Ok, SyncError>> DeleteAsync(RemotePath path, CancellationToken ct) => inner.DeleteAsync(path, ct);
+    }
+
+    /// <summary>
+    /// State whose run-log write always fails — the shape storage takes when the journal row is
+    /// gone from under the run (disk full, a parent row that no longer exists). Everything else
+    /// passes through: only the log write dies.
+    /// </summary>
+    private sealed class UnjournalingState(ISyncStateRepository inner) : ISyncStateRepository
+    {
+        public Task SaveRunLogAsync(SyncRunLog runLog, CancellationToken ct) =>
+            throw new IOException("the journal storage is gone");
+
+        public Task<IReadOnlyList<FileSnapshot>> LoadBaselineAsync(Guid pairId, CancellationToken ct) =>
+            inner.LoadBaselineAsync(pairId, ct);
+
+        public Task ReplaceBaselineAsync(Guid pairId, IReadOnlyList<FileSnapshot> baseline, CancellationToken ct) =>
+            inner.ReplaceBaselineAsync(pairId, baseline, ct);
+
+        public Task AppendJournalAsync(Guid pairId, JournalEntry entry, CancellationToken ct) =>
+            inner.AppendJournalAsync(pairId, entry, ct);
+
+        public Task<IReadOnlyList<JournalEntry>> LoadJournalAsync(Guid pairId, CancellationToken ct) =>
+            inner.LoadJournalAsync(pairId, ct);
+
+        public Task ClearJournalAsync(Guid pairId, CancellationToken ct) => inner.ClearJournalAsync(pairId, ct);
+
+        public Task<IReadOnlyList<SyncRunLog>> RecentRunsAsync(Guid pairId, int limit, CancellationToken ct) =>
+            inner.RecentRunsAsync(pairId, limit, ct);
     }
 }

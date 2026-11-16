@@ -6,7 +6,7 @@ using Microsoft.Data.Sqlite;
 namespace FileFerry.ContractTests.Data;
 
 /// <summary>
-/// Unit tests for the SQLite state: repeated migration = no-op, WAL, round-trips 
+/// Unit tests for the SQLite state: repeated migration = no-op, WAL, round-trips
 /// baseline/journal/run-log, single-writer serialization.
 /// </summary>
 [Trait("Category", "Unit")]
@@ -208,6 +208,40 @@ public sealed class SqliteSyncStateRepositoryTests : IAsyncLifetime, IDisposable
         Assert.Equal(EventKind.ConflictDetected, stored.Events[2].Kind);
         Assert.Equal("AddAdd", stored.Events[2].Args!["conflict"]);
         Assert.Equal("a.txt", stored.Events[2].Path!.ToString());
+    }
+
+    [Fact]
+    public async Task RunLog_OfADeletedPair_IsRejected_TheDatabaseStaysWritable()
+    {
+        // The run-log hangs off the pair as its parent: a write about a run of a deleted pair has
+        // no parent and SQLite rejects it — the rejection stays inside that one write.
+        var gone = Guid.NewGuid();
+        var alive = Guid.NewGuid();
+        await SeedPairAsync(gone);
+        await SeedPairAsync(alive);
+        var started = new DateTimeOffset(2026, 11, 16, 9, 0, 0, TimeSpan.Zero);
+
+        await _repo.SaveRunLogAsync(
+            new SyncRunLog(Guid.NewGuid(), gone, started, started.AddSeconds(1), SyncRunOutcome.Success,
+                [new SyncEvent(started, EventKind.RunStarted)]), CancellationToken.None);
+        await using (var connection = await _store.OpenAsync(CancellationToken.None))
+        {
+            await using var delete = connection.CreateCommand();
+            delete.CommandText = "DELETE FROM folder_pairs WHERE id = $pair;";
+            delete.Parameters.AddWithValue("$pair", gone.ToString());
+            await delete.ExecuteNonQueryAsync();
+        }
+
+        Assert.Empty(await _repo.RecentRunsAsync(gone, 10, CancellationToken.None)); // deleting a pair cascades its history
+
+        await Assert.ThrowsAsync<SqliteException>(() => _repo.SaveRunLogAsync(
+            new SyncRunLog(Guid.NewGuid(), gone, started, started.AddSeconds(1), SyncRunOutcome.Failed,
+                [new SyncEvent(started, EventKind.RunFailed, SyncEventOutcome.Error)]), CancellationToken.None));
+
+        await _repo.SaveRunLogAsync(
+            new SyncRunLog(Guid.NewGuid(), alive, started, started.AddSeconds(1), SyncRunOutcome.Success,
+                [new SyncEvent(started, EventKind.RunStarted)]), CancellationToken.None);
+        Assert.Single(await _repo.RecentRunsAsync(alive, 10, CancellationToken.None)); // the orphan row's rejection is not a broken database
     }
 
     [Fact]

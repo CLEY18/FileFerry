@@ -513,6 +513,7 @@ public sealed class PairDetailsViewModel : Mvvm.ObservableObject
             AppStrings.DetailsDeletePair, AppStrings.DetailsDeletePairBody, AppStrings.DeletePairAccept, AppStrings.DialogCancel, ct);
         if (confirmed)
         {
+            await _scheduler.CancelAsync(_pairId, ct); // cancel periodic/one-shot jobs before deleting the config
             await _pairs.DeleteAsync(_pairId, ct);
             await _navigation.BackAsync(ct);
         }

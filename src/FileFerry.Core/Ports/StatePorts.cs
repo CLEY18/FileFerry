@@ -41,7 +41,8 @@ public interface ISyncStateRepository
     Task ClearJournalAsync(Guid pairId, CancellationToken ct);
 
     /// <summary>
-    /// Write/update the run's summary with events (UoW boundary).
+    /// Write/update the run's summary with events (UoW boundary). Presentation data: the engine
+    /// degrades a rejected write, so a run's outcome never depends on this row surviving.
     /// </summary>
     Task SaveRunLogAsync(SyncRunLog runLog, CancellationToken ct);
 
