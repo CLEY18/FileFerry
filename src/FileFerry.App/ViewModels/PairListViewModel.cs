@@ -23,6 +23,8 @@ public sealed class PairListViewModel : Mvvm.ObservableObject
     private readonly SyncStatusService _status;
     private readonly HashSet<Guid> _running = []; // pairs with an active run per the hub's last event
     private string _accountLabel = AppStrings.AccountChipEmpty;
+
+    private bool _gatePending;
     private bool _isRefreshing;
 
     public PairListViewModel(
@@ -250,7 +252,7 @@ public sealed class PairListViewModel : Mvvm.ObservableObject
             .OrderBy(item => item.IsPaused) // stable OrderBy: "active on top", the rest by creation order
             .ToList();
 
-        await Application.Current!.Dispatcher.DispatchAsync(() =>
+        await Application.Current!.Dispatcher.DispatchAsync(async () =>
         {
             AccountLabel = account is null
                 ? AppStrings.AccountChipEmpty
@@ -262,6 +264,15 @@ public sealed class PairListViewModel : Mvvm.ObservableObject
             }
 
             Raise(nameof(IsEmpty));
+
+            // Without a server connection this screen has nothing to show and every action
+            // on it dead-ends — send the user to the welcome screen instead of an empty shell.
+            // Once per screen visit: the appearing hook can fire more than once in a row.
+            if (account is null && !_gatePending)
+            {
+                _gatePending = true;
+                await _navigation.GoAsync(AppShell.WelcomeRoute, CancellationToken.None);
+            }
         });
     }
 

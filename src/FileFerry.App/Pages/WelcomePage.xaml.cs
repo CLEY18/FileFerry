@@ -13,4 +13,15 @@ public sealed partial class WelcomePage : ContentPage
         BindingContext = viewModel;
         InitializeComponent();
     }
+
+    /// <summary>
+    /// This screen is the root of a fresh start: everything beneath it waits for a server
+    /// connection, so there is nothing to return to — back leaves the app instead of
+    /// uncovering the gated screens.
+    /// </summary>
+    protected override bool OnBackButtonPressed()
+    {
+        Application.Current?.Quit();
+        return true;
+    }
 }
