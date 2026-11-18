@@ -20,9 +20,18 @@ public sealed partial class App : Application
     protected override Window CreateWindow(IActivationState? activationState)
     {
         // Theme is applied before the first render: token resources are already merged from App.xaml.
-        MauiProgram.Application.Services.GetRequiredService<IThemeService>().Initialize();
+        var theme = MauiProgram.Application.Services.GetRequiredService<IThemeService>();
+        AndroidAppBar.Attach(theme); // the app bar lives outside the resource tree: it repaints on the event
+        theme.Initialize();
         var shell = new AppShell();
-        shell.Loaded += async (_, _) => await StartupGateAsync();
+        shell.Loaded += async (_, _) =>
+        {
+            AndroidAppBar.Repaint(); // the toolbar exists only now: paint it with the stored palette
+            await StartupGateAsync();
+        };
+        // MAUI re-applies the default toolbar appearance for every navigation — the token paint
+        // must land after that pass, or the header falls back to the framework tone.
+        shell.Navigated += (_, _) => AndroidAppBar.RepaintAfterNavigation();
         return new Window(shell);
     }
 

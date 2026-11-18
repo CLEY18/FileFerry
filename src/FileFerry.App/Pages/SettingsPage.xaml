@@ -66,6 +66,7 @@
                     <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space4}">
                         <HorizontalStackLayout Spacing="{x:Static tok:DesignTokens.Space12}">
                             <Switch
+                                Style="{StaticResource TokenSwitch}"
                                 IsToggled="{Binding WifiOnlyDefault, Mode=TwoWay}"
                                 SemanticProperties.Description="{x:Static res:AppStrings.SettingsWifiOnlyTitle}" />
                             <Label

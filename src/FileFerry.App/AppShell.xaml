@@ -5,7 +5,10 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:pages="clr-namespace:FileFerry.App.Pages"
     xmlns:res="clr-namespace:FileFerry.App.Resources"
-    FlyoutBehavior="Flyout">
+    FlyoutBehavior="Flyout"
+    BackgroundColor="{DynamicResource Surface}"
+    ForegroundColor="{DynamicResource TextPrimary}"
+    TitleColor="{DynamicResource TextPrimary}">
     <!-- Stack main Pair List; the drawer leads to Settings; the welcome screen registers as a route in code.-->
     <FlyoutItem Title="{x:Static res:AppStrings.PairListTitle}">
         <ShellContent Route="pairlist" ContentTemplate="{DataTemplate pages:PairListPage}" />

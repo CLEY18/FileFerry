@@ -55,6 +55,8 @@ public sealed class MainActivity : MauiAppCompatActivity
         // practice meant "none at all". One polite request at startup (Post — after MAUI
         // initialization); a refusal = silent mode, which does not hinder synchronization.
         Window?.DecorView.Post(() => _ = RequestNotificationsAsync());
+        // a fresh toolbar (first start, light/dark recreation) must wear the current tokens at once
+        Window?.DecorView.Post(AndroidAppBar.Repaint);
         TreeLauncher = RegisterForActivityResult(
             new ActivityResultContracts.OpenDocumentTree(),
             new TreePickCallback(this));

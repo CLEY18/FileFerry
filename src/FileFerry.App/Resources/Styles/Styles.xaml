@@ -99,6 +99,16 @@
         <Setter Property="FontSize" Value="15" />
     </Style>
 
+    <!-- switch: thumb/track from tokens (not the platform accent); the negative margin cancels the
+         platform drawable's baked-in outer inset so the track sits flush with the card content
+         column, and the label hugs the track at the standard row gap despite the reserved travel-->
+    <Style x:Key="TokenSwitch" TargetType="Switch">
+        <Setter Property="OnColor" Value="{DynamicResource Primary}" />
+        <Setter Property="ThumbColor" Value="{DynamicResource OnPrimary}" />
+        <Setter Property="Margin" Value="-14,0,-5,0" />
+        <Setter Property="VerticalOptions" Value="Center" />
+    </Style>
+
     <!-- FAB: Primary circle with a Material Symbols glyph-->
     <Style x:Key="FabButton" TargetType="Button">
         <Setter Property="BackgroundColor" Value="{DynamicResource Primary}" />

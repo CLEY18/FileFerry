@@ -20,4 +20,10 @@ public interface IThemeService
     /// Change the mode, persist it and re-map tokens immediately (DynamicResource consumers update themselves).
     /// </summary>
     Task SetModeAsync(ThemeMode mode, CancellationToken ct = default);
+
+    /// <summary>
+    /// Tokens were re-mapped (mode or light/dark change): surfaces outside the resource tree —
+    /// the platform app bar — repaint on this event.
+    /// </summary>
+    event EventHandler? Applied;
 }

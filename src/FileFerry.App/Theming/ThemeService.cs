@@ -32,6 +32,9 @@ public sealed class ThemeService : IThemeService
     private bool initialized;
 
     /// <inheritdoc />
+    public event EventHandler? Applied;
+
+    /// <inheritdoc />
     public ThemeMode Mode { get; private set; } = ThemeMode.Nextcloud;
 
     public ThemeService(IThemePaletteSource palette) => this.palette = palette;
@@ -100,5 +103,7 @@ public sealed class ThemeService : IThemeService
                 : light;
             app.Resources[key] = overlay is not null && overlay.TryGetValue(key, out var color) ? color : value;
         }
+
+        Applied?.Invoke(this, EventArgs.Empty);
     }
 }

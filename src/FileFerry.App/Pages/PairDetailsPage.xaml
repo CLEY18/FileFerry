@@ -51,6 +51,7 @@
                     </VerticalStackLayout>
                     <HorizontalStackLayout Spacing="{x:Static tok:DesignTokens.Space12}">
                         <Switch
+                            Style="{StaticResource TokenSwitch}"
                             IsToggled="{Binding PauseSync, Mode=TwoWay}"
                             SemanticProperties.Description="{x:Static res:AppStrings.DetailsPauseSwitch}" />
                         <Label
