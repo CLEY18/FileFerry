@@ -57,20 +57,20 @@ public static class AndroidAppBar
     /// </summary>
     public static void Repaint()
     {
-        if (MauiApplication.Current?.Resources["Surface"] is not SystemColor surface
+        if (MauiApplication.Current?.Resources["Primary"] is not SystemColor brand
             || Platform.CurrentActivity?.Window is not { } window
             || window.DecorView is not ViewGroup decor)
         {
             return;
         }
 
-        var bg = ToAndroidColor(surface);
+        var bg = ToAndroidColor(brand);
         Paint(decor);
 
         // under edge-to-edge the strip above the app bar is the layout's status-bar foreground,
         // and the icon polarity follows the painted surface so both stay readable
         AndroidX.Core.View.WindowCompat.GetInsetsController(window, decor)?.AppearanceLightStatusBars =
-            IsLight(surface);
+            IsLight(brand);
 
         void Paint(Android.Views.View view)
         {
@@ -78,6 +78,9 @@ public static class AndroidAppBar
             {
                 case Toolbar toolbar:
                     toolbar.SetBackgroundColor(bg);
+                    // the framework default stacks a 16dp content inset on top of the navigation
+                    // button before the title starts; the design gap is the button edge itself
+                    toolbar.ContentInsetStartWithNavigation = 0;
                     break;
                 case AppBarLayout bar:
                     bar.SetBackgroundColor(bg);
