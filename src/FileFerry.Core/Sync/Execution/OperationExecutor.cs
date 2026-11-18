@@ -130,6 +130,7 @@ public sealed class OperationExecutor
         var sides = new ExecutionSides(_local, _remote, context.Pair, RemotePath.Parse(context.Pair.RemoteRootPath));
         var applied = new List<SyncOperation>();
         var stashSources = new HashSet<RelativePath>();
+        var observed = new Dictionary<RelativePath, FileSnapshot>(); // real per-path evidence as the journal rewrote the sides
 
         foreach (var entry in entries)
         {
@@ -166,12 +167,24 @@ public sealed class OperationExecutor
             }
 
             // Evidence from the port (fresh ETag/record snapshot) becomes part of the operation — into both the journal and the baseline.
-            var stamped = entry.Operation with { After = result.Value ?? entry.Operation.After };
+            var evidence = result.Value;
+            if (evidence is { ModifiedAt: { } echoed } && entry.Operation.After?.ModifiedAt == echoed
+                && observed.TryGetValue(entry.Operation.Path, out var rewritten)
+                && rewritten.ModifiedAt is { } real && real != echoed)
+            {
+                // The handler echoed the planned timestamp, but a step of this same journal already
+                // rewrote the path: the earlier observation is the moment the side really carries —
+                // a planned time the file never had would make the next scan see a phantom change.
+                evidence = evidence with { ModifiedAt = real };
+            }
+
+            var stamped = entry.Operation with { After = evidence ?? entry.Operation.After };
             await UpdateAsync(context.Pair.Id, entry with { Operation = stamped }, JournalState.Applied, ct)
                 .ConfigureAwait(false);
 
             applied.Add(stamped);
             TrackStashSource(stamped, stashSources);
+            TrackObserved(stamped, evidence, observed);
             _onStepApplied?.Invoke(context.Pair.Id); // tick only for a step actually applied
         }
 
@@ -225,6 +238,39 @@ public sealed class OperationExecutor
     /// <summary>
     /// A copy into the stash root makes the source's later deletion legitimate.
     /// </summary>
+    /// <summary>
+    /// The real evidence the journal holds per path: writes and copies record the side's actual
+    /// moment, a move carries it to the target, a delete forgets the path — so a later step on the
+    /// same path is never judged against a time the side never carried.
+    /// </summary>
+    private static void TrackObserved(
+        SyncOperation op, FileSnapshot? evidence, Dictionary<RelativePath, FileSnapshot> observed)
+    {
+        switch (op.Kind)
+        {
+            case OperationKind.DeleteLocal or OperationKind.DeleteRemote:
+                observed.Remove(op.Path);
+                break;
+
+            case OperationKind.MoveLocal or OperationKind.MoveRemote when op.SourcePath is { } source:
+                observed.Remove(source);
+                if (op.After is { } moved)
+                {
+                    observed[op.Path] = evidence ?? moved;
+                }
+
+                break;
+
+            default:
+                if (evidence is not null)
+                {
+                    observed[op.Path] = evidence;
+                }
+
+                break;
+        }
+    }
+
     private void TrackStashSource(SyncOperation op, HashSet<RelativePath> stashSources)
     {
         if (op.SourcePath is { } source

@@ -59,7 +59,7 @@ public sealed class StashIndexingLocalFileSystem : ILocalFileSystem
         _inner.CreateFolderAsync(path, ct);
 
     /// <inheritdoc />
-    public Task<Result<Ok, SyncError>> CopyAsync(RelativePath from, RelativePath to, CancellationToken ct) =>
+    public Task<Result<FileSnapshot, SyncError>> CopyAsync(RelativePath from, RelativePath to, CancellationToken ct) =>
         IndexOnCopyAsync(from, to, ct);
 
     /// <inheritdoc />
@@ -118,7 +118,7 @@ public sealed class StashIndexingLocalFileSystem : ILocalFileSystem
     /// A copy inside the stash root: after physical success comes the index; an index
     /// failure fails the step (the executor retries idempotently).
     /// </summary>
-    private async Task<Result<Ok, SyncError>> IndexOnCopyAsync(RelativePath from, RelativePath to, CancellationToken ct)
+    private async Task<Result<FileSnapshot, SyncError>> IndexOnCopyAsync(RelativePath from, RelativePath to, CancellationToken ct)
     {
         var copied = await _inner.CopyAsync(from, to, ct).ConfigureAwait(false);
         if (copied.IsFailure || !IsStashPath(to))
@@ -132,7 +132,7 @@ public sealed class StashIndexingLocalFileSystem : ILocalFileSystem
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            return Result<Ok, SyncError>.Failure(
+            return Result<FileSnapshot, SyncError>.Failure(
                 SyncError.Of(ErrorKind.Unknown, $"The stash-copy index for '{to}' was not written.", ex));
         }
 

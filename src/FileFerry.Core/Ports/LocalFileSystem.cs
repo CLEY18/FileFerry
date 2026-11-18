@@ -36,9 +36,11 @@ public interface ILocalFileSystem
     Task<Result<Ok, SyncError>> CreateFolderAsync(RelativePath path, CancellationToken ct);
 
     /// <summary>
-    /// Copy a file inside the tree (for the stash: the source stays untouched).
+    /// Copy a file inside the tree (for the stash: the source stays untouched); the success value
+    /// is the snapshot of the fresh copy — its mtime is the copy moment, which the baseline must
+    /// carry (a planned source mtime is a time the next scan never shows → phantom change, churn).
     /// </summary>
-    Task<Result<Ok, SyncError>> CopyAsync(RelativePath from, RelativePath to, CancellationToken ct);
+    Task<Result<FileSnapshot, SyncError>> CopyAsync(RelativePath from, RelativePath to, CancellationToken ct);
 
     /// <summary>
     /// Rename/move (not copy+delete): preserves the entry's identity.

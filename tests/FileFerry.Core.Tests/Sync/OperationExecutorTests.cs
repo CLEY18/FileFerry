@@ -17,10 +17,12 @@ public sealed class OperationExecutorTests
 {
     private readonly FolderPair _pair = new(Guid.NewGuid(), Guid.NewGuid(), "sync", "tree", "Sync");
     private readonly MutableClock _clock = new();
-    private readonly InMemoryFileSystem _local = new();
+    private readonly InMemoryFileSystem _local;
     private readonly InMemoryRemoteStore _remote = new();
     private readonly InMemorySyncStateRepository _state = new();
     private readonly StashPolicy _stash = new(new StashPolicyOptions());
+
+    public OperationExecutorTests() => _local = new(_clock); // one clock for the side and the assertions
 
     [Fact]
     public async Task Execute_AppliesWholePlan_AndClearsJournal()
@@ -42,6 +44,28 @@ public sealed class OperationExecutorTests
         Assert.DoesNotContain("old.txt", (await RemoteListAsync("sync")).Select(static e => e.Path.Name));
         Assert.Contains("a.txt", (await RemoteListAsync("sync/docs")).Select(static e => e.Path.Name));
         Assert.Empty(await _state.LoadJournalAsync(_pair.Id, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task CopyLocal_EvidenceIsTheActualCopyMoment_NotThePlannedSourceSnapshot()
+    {
+        await SeedLocalAsync("a.txt", "AAAA");
+        _clock.Advance(TimeSpan.FromMinutes(3)); // the copy physically happens later than the source was written
+
+        var plannedSource = (await _local.SnapshotAsync(CancellationToken.None)).Value
+            .Single(static s => s.Path.ToString() == "a.txt");
+        var target = RelativePath.Parse("sub/a (conflicted copy 20260101T000300).txt");
+        var plan = new List<SyncOperation>
+        {
+            new(OperationKind.CopyLocal, target, RelativePath.Parse("a.txt"), plannedSource with { Path = target }),
+        };
+
+        var report = await Executor().ExecuteAsync(Ctx(), plan, CancellationToken.None);
+
+        Assert.True(report.Completed);
+        var evidence = Assert.Single(report.Applied).After!;
+        Assert.Equal(_clock.UtcNow, evidence.ModifiedAt); // the side's real moment — a stale row would churn the next run
+        Assert.Equal(plannedSource.Size, evidence.Size);
     }
 
     [Fact]

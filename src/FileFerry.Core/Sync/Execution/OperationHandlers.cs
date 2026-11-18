@@ -197,7 +197,12 @@ public sealed class CopyLocalHandler : IOperationHandler
                 SyncError.Of(ErrorKind.Conflict, $"{nameof(OperationKind.CopyLocal)} without a source."));
         }
 
-        return HandlerResult.Evidenceless(await sides.Local.CopyAsync(op.SourcePath, op.Path, ct).ConfigureAwait(false));
+        // Evidence: the port's snapshot of the fresh copy — its mtime is the copy moment; the
+        // planned source snapshot is a time the copy never carries (the next run would churn).
+        var copied = await sides.Local.CopyAsync(op.SourcePath, op.Path, ct).ConfigureAwait(false);
+        return copied.IsSuccess
+            ? Result<FileSnapshot?, SyncError>.Success(copied.Value)
+            : Result<FileSnapshot?, SyncError>.Failure(copied.Error);
     }
 }
 

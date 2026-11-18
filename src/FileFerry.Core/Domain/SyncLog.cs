@@ -84,6 +84,12 @@ public enum EventKind
     /// The TTL-purge stage removed expired copies; argument <c>count</c>.
     /// </summary>
     StashPurged,
+
+    /// <summary>
+    /// A keep-side resolution closed a conflict on <see cref="SyncEvent.Path"/>;
+    /// argument <c>side</c> — "local" or "server".
+    /// </summary>
+    ConflictResolved,
 }
 
 /// <summary>

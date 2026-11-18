@@ -96,6 +96,13 @@
   <data name="ConflictKeptBoth" xml:space="preserve"><value>Збережено обидві версії</value></data>
   <data name="ConflictKeepServer" xml:space="preserve"><value>Залишити серверну</value></data>
   <data name="ConflictKeepLocal" xml:space="preserve"><value>Залишити локальну</value></data>
+  <data name="ConflictResolveConfirmTitle" xml:space="preserve"><value>Вирішити конфлікт</value></data>
+  <data name="ConflictResolveServerConfirmFormat" xml:space="preserve"><value>Залишити серверну версію «{0}»? Локальна версія перейде у буфер кошика.</value></data>
+  <data name="ConflictResolveLocalConfirmFormat" xml:space="preserve"><value>Залишити локальну версію «{0}»? Серверна версія перейде у буфер кошика.</value></data>
+  <data name="ConflictResolvedTitle" xml:space="preserve"><value>Вирішено</value></data>
+  <data name="ConflictResolvedBody" xml:space="preserve"><value>Залишена версія тепер з обох боків — відкинута — у буфері кошика.</value></data>
+  <data name="ConflictResolvePartialBody" xml:space="preserve"><value>Розвʼязання не завершилося — наступна синхронізація продовжить його з місця зупинки.</value></data>
+  <data name="ConflictResolveFailedTitle" xml:space="preserve"><value>Не вдалося розвʼязати</value></data>
   <data name="StashEmptyTitle" xml:space="preserve"><value>Сховище порожнє</value></data>
   <data name="StashEmptyBody" xml:space="preserve"><value>Видалені файли надійно зберігатимуться тут 30 днів.</value></data>
   <data name="StashRestore" xml:space="preserve"><value>Відновити</value></data>
@@ -162,6 +169,9 @@
   <data name="EventFailRemoteScan" xml:space="preserve"><value>Збій серверного сканування · {0}</value></data>
   <data name="EventFailPlanner" xml:space="preserve"><value>Планувальник зупинив синхронізацію · {0}</value></data>
   <data name="EventStashPurged" xml:space="preserve"><value>Прострочені копії сховища видалено · {0}</value></data>
+  <data name="EventResolvedLocal" xml:space="preserve"><value>Залишено локальну версію</value></data>
+  <data name="EventResolvedServer" xml:space="preserve"><value>Залишено серверну версію</value></data>
+  <data name="EventConflictResolved" xml:space="preserve"><value>Конфлікт вирішено</value></data>
   <data name="EventRaw" xml:space="preserve"><value>{0}</value></data>
   <data name="ErrorAuthExpired" xml:space="preserve"><value>Сесію втрачено — потрібен новий вхід</value></data>
   <data name="ErrorServerGone" xml:space="preserve"><value>Сервер недоступний</value></data>

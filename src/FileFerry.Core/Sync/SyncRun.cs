@@ -298,6 +298,138 @@ public sealed class SyncRun
     }
 
     /// <summary>
+    /// A keep-side resolution as a short run under the same pair lock: scan → resolution plan →
+    /// journaled execution → baseline-UoW. Explicit user intent, so the paused flag does not
+    /// block it; a busy pair is refused like a second trigger, and a cut resolution leaves its
+    /// journal for the next run's resume — same recovery contract as a plain run.
+    /// </summary>
+    /// <param name="pairId">The pair whose conflict is being resolved.</param>
+    /// <param name="path">The conflicted file (pair coordinates).</param>
+    /// <param name="side">Which version the user chose to keep.</param>
+    /// <param name="ct">Cancellation; the journal stays for resume.</param>
+    public async Task<Result<SyncRunReport, SyncError>> ResolveConflictAsync(
+        Guid pairId, RelativePath path, KeepSide side, CancellationToken ct)
+    {
+        var gate = _locks.TryAcquire(pairId, ct);
+        if (gate is null)
+        {
+            return Result<SyncRunReport, SyncError>.Failure(SyncError.Of(
+                ErrorKind.Conflict,
+                "The pair already has an active run — one pair, one run — so the resolution was refused."));
+        }
+
+        using (gate)
+        {
+            var runId = Guid.NewGuid();
+            var startedAt = _clock.UtcNow;
+            var events = new List<SyncEvent>();
+            try
+            {
+                return await ResolvePipelineAsync(runId, pairId, path, side, startedAt, events, ct)
+                    .ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // cut between steps: applied evidence is journaled, the next run resumes the rest.
+                events.Add(MakeEvent(EventKind.RunCancelled, SyncEventOutcome.Warning));
+                await SaveRunAsync(runId, pairId, startedAt, SyncRunOutcome.Cancelled, events).ConfigureAwait(false);
+                return Result<SyncRunReport, SyncError>.Success(
+                    new SyncRunReport(runId, SyncRunOutcome.Cancelled, 0, 0, 0, null));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Resolution pipeline: the same gates as a plain run (scope, probe, scans), then the
+    /// resolver's plan instead of diff-planning; baseline UoW and run-log follow the identical rule.
+    /// </summary>
+    private async Task<Result<SyncRunReport, SyncError>> ResolvePipelineAsync(
+        Guid runId, Guid pairId, RelativePath path, KeepSide side,
+        DateTimeOffset startedAt, List<SyncEvent> events, CancellationToken ct)
+    {
+        var scopeResult = await _scopes.OpenAsync(pairId, ct).ConfigureAwait(false);
+        if (scopeResult.IsFailure)
+        {
+            return await FailAsync(runId, pairId, startedAt, scopeResult.Error,
+                EventPhrases.FailScope, events).ConfigureAwait(false);
+        }
+
+        var scope = scopeResult.Value;
+
+        // a resolution needs both sides live: it rewrites the record exactly where it disagrees
+        var status = await scope.Probe.ProbeAsync(ct).ConfigureAwait(false);
+        if (status.IsFailure)
+        {
+            return await FailAsync(runId, pairId, startedAt, status.Error,
+                EventPhrases.FailProbe, events).ConfigureAwait(false);
+        }
+
+        var baseline = await _state.LoadBaselineAsync(pairId, ct).ConfigureAwait(false);
+        var localScan = await scope.Local.SnapshotAsync(ct).ConfigureAwait(false);
+        if (localScan.IsFailure)
+        {
+            return await FailAsync(runId, pairId, startedAt, localScan.Error,
+                EventPhrases.FailLocalScan, events).ConfigureAwait(false);
+        }
+
+        var remoteScan = await RemoteScanner
+            .ScanAsync(scope.Remote, RemotePath.Parse(scope.Pair.RemoteRootPath), baseline, ct)
+            .ConfigureAwait(false);
+        if (remoteScan.IsFailure)
+        {
+            return await FailAsync(runId, pairId, startedAt, remoteScan.Error,
+                EventPhrases.FailRemoteScan, events).ConfigureAwait(false);
+        }
+
+        var localByKey = localScan.Value.ToDictionary(static s => s.Path, static s => s);
+        var remoteByKey = remoteScan.Value.ToDictionary(static s => s.Path, static s => s);
+        var plan = ConflictResolver.Build(
+            path, side, localByKey, remoteByKey, _stash, _clock.UtcNow);
+        if (plan.IsFailure)
+        {
+            return await FailAsync(runId, pairId, startedAt, plan.Error,
+                EventPhrases.FailPlanner, events).ConfigureAwait(false);
+        }
+
+        var context = new SyncRunContext(
+            scope.Pair, _clock.UtcNow,
+            new Dictionary<RelativePath, FileSnapshot>(),
+            new Dictionary<RelativePath, FileSnapshot>(),
+            new Dictionary<RelativePath, FileSnapshot>());
+        var executor = new OperationExecutor(
+            scope.Local, scope.Remote, _state, _stash, _handlers,
+            _observer is null ? null : pid => _observer.OnStepApplied(pid));
+
+        events.Add(MakeEvent(EventKind.PlanSummary, count: plan.Value.Operations.Count));
+        _observer?.OnPlanned(pairId, plan.Value.Operations.Count);
+
+        var report = await executor.ExecuteAsync(context, plan.Value.Operations, ct).ConfigureAwait(false);
+
+        // The resolved marker only for a completed resolution: an interrupted one leaves the
+        // conflict open — screens keep counting it until resume or re-plan closes it out.
+        if (report.Completed)
+        {
+            events.Add(MakeEvent(EventKind.ConflictResolved, SyncEventOutcome.Success, path,
+                side: side == KeepSide.Local ? "local" : "server"));
+        }
+
+        await _baseline
+            .ApplyAsync(pairId, report.Applied, remoteScan.Value, localScan.Value, ct)
+            .ConfigureAwait(false);
+
+        var outcome = report.Completed
+            ? SyncRunOutcome.Success
+            : report.Applied.Count > 0 ? SyncRunOutcome.Partial : SyncRunOutcome.Failed;
+        events.Add(report.Completed
+            ? MakeEvent(EventKind.AppliedBaseline, SyncEventOutcome.Success, count: report.Applied.Count)
+            : MakeEvent(EventKind.RunStopped, SyncEventOutcome.Error, detail: report.Error?.Message));
+
+        await SaveRunAsync(runId, pairId, startedAt, outcome, events).ConfigureAwait(false);
+        return Result<SyncRunReport, SyncError>.Success(
+            new SyncRunReport(runId, outcome, plan.Value.Operations.Count, report.Applied.Count, 0, report.Error));
+    }
+
+    /// <summary>
     /// A stage failed: Error event, Failed run-log, the failure returned with the same error.
     /// </summary>
     private async Task<Result<SyncRunReport, SyncError>> FailAsync(
@@ -342,13 +474,15 @@ public sealed class SyncRun
         int? count = null,
         string? detail = null,
         string? label = null,
-        string? conflict = null)
+        string? conflict = null,
+        string? side = null)
     {
         Dictionary<string, string>? args = null;
         if (count is { } n) (args ??= [])["count"] = n.ToString(System.Globalization.CultureInfo.InvariantCulture);
         if (detail is { } d) (args ??= [])["detail"] = d;
         if (label is { } l) (args ??= [])["label"] = l;
         if (conflict is { } c) (args ??= [])["conflict"] = c;
+        if (side is { } s) (args ??= [])["side"] = s;
         return new SyncEvent(_clock.UtcNow, kind, outcome, path, args);
     }
 }

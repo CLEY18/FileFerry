@@ -96,6 +96,13 @@
   <data name="ConflictKeptBoth" xml:space="preserve"><value>Both versions kept</value></data>
   <data name="ConflictKeepServer" xml:space="preserve"><value>Keep server version</value></data>
   <data name="ConflictKeepLocal" xml:space="preserve"><value>Keep local version</value></data>
+  <data name="ConflictResolveConfirmTitle" xml:space="preserve"><value>Resolve the conflict</value></data>
+  <data name="ConflictResolveServerConfirmFormat" xml:space="preserve"><value>Keep the server version of “{0}”? The local version moves to the trash buffer.</value></data>
+  <data name="ConflictResolveLocalConfirmFormat" xml:space="preserve"><value>Keep the local version of “{0}”? The server version moves to the trash buffer.</value></data>
+  <data name="ConflictResolvedTitle" xml:space="preserve"><value>Resolved</value></data>
+  <data name="ConflictResolvedBody" xml:space="preserve"><value>The kept version now lives on both sides — the discarded one is in the trash buffer.</value></data>
+  <data name="ConflictResolvePartialBody" xml:space="preserve"><value>The resolution did not finish — the next sync continues it where it stopped.</value></data>
+  <data name="ConflictResolveFailedTitle" xml:space="preserve"><value>Could not resolve</value></data>
   <data name="StashEmptyTitle" xml:space="preserve"><value>Trash buffer is empty</value></data>
   <data name="StashEmptyBody" xml:space="preserve"><value>Deleted files will be kept safely here for 30 days.</value></data>
   <data name="StashRestore" xml:space="preserve"><value>Restore</value></data>
@@ -162,6 +169,9 @@
   <data name="EventFailRemoteScan" xml:space="preserve"><value>Remote scan failed · {0}</value></data>
   <data name="EventFailPlanner" xml:space="preserve"><value>Planner halted the sync · {0}</value></data>
   <data name="EventStashPurged" xml:space="preserve"><value>Expired trash copies purged · {0}</value></data>
+  <data name="EventResolvedLocal" xml:space="preserve"><value>Kept the local version</value></data>
+  <data name="EventResolvedServer" xml:space="preserve"><value>Kept the server version</value></data>
+  <data name="EventConflictResolved" xml:space="preserve"><value>Conflict resolved</value></data>
   <data name="EventRaw" xml:space="preserve"><value>{0}</value></data>
   <data name="ErrorAuthExpired" xml:space="preserve"><value>Session expired — sign in again</value></data>
   <data name="ErrorServerGone" xml:space="preserve"><value>Server unavailable</value></data>

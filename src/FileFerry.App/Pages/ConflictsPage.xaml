@@ -46,12 +46,15 @@
                                 Text="{Binding WhenText}"
                                 Style="{StaticResource Caption13}"
                                 TextColor="{DynamicResource TextDisabled}" />
-                            <!-- v1 state: KeepBoth is already applied; fallback actions land with the engine-->
+                            <!-- state line: what the run kept, or the kept side after a resolution-->
                             <Label
                                 Text="{Binding KeptBothText}"
                                 Style="{StaticResource Caption13}"
                                 TextColor="{DynamicResource PrimaryText}" />
-                            <HorizontalStackLayout Spacing="{x:Static tok:DesignTokens.Space8}">
+                            <!-- actions only while the conflict is unacknowledged-->
+                            <HorizontalStackLayout
+                                Spacing="{x:Static tok:DesignTokens.Space8}"
+                                IsVisible="{Binding ShowActions}">
                                 <Button
                                     Text="{x:Static res:AppStrings.ConflictKeepServer}"
                                     Style="{StaticResource TextButton}"

@@ -471,14 +471,49 @@ public static class AppStrings
     public static string ConflictKeptBoth => Get();
 
     /// <summary>
-    /// Reserved conflict action: keep the server version.
+    /// Conflict action: keep the server version.
     /// </summary>
     public static string ConflictKeepServer => Get();
 
     /// <summary>
-    /// Reserved conflict action: keep the local version.
+    /// Conflict action: keep the local version.
     /// </summary>
     public static string ConflictKeepLocal => Get();
+
+    /// <summary>
+    /// Confirmation dialog title before a keep-side resolution.
+    /// </summary>
+    public static string ConflictResolveConfirmTitle => Get();
+
+    /// <summary>
+    /// Confirmation body: the server version is kept, the local one goes to the trash buffer.
+    /// </summary>
+    public static string ConflictResolveServerConfirmFormat => Get();
+
+    /// <summary>
+    /// Confirmation body: the local version is kept, the server one goes to the trash buffer.
+    /// </summary>
+    public static string ConflictResolveLocalConfirmFormat => Get();
+
+    /// <summary>
+    /// Title after a completed resolution.
+    /// </summary>
+    public static string ConflictResolvedTitle => Get();
+
+    /// <summary>
+    /// Body after a completed resolution: kept on both sides, discarded copy in the buffer.
+    /// </summary>
+    public static string ConflictResolvedBody => Get();
+
+    /// <summary>
+    /// Body when a resolution stopped mid-way: the journal continues it on the next sync.
+    /// </summary>
+    public static string ConflictResolvePartialBody => Get();
+
+    /// <summary>
+    /// Title when the resolution could not run (busy pair, versions already sorted out).
+    /// </summary>
+    public static string ConflictResolveFailedTitle => Get();
 
     /// <summary>
     /// Title of the empty trash buffer screen.

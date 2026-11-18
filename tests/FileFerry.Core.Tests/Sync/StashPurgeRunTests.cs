@@ -162,7 +162,7 @@ public sealed class StashPurgeRunTests
         public Task<Result<Ok, SyncError>> CreateFolderAsync(RelativePath path, CancellationToken ct) =>
             inner.CreateFolderAsync(path, ct);
 
-        public Task<Result<Ok, SyncError>> CopyAsync(RelativePath from, RelativePath to, CancellationToken ct) =>
+        public Task<Result<FileSnapshot, SyncError>> CopyAsync(RelativePath from, RelativePath to, CancellationToken ct) =>
             inner.CopyAsync(from, to, ct);
 
         public Task<Result<Ok, SyncError>> MoveAsync(RelativePath from, RelativePath to, CancellationToken ct) =>

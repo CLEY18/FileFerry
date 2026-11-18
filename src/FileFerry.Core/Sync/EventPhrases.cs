@@ -48,9 +48,20 @@ public static class EventPhrases
         EventKind.RunStopped => ("EventRunStopped", [Arg(e, "detail")]),
         EventKind.RunFailed => (FailPhrase(Arg(e, "label")), [Arg(e, "detail")]),
         EventKind.StashPurged => ("EventStashPurged", [Count(e)]),
+        EventKind.ConflictResolved => (ResolvePhrase(Arg(e, "side")), []),
         // free text — its detail is the phrase; an unknown (future) kind — the visible key name
         EventKind.FreeText => ("EventRaw", [Arg(e, "detail")]),
         _ => ("Event" + e.Kind, [Arg(e, "detail")]),
+    };
+
+    /// <summary>
+    /// Resolution phrases keyed by the kept side (an unknown side → the neutral "resolved" phrase).
+    /// </summary>
+    public static string ResolvePhrase(string side) => side switch
+    {
+        "local" => "EventResolvedLocal",
+        "server" => "EventResolvedServer",
+        _ => "EventConflictResolved",
     };
 
     private static string Arg(SyncEvent e, string name) =>

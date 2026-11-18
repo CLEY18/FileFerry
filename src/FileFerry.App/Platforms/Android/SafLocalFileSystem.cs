@@ -165,8 +165,8 @@ public sealed class SafLocalFileSystem : ILocalFileSystem
     /// SAF has no copy primitive — the source stream is pumped into a newly created target document
     /// (the source stays untouched — a stash requirement). The target is overwritten like Plain.
     /// </remarks>
-    public Task<Result<Ok, SyncError>> CopyAsync(RelativePath from, RelativePath to, CancellationToken ct) =>
-        GuardAsync(to, () => Task.Run<Result<Ok, SyncError>>(() =>
+    public Task<Result<FileSnapshot, SyncError>> CopyAsync(RelativePath from, RelativePath to, CancellationToken ct) =>
+        GuardAsync(to, () => Task.Run<Result<FileSnapshot, SyncError>>(() =>
         {
             var source = Resolve(from, ct) ?? throw NotFound(from);
             if (source.IsDirectory)
@@ -188,13 +188,14 @@ public sealed class SafLocalFileSystem : ILocalFileSystem
 
             var created = DocumentsContract.CreateDocument(_resolver, parentUri, "application/octet-stream", to.Name)
                           ?? throw Fail(ErrorKind.Unknown, $"Provider refused to create '{to}'.");
+            long written;
             try
             {
                 using var input = _resolver.OpenInputStream(DocUri(source.DocId))
                                   ?? throw NotFound(from);
                 using var output = _resolver.OpenOutputStream(created, "w")
                                    ?? throw Fail(ErrorKind.Unknown, $"Provider did not open a write stream for '{to}'.");
-                Pump(input, output, ct);
+                written = Pump(input, output, ct);
             }
             catch (Exception)
             {
@@ -203,7 +204,14 @@ public sealed class SafLocalFileSystem : ILocalFileSystem
             }
 
             NotifyMedia(GetDocId(created));
-            return Result<Ok, SyncError>.Success();
+            // evidence as the provider sees the fresh copy (same rule as WriteAsync: the baseline
+            // must record a time the scan can actually show, or every next run sees a phantom change)
+            var fresh = Resolve(to, ct);
+            var modifiedAt = fresh is { LastModifiedMs: > 0 }
+                ? DateTimeOffset.FromUnixTimeMilliseconds(fresh.LastModifiedMs).ToUniversalTime()
+                : DateTimeOffset.UtcNow;
+            return Result<FileSnapshot, SyncError>.Success(
+                new FileSnapshot(to, EntryKind.File, written, modifiedAt));
         }, ct), ct);
 
     /// <inheritdoc cref="ILocalFileSystem.MoveAsync" />

@@ -228,17 +228,14 @@ public sealed class PairListViewModel : Mvvm.ObservableObject
         var account = accounts.Count > 0 ? accounts[0] : null;
         var pairs = await _pairs.ListAsync(ct);
         // Status chip "status always visible": summary of the last completed run +
-        // conflicting Warning events; the rule matches ConflictsPage (Warning + path, window of 20).
+        // conflicting Warning events; the rule matches ConflictsPage (Warning + path, window of 20,
+        // resolutions acknowledged).
         var runWindows = await Task.WhenAll(
             pairs.Select(pair => _state.RecentRunsAsync(pair.Id, 20, ct)));
 
         var items = pairs
             .Zip(runWindows, (pair, runs) =>
-            {
-                var conflicts = runs.Sum(r => r.Events.Count(
-                    e => e.Outcome == SyncEventOutcome.Warning && e.Path is { IsEmpty: false }));
-                return PairListItem.From(pair, StatusFromRuns(pair, runs), conflicts);
-            })
+                PairListItem.From(pair, StatusFromRuns(pair, runs), Services.ConflictEvents.CountUnresolved(runs)))
             .Select(p => p with
             {
                 // MAUI 10 has no ancestor bindings in templates — the card carries the VM's commands itself.
@@ -325,8 +322,7 @@ public sealed class PairListViewModel : Mvvm.ObservableObject
             return PairStatus.Idle; // "Paused" is Idle, not a separate chip
         }
 
-        var conflicts = runs.Sum(r => r.Events.Count(
-            e => e.Outcome == SyncEventOutcome.Warning && e.Path is { IsEmpty: false }));
+        var conflicts = Services.ConflictEvents.CountUnresolved(runs);
         var latest = runs.FirstOrDefault(r => r.Outcome is not (SyncRunOutcome.Running or SyncRunOutcome.Cancelled));
         return latest?.Outcome switch
         {

@@ -101,25 +101,27 @@ public sealed class InMemoryFileSystem : ILocalFileSystem
     }
 
     /// <inheritdoc cref="ILocalFileSystem.CopyAsync"/>
-    public Task<Result<Ok, SyncError>> CopyAsync(RelativePath from, RelativePath to, CancellationToken ct)
+    public Task<Result<FileSnapshot, SyncError>> CopyAsync(RelativePath from, RelativePath to, CancellationToken ct)
     {
         lock (_gate)
         {
             if (!_files.TryGetValue(from.ToString(), out var node))
             {
-                return Task.FromResult(Result<Ok, SyncError>.Failure(NotFound(from)));
+                return Task.FromResult(Result<FileSnapshot, SyncError>.Failure(NotFound(from)));
             }
 
             var key = to.ToString();
             if (_folders.Contains(key))
             {
-                return Task.FromResult(Result<Ok, SyncError>.Failure(
+                return Task.FromResult(Result<FileSnapshot, SyncError>.Failure(
                     SyncError.Of(ErrorKind.Conflict, $"Target '{to}' is a directory.")));
             }
 
             EnsureParents(to);
-            _files[key] = node with { ModifiedAt = _clock.UtcNow };
-            return Task.FromResult(Result<Ok, SyncError>.Success());
+            var copy = node with { ModifiedAt = _clock.UtcNow }; // the copy moment — like a real provider
+            _files[key] = copy;
+            return Task.FromResult(Result<FileSnapshot, SyncError>.Success(
+                new FileSnapshot(to, EntryKind.File, copy.Content.LongLength, copy.ModifiedAt)));
         }
     }
 

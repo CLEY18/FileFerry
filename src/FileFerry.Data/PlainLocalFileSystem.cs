@@ -133,7 +133,7 @@ public sealed class PlainLocalFileSystem : ILocalFileSystem
     }
 
     /// <inheritdoc cref="ILocalFileSystem.CopyAsync"/>
-    public async Task<Result<Ok, SyncError>> CopyAsync(RelativePath from, RelativePath to, CancellationToken ct)
+    public async Task<Result<FileSnapshot, SyncError>> CopyAsync(RelativePath from, RelativePath to, CancellationToken ct)
     {
         var fullFrom = ToFull(from);
         var fullTo = ToFull(to);
@@ -141,12 +141,13 @@ public sealed class PlainLocalFileSystem : ILocalFileSystem
         {
             if (!File.Exists(fullFrom))
             {
-                return Result<Ok, SyncError>.Failure(NotFound(from));
+                return Result<FileSnapshot, SyncError>.Failure(NotFound(from));
             }
 
             if (Directory.Exists(fullTo))
             {
-                return Result<Ok, SyncError>.Failure(SyncError.Of(ErrorKind.Conflict, $"Target '{to}' is a directory."));
+                return Result<FileSnapshot, SyncError>.Failure(
+                    SyncError.Of(ErrorKind.Conflict, $"Target '{to}' is a directory."));
             }
 
             Directory.CreateDirectory(Path.GetDirectoryName(fullTo)!);
@@ -156,11 +157,14 @@ public sealed class PlainLocalFileSystem : ILocalFileSystem
                 await source.CopyToAsync(target, ct).ConfigureAwait(false);
             }
 
-            return Result<Ok, SyncError>.Success();
+            // evidence as written: the file system stamped the copy's own mtime, the scan will show exactly it
+            var info = new FileInfo(fullTo);
+            return Result<FileSnapshot, SyncError>.Success(new FileSnapshot(
+                to, EntryKind.File, info.Length, info.LastWriteTimeUtc));
         }
         catch (Exception ex)
         {
-            return FromException<Ok>(ex, fullTo);
+            return FromException<FileSnapshot>(ex, fullTo);
         }
     }
 
