@@ -9,11 +9,23 @@
     BackgroundColor="{DynamicResource Primary}"
     ForegroundColor="{DynamicResource OnPrimary}"
     TitleColor="{DynamicResource OnPrimary}">
-    <!-- Stack main Pair List; the drawer leads to Settings; the welcome screen registers as a route in code.-->
-    <FlyoutItem Title="{x:Static res:AppStrings.PairListTitle}">
+    <!-- Stack main Pair List; the drawer leads to the log and Settings; the welcome screen registers as a route in code.
+         The icons are outlines lifted from the shipped Material Symbols subset — the same open-licensed
+         symbol set the icon font is cut from (its license note covers derivatives); the drawer ships a
+         light and a dark polarity so the rows stay readable on both surfaces.-->
+    <FlyoutItem
+        Title="{x:Static res:AppStrings.PairListTitle}"
+        Icon="{AppThemeBinding Light=flyout_folder.svg, Dark=flyout_folder_dark.svg}">
         <ShellContent Route="pairlist" ContentTemplate="{DataTemplate pages:PairListPage}" />
     </FlyoutItem>
-    <FlyoutItem Title="{x:Static res:AppStrings.SettingsTitle}">
+    <FlyoutItem
+        Title="{x:Static res:AppStrings.SettingsLogTitle}"
+        Icon="{AppThemeBinding Light=flyout_article.svg, Dark=flyout_article_dark.svg}">
+        <ShellContent Route="synclog" ContentTemplate="{DataTemplate pages:LogPage}" />
+    </FlyoutItem>
+    <FlyoutItem
+        Title="{x:Static res:AppStrings.SettingsTitle}"
+        Icon="{AppThemeBinding Light=flyout_settings.svg, Dark=flyout_settings_dark.svg}">
         <ShellContent Route="settings" ContentTemplate="{DataTemplate pages:SettingsPage}" />
     </FlyoutItem>
 </Shell>

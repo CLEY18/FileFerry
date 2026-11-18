@@ -22,6 +22,9 @@
   <ItemGroup>
     <!-- Fonts: the SDK does not glob Resources/Fonts automatically — the icon TTF is registered explicitly.-->
     <MauiFont Include="Resources/Fonts/*.ttf" />
+    <!-- Flyout icons: outlines lifted from that same font subset, registered like the fonts —
+         the SDK does not glob Resources/Images either. -->
+    <MauiImage Include="Resources/Images/*.svg" BaseSize="24,24" />
   </ItemGroup>
 
   <ItemGroup>
