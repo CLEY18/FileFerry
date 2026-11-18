@@ -119,7 +119,7 @@
   <data name="ShortHours" xml:space="preserve"><value>{0} год</value></data>
   <data name="ShortMinutes" xml:space="preserve"><value>{0} хв</value></data>
   <data name="SettingsThemeTitle" xml:space="preserve"><value>Тема</value></data>
-  <data name="ThemeNextcloudLabel" xml:space="preserve"><value>Nextcloud</value></data>
+  <data name="ThemeNextcloudLabel" xml:space="preserve"><value>Додаток</value></data>
   <data name="ThemeDynamicLabel" xml:space="preserve"><value>Динамічна</value></data>
   <data name="SettingsDefaultIntervalTitle" xml:space="preserve"><value>Інтервал за замовчуванням</value></data>
   <data name="SettingsWifiOnlyTitle" xml:space="preserve"><value>Тільки LAN</value></data>

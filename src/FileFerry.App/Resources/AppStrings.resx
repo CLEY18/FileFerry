@@ -119,7 +119,7 @@
   <data name="ShortHours" xml:space="preserve"><value>{0} hr</value></data>
   <data name="ShortMinutes" xml:space="preserve"><value>{0} min</value></data>
   <data name="SettingsThemeTitle" xml:space="preserve"><value>Theme</value></data>
-  <data name="ThemeNextcloudLabel" xml:space="preserve"><value>Nextcloud</value></data>
+  <data name="ThemeNextcloudLabel" xml:space="preserve"><value>App</value></data>
   <data name="ThemeDynamicLabel" xml:space="preserve"><value>Dynamic</value></data>
   <data name="SettingsDefaultIntervalTitle" xml:space="preserve"><value>Default interval</value></data>
   <data name="SettingsWifiOnlyTitle" xml:space="preserve"><value>LAN only</value></data>
