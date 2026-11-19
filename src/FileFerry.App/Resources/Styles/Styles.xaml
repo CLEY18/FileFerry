@@ -99,13 +99,17 @@
         <Setter Property="FontSize" Value="15" />
     </Style>
 
-    <!-- switch: thumb/track from tokens (not the platform accent); the negative margin cancels the
-         platform drawable's baked-in outer inset so the track sits flush with the card content
-         column, and the label hugs the track at the standard row gap despite the reserved travel-->
+    <!-- switch: thumb/track from tokens (not the platform accent). The platform drawable bakes an
+         outer inset and the off-state thumb's halo reaches left of the view box, so the negative
+         margins are calibrated so the worst-case ink (the off thumb) starts exactly at the content
+         column in both states; the right margin cancels most of the reserved thumb travel so the
+         label keeps a comfortable gap from the thumb halo in the on state and the standard row
+         gap from the track in the off state (the thumb travels, so the gap balances between the
+         two states rather than hitting 12 dp in both). -->
     <Style x:Key="TokenSwitch" TargetType="Switch">
         <Setter Property="OnColor" Value="{DynamicResource Primary}" />
         <Setter Property="ThumbColor" Value="{DynamicResource OnPrimary}" />
-        <Setter Property="Margin" Value="-14,0,-5,0" />
+        <Setter Property="Margin" Value="-6,0,-13,0" />
         <Setter Property="VerticalOptions" Value="Center" />
     </Style>
 
