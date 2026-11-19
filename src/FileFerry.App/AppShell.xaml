@@ -5,6 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:pages="clr-namespace:FileFerry.App.Pages"
     xmlns:res="clr-namespace:FileFerry.App.Resources"
+    xmlns:tok="clr-namespace:FileFerry.App"
     FlyoutBehavior="Flyout"
     BackgroundColor="{DynamicResource Primary}"
     FlyoutBackgroundColor="{DynamicResource Background}"
@@ -13,7 +14,47 @@
     <!-- Stack main Pair List; the drawer leads to the log and Settings; the welcome screen registers as a route in code.
          The icons are outlines lifted from the shipped Material Symbols subset — the same open-licensed
          symbol set the icon font is cut from (its license note covers derivatives); the drawer ships a
-         light and a dark polarity so the rows stay readable on both surfaces.-->
+         light and a dark polarity so the rows stay readable on both surfaces.
+         The row template replaces the platform default only to tighten the icon-to-label gap to the
+         design's row spacing; the selected row keeps the state-driven tint, bound to the selected
+         token of each polarity so it follows light/dark changes.-->
+    <Shell.ItemTemplate>
+        <DataTemplate>
+            <Grid
+                x:DataType="ShellItem"
+                Padding="16,12"
+                ColumnDefinitions="24,*"
+                ColumnSpacing="{x:Static tok:DesignTokens.Space12}">
+                <VisualStateManager.VisualStateGroups>
+                    <VisualStateGroupList>
+                        <VisualStateGroup x:Name="CommonStates">
+                            <VisualState x:Name="Normal" />
+                            <VisualState x:Name="Selected">
+                                <VisualState.Setters>
+                                    <Setter Property="BackgroundColor">
+                                        <Setter.Value>
+                                            <AppThemeBinding
+                                                Light="{StaticResource Selected}"
+                                                Dark="{StaticResource SelectedDark}" />
+                                        </Setter.Value>
+                                    </Setter>
+                                </VisualState.Setters>
+                            </VisualState>
+                        </VisualStateGroup>
+                    </VisualStateGroupList>
+                </VisualStateManager.VisualStateGroups>
+                <Image
+                    WidthRequest="24"
+                    HeightRequest="24"
+                    Source="{Binding FlyoutIcon}"
+                    VerticalOptions="Center" />
+                <Label
+                    Grid.Column="1"
+                    Text="{Binding Title}"
+                    VerticalOptions="Center" />
+            </Grid>
+        </DataTemplate>
+    </Shell.ItemTemplate>
     <FlyoutItem
         Title="{x:Static res:AppStrings.PairListTitle}"
         Icon="{AppThemeBinding Light=flyout_folder.svg, Dark=flyout_folder_dark.svg}">
