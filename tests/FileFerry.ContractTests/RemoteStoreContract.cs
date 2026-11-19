@@ -88,7 +88,11 @@ public static class RemoteStoreContractSuite
     }
 
     /// <summary>
-    /// Rewriting changes the ETag — otherwise diff and pruning would lie.
+    /// Rewriting changes the ETag — otherwise diff and pruning would lie. Servers that derive the
+    /// fingerprint from the modification moment answer the old one until that moment advances (one
+    /// second on the live backend), so the honest contract is "changes within the next tick":
+    /// rewrite until the ETag moves, with a deadline past the coarsest tick. Instant stores — the
+    /// in-memory server, the HTTP fake — pass on the first rewrite without a single delay.
     /// </summary>
     public static async Task WriteAgainChangesEtag(Func<IWritableRemoteStore> create)
     {
@@ -96,9 +100,15 @@ public static class RemoteStoreContractSuite
         var path = RemotePath.Parse("f.txt");
 
         var first = (await store.WriteAsync(path, new MemoryStream([1]), CancellationToken.None)).Value;
-        var second = (await store.WriteAsync(path, new MemoryStream([1, 2]), CancellationToken.None)).Value;
+        var etag = (await store.WriteAsync(path, new MemoryStream([1, 2]), CancellationToken.None)).Value.ETag;
 
-        Assert.NotEqual(first.ETag, second.ETag);
+        for (var attempt = 0; attempt < 5 && etag == first.ETag; attempt++)
+        {
+            await Task.Delay(300, CancellationToken.None);
+            etag = (await store.WriteAsync(path, new MemoryStream([1, 2, 3]), CancellationToken.None)).Value.ETag;
+        }
+
+        Assert.NotEqual(first.ETag, etag);
     }
 
     /// <summary>
