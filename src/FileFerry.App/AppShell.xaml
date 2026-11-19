@@ -61,7 +61,7 @@
         <ShellContent Route="pairlist" ContentTemplate="{DataTemplate pages:PairListPage}" />
     </FlyoutItem>
     <FlyoutItem
-        Title="{x:Static res:AppStrings.SettingsLogTitle}"
+        Title="{x:Static res:AppStrings.LogTitle}"
         Icon="{AppThemeBinding Light=flyout_article.svg, Dark=flyout_article_dark.svg}">
         <ShellContent Route="synclog" ContentTemplate="{DataTemplate pages:LogPage}" />
     </FlyoutItem>

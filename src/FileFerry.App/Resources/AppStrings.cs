@@ -661,9 +661,9 @@ public static class AppStrings
     public static string LogoutBody => Get();
 
     /// <summary>
-    /// Navigation to the global log global log.
+    /// The global log, as the flyout section and the screen title.
     /// </summary>
-    public static string SettingsLogTitle => Get();
+    public static string LogTitle => Get();
 
     /// <summary>
     /// Navigation to the about screen about the app.

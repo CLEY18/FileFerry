@@ -9,7 +9,7 @@
     xmlns:vm="clr-namespace:FileFerry.App.ViewModels"
     x:DataType="vm:LogViewModel"
     BackgroundColor="{DynamicResource Background}"
-    Title="{x:Static res:AppStrings.SettingsLogTitle}">
+    Title="{x:Static res:AppStrings.LogTitle}">
     <!-- Global log: filter chips on top; 13 Caption rows; no autoscroll.-->
     <Grid Padding="{x:Static tok:DesignTokens.ScreenPadding}" RowDefinitions="Auto,*" RowSpacing="{x:Static tok:DesignTokens.Space12}">
 

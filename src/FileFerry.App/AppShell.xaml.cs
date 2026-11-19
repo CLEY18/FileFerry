@@ -17,7 +17,6 @@ public sealed partial class AppShell : Shell
         Routing.RegisterRoute(PairDetailsRoute, typeof(Pages.PairDetailsPage));
         Routing.RegisterRoute(ConflictsRoute, typeof(Pages.ConflictsPage));
         Routing.RegisterRoute(StashRoute, typeof(Pages.StashPage));
-        Routing.RegisterRoute(LogRoute, typeof(Pages.LogPage));
         Routing.RegisterRoute(AboutRoute, typeof(Pages.AboutPage));
     }
 
@@ -50,11 +49,6 @@ public sealed partial class AppShell : Shell
     /// Route of the trash buffer screen — a pair's deletion stash (query <c>?id=&lt;guid&gt;</c>).
     /// </summary>
     public const string StashRoute = "pair/stash";
-
-    /// <summary>
-    /// Route of the global log — global event log.
-    /// </summary>
-    public const string LogRoute = "log";
 
     /// <summary>
     /// Route of the about screen — logotype, version, disclaimers and links.

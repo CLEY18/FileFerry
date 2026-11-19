@@ -111,13 +111,8 @@
                     HorizontalOptions="Start" />
             </VerticalStackLayout>
 
-            <!-- navigation: log · privacy · about-->
+            <!-- navigation: privacy · about (the global log lives in the flyout)-->
             <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space8}">
-                <Button
-                    Text="{x:Static res:AppStrings.SettingsLogTitle}"
-                    Style="{StaticResource TextButton}"
-                    Command="{Binding OpenLogCommand}"
-                    HorizontalOptions="Start" />
                 <Button
                     Text="{x:Static res:AppStrings.SettingsPrivacyTitle}"
                     Style="{StaticResource TextButton}"

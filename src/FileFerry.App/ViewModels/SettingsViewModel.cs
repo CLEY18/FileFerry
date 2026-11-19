@@ -69,7 +69,6 @@ public sealed class SettingsViewModel : Mvvm.ObservableObject
         ChangeDefaultIntervalCommand = new Mvvm.AsyncRelayCommand(ChangeDefaultIntervalAsync);
         BatteryCommand = new Mvvm.AsyncRelayCommand(async (_, ct) => await _battery.OpenRequestAsync(ct));
         LogoutCommand = new Mvvm.AsyncRelayCommand(LogoutAsync);
-        OpenLogCommand = new Mvvm.AsyncRelayCommand((_, ct) => _navigation.GoAsync(AppShell.LogRoute, ct));
         OpenAboutCommand = new Mvvm.AsyncRelayCommand((_, ct) => _navigation.GoAsync(AppShell.AboutRoute, ct));
         PrivacyCommand = new Mvvm.AsyncRelayCommand(
             (_, ct) => _dialogs.ShowAlertAsync(
@@ -140,11 +139,6 @@ public sealed class SettingsViewModel : Mvvm.ObservableObject
     /// Logout: secret + account removed, pairs cascade-deleted, the shell is rebuilt.
     /// </summary>
     public Mvvm.AsyncRelayCommand LogoutCommand { get; }
-
-    /// <summary>
-    /// Navigate to the global log global log.
-    /// </summary>
-    public Mvvm.AsyncRelayCommand OpenLogCommand { get; }
 
     /// <summary>
     /// Navigate to the about screen.
