@@ -8,6 +8,7 @@
     xmlns:tok="clr-namespace:FileFerry.App"
     xmlns:vm="clr-namespace:FileFerry.App.ViewModels"
     x:DataType="vm:PairDetailsViewModel"
+    BackgroundColor="{DynamicResource Background}"
     Title="{Binding HeaderTitle}">
     <!-- Pair details: run status + pause; section navigation; event journal; settings; destructive actions.-->
     <ScrollView Padding="{x:Static tok:DesignTokens.ScreenPadding}">

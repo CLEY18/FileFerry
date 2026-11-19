@@ -8,6 +8,7 @@
     xmlns:tok="clr-namespace:FileFerry.App"
     xmlns:vm="clr-namespace:FileFerry.App.ViewModels"
     x:DataType="vm:SettingsViewModel"
+    BackgroundColor="{DynamicResource Background}"
     Title="{x:Static res:AppStrings.SettingsTitle}">
     <!-- Settings screen: theme · pair defaults · battery · account · log/privacy/about.-->
     <ScrollView Padding="{x:Static tok:DesignTokens.ScreenPadding}">

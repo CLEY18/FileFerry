@@ -7,6 +7,7 @@
     xmlns:tok="clr-namespace:FileFerry.App"
     xmlns:vm="clr-namespace:FileFerry.App.ViewModels"
     x:DataType="vm:ConflictsViewModel"
+    BackgroundColor="{DynamicResource Background}"
     Title="{x:Static res:AppStrings.DetailsConflictsTitle}">
     <!-- Conflicts screen: KeepBoth warning-conflict rows; reassuring empty state.-->
     <Grid Padding="{x:Static tok:DesignTokens.ScreenPadding}">

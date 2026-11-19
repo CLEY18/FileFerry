@@ -8,6 +8,7 @@
     xmlns:tok="clr-namespace:FileFerry.App"
     xmlns:vm="clr-namespace:FileFerry.App.ViewModels"
     x:DataType="vm:PairWizardViewModel"
+    BackgroundColor="{DynamicResource Background}"
     Title="{x:Static res:AppStrings.WizardTitle}">
     <!-- Add-pair wizard: 3-dot stepper on top; one section per step; a single Filled button at the bottom.-->
     <Grid

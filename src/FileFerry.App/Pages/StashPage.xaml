@@ -7,6 +7,7 @@
     xmlns:tok="clr-namespace:FileFerry.App"
     xmlns:vm="clr-namespace:FileFerry.App.ViewModels"
     x:DataType="vm:StashViewModel"
+    BackgroundColor="{DynamicResource Background}"
     Title="{x:Static res:AppStrings.DetailsStashTitle}">
     <!-- Trash buffer screen: deletion copies with TTL progress; "Restore" action; reassuring EmptyState.-->
     <Grid Padding="{x:Static tok:DesignTokens.ScreenPadding}">

@@ -8,6 +8,7 @@
     xmlns:vm="clr-namespace:FileFerry.App.ViewModels"
     x:DataType="vm:LoginViewModel"
     Shell.NavBarIsVisible="False"
+    BackgroundColor="{DynamicResource Background}"
     Title="{Binding Title}">
     <!-- Welcome screen WebView: fullscreen; TopAppBar "Sign in on <host>" + close button; poll runs in the background.-->
     <Grid RowDefinitions="Auto,*">

@@ -8,6 +8,7 @@
     xmlns:tok="clr-namespace:FileFerry.App"
     xmlns:vm="clr-namespace:FileFerry.App.ViewModels"
     x:DataType="vm:WelcomeViewModel"
+    BackgroundColor="{DynamicResource Background}"
     Title="{x:Static res:AppStrings.AppDisplayName}">
     <!-- Welcome screen: logo → title → subtitle → manual host/IP field (always shown) → action → help.-->
     <VerticalStackLayout

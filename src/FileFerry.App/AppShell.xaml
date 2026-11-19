@@ -7,6 +7,7 @@
     xmlns:res="clr-namespace:FileFerry.App.Resources"
     FlyoutBehavior="Flyout"
     BackgroundColor="{DynamicResource Primary}"
+    FlyoutBackgroundColor="{DynamicResource Background}"
     ForegroundColor="{DynamicResource OnPrimary}"
     TitleColor="{DynamicResource OnPrimary}">
     <!-- Stack main Pair List; the drawer leads to the log and Settings; the welcome screen registers as a route in code.

@@ -53,7 +53,10 @@ public static class AndroidAppBar
     /// <summary>
     /// Re-resolve the app-bar background token onto every toolbar container the window hosts,
     /// including the strip the layout paints behind the system status bar. A no-op before the
-    /// toolbar exists; a later navigation or event paints it.
+    /// toolbar exists; a later navigation or event paints it. The window surface behind the page
+    /// content (the strip below it, around the system navigation bar) is painted from the page
+    /// background token as well — the theme swap never recreates the activity, so the platform
+    /// window background keeps the tone of the previous theme unless it is re-painted here.
     /// </summary>
     public static void Repaint()
     {
@@ -62,6 +65,11 @@ public static class AndroidAppBar
             || window.DecorView is not ViewGroup decor)
         {
             return;
+        }
+
+        if (MauiApplication.Current.Resources["Background"] is SystemColor page)
+        {
+            decor.SetBackgroundColor(ToAndroidColor(page));
         }
 
         var bg = ToAndroidColor(brand);

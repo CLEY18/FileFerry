@@ -8,6 +8,7 @@
     xmlns:views="clr-namespace:FileFerry.App.Views"
     xmlns:vm="clr-namespace:FileFerry.App.ViewModels"
     x:DataType="vm:PairListViewModel"
+    BackgroundColor="{DynamicResource Background}"
     Title="{x:Static res:AppStrings.AppDisplayName}">
     <!-- Pair list: account dns chip → PairCard list (pull-to-refresh) → FAB; EmptyState.-->
     <Grid Padding="{x:Static tok:DesignTokens.ScreenPadding}" RowDefinitions="Auto,*">
