@@ -21,7 +21,10 @@
       local name suffixes only (home.arpa/local/lan/...), not global.
       Platform limitation: NSC cannot white-list IP literals.
 -->
-    <application android:networkSecurityConfig="@xml/network_security_config">
+    <application
+        android:icon="@mipmap/appicon"
+        android:roundIcon="@mipmap/appicon_round"
+        android:networkSecurityConfig="@xml/network_security_config">
         <service
             android:name="androidx.work.impl.foreground.SystemForegroundService"
             android:foregroundServiceType="dataSync"

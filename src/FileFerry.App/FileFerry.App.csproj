@@ -25,6 +25,9 @@
     <!-- Flyout icons: outlines lifted from that same font subset, registered like the fonts —
          the SDK does not glob Resources/Images either. -->
     <MauiImage Include="Resources/Images/*.svg" BaseSize="24,24" />
+    <!-- Launcher icon: the brand mark on the brand blue (design note's logo concept); the
+         foreground keeps the adaptive safe zone, the legacy file carries the blue itself. -->
+    <MauiIcon Include="Resources/AppIcon/appicon.svg" ForegroundFile="Resources/AppIcon/appiconfg.svg" Color="#0082C9" />
   </ItemGroup>
 
   <ItemGroup>
