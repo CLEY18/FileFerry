@@ -55,6 +55,31 @@
             </Grid>
         </DataTemplate>
     </Shell.ItemTemplate>
+    <Shell.FlyoutHeaderTemplate>
+        <DataTemplate>
+            <Grid
+                x:DataType="Shell"
+                BackgroundColor="{DynamicResource Primary}"
+                HeightRequest="80"
+                Padding="16,16">
+                <HorizontalStackLayout
+                    Spacing="{x:Static tok:DesignTokens.Space12}"
+                    VerticalOptions="Center">
+                    <Image
+                        WidthRequest="56"
+                        HeightRequest="45"
+                        Aspect="AspectFit"
+                        Source="logo_header.svg"
+                        VerticalOptions="Center" />
+                    <Label
+                        Style="{StaticResource Heading20}"
+                        Text="{x:Static res:AppStrings.AppDisplayName}"
+                        TextColor="{DynamicResource OnPrimary}"
+                        VerticalOptions="Center" />
+                </HorizontalStackLayout>
+            </Grid>
+        </DataTemplate>
+    </Shell.FlyoutHeaderTemplate>
     <FlyoutItem
         Title="{x:Static res:AppStrings.PairListTitle}"
         Icon="{AppThemeBinding Light=flyout_folder.svg, Dark=flyout_folder_dark.svg}">

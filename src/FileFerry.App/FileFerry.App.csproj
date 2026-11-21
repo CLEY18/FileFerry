@@ -26,8 +26,10 @@
          the SDK does not glob Resources/Images either. -->
     <MauiImage Include="Resources/Images/*.svg" BaseSize="24,24" />
     <!-- Launcher icon: the brand mark on the brand blue (design note's logo concept); the
-         foreground keeps the adaptive safe zone, the legacy file carries the blue itself. -->
+         foreground keeps the adaptive safe zone, the legacy file carries the blue itself.
+         The same foreground file doubles as the drawer-header logo - one carrier for the mark. -->
     <MauiIcon Include="Resources/AppIcon/appicon.svg" ForegroundFile="Resources/AppIcon/appiconfg.svg" Color="#0082C9" />
+    <MauiImage Include="Resources/AppIcon/logo_header.svg" BaseSize="126,100" />
   </ItemGroup>
 
   <ItemGroup>

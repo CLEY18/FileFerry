@@ -1,4 +1,5 @@
 using Android.Views;
+using AndroidX.DrawerLayout.Widget;
 using FileFerry.App.Theming;
 using Microsoft.Maui.ApplicationModel;
 using AppBarLayout = Google.Android.Material.AppBar.AppBarLayout;
@@ -9,10 +10,11 @@ using Toolbar = AndroidX.AppCompat.Widget.Toolbar;
 namespace FileFerry.App;
 
 /// <summary>
-/// Paints the live Shell app bar (and the status strip above it) from tokens. The MAUI toolbar
-/// is not part of the resource tree, so a token change cannot reach it by itself: the theme
-/// service's "tokens re-mapped" event drives this repaint, and a navigation re-paint is queued
-/// after MAUI's own pass because that pass re-applies the framework default appearance.
+/// Paints the live Shell app bar (and the status strip above it) and the drawer's status-bar
+/// strip from tokens. The MAUI toolbar is not part of the resource tree, so a token change
+/// cannot reach it by itself: the theme service's "tokens re-mapped" event drives this repaint,
+/// and a navigation re-paint is queued after MAUI's own pass because that pass re-applies the
+/// framework default appearance.
 /// Title and icons are token-bound through the Shell's own chrome colors — this covers only
 /// the surfaces Shell leaves unpainted.
 /// </summary>
@@ -61,16 +63,14 @@ public static class AndroidAppBar
     public static void Repaint()
     {
         if (MauiApplication.Current?.Resources["Primary"] is not SystemColor brand
+            || MauiApplication.Current.Resources["Background"] is not SystemColor page
             || Platform.CurrentActivity?.Window is not { } window
             || window.DecorView is not ViewGroup decor)
         {
             return;
         }
 
-        if (MauiApplication.Current.Resources["Background"] is SystemColor page)
-        {
-            decor.SetBackgroundColor(ToAndroidColor(page));
-        }
+        decor.SetBackgroundColor(ToAndroidColor(page));
 
         var bg = ToAndroidColor(brand);
         Paint(decor);
@@ -93,6 +93,18 @@ public static class AndroidAppBar
                 case AppBarLayout bar:
                     bar.SetBackgroundColor(bg);
                     bar.SetStatusBarForegroundColor(bg);
+                    break;
+                default:
+                    // the drawer's own layout pads itself below the status bar and shows the
+                    // drawer background in that strip; painting the strip from the header's
+                    // token (the class is Shell-internal, matched by name) lets the drawer
+                    // header run seamless under the system status bar
+                    if (view.Class.Name.EndsWith("ShellFlyoutLayout", StringComparison.Ordinal)
+                        && view.PaddingTop > 0)
+                    {
+                        view.Background = new DrawerStripDrawable(bg, ToAndroidColor(page), view.PaddingTop);
+                    }
+
                     break;
             }
 
@@ -120,4 +132,28 @@ public static class AndroidAppBar
 
     private static bool IsLight(SystemColor color) =>
         color.Red * 0.299 + color.Green * 0.587 + color.Blue * 0.114 > 0.6;
+
+    /// <summary>
+    /// The flyout list's background: the drawer body color everywhere except the top strip the
+    /// list pads out for the status bar - that one carries the header blue.
+    /// </summary>
+    private sealed class DrawerStripDrawable(
+        Android.Graphics.Color strip,
+        Android.Graphics.Color body,
+        int stripHeight) : Android.Graphics.Drawables.ColorDrawable(body)
+    {
+        public override void Draw(Android.Graphics.Canvas? canvas)
+        {
+            if (canvas is null)
+            {
+                return;
+            }
+
+            // the base fills the whole bounds with the drawer body color; the strip is the
+            // only addition on top
+            base.Draw(canvas);
+            using var paint = new Android.Graphics.Paint { Color = strip };
+            canvas.DrawRect(0, 0, Bounds.Width(), stripHeight, paint);
+        }
+    }
 }
