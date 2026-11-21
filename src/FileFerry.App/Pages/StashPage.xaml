@@ -31,7 +31,8 @@
                                     Text="{x:Static tok:GlyphMapping.RestoreFromTrash}"
                                     Style="{StaticResource IconGlyph24}"
                                     TextColor="{DynamicResource TextSecondary}"
-                                    VerticalOptions="Center" />
+                                    VerticalOptions="Center"
+                                    tok:A11y.IsDecorative="True" />
                                 <Label
                                     Grid.Column="1"
                                     Text="{Binding OriginText}"
@@ -72,7 +73,8 @@
                     <Label
                         Text="{x:Static tok:GlyphMapping.RestoreFromTrash}"
                         Style="{StaticResource IconEmptyState}"
-                        HorizontalOptions="Center" />
+                        HorizontalOptions="Center"
+                        tok:A11y.IsDecorative="True" />
                     <Label
                         Text="{x:Static res:AppStrings.StashEmptyTitle}"
                         Style="{StaticResource Heading20}"

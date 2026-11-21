@@ -17,6 +17,9 @@
     <!-- min Android 8.0: stable SAF persisted-URIs, WorkManager without legacy constraints.-->
     <SupportedOSPlatformVersion>26</SupportedOSPlatformVersion>
     <TargetPlatformVersion>36</TargetPlatformVersion>
+
+    <!-- stamp bindings carry an explicit Source (the theme-state singleton) - compile them too -->
+    <MauiEnableXamlCBindingWithSourceCompilation>true</MauiEnableXamlCBindingWithSourceCompilation>
   </PropertyGroup>
 
   <ItemGroup>

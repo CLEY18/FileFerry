@@ -26,8 +26,8 @@
     <Color x:Key="Border">#CAC4D0</Color>
     <Color x:Key="Selected">#ECECEC</Color>
     <Color x:Key="StatusSuccess">#2D7B41</Color>
-    <Color x:Key="StatusError">#E9322D</Color>
-    <Color x:Key="StatusWarning">#FFA000</Color>
+    <Color x:Key="StatusError">#C62828</Color>
+    <Color x:Key="StatusWarning">#7A4F01</Color>
     <Color x:Key="StatusInfo">#0082C9</Color>
     <Color x:Key="StatusWarningContainer">#FFF4DE</Color> <!-- ≈ warning-toned chip background-->
     <Color x:Key="StatusErrorContainer">#FCE9E8</Color> <!-- ≈ error-toned chip background-->

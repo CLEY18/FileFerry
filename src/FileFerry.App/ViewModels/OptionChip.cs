@@ -32,6 +32,7 @@ public abstract class OptionChip : Mvvm.ObservableObject
             {
                 Raise(nameof(BackgroundToken));
                 Raise(nameof(TextToken));
+                Raise(nameof(MarkToken));
             }
         }
     }
@@ -39,4 +40,12 @@ public abstract class OptionChip : Mvvm.ObservableObject
     public string BackgroundToken => IsSelected ? "PrimaryContainer" : "SurfaceVariant";
 
     public string TextToken => IsSelected ? "PrimaryText" : "TextSecondary";
+
+    /// <summary>
+    /// Color of the selected-mark: the mark always occupies its place (a chip must not change
+    /// width when the selection moves), so an unselected chip renders it from an unknown token —
+    /// the converter resolves that to transparent, an invisible mark that still holds the width.
+    /// A selected chip paints it in the chip's own text color.
+    /// </summary>
+    public string MarkToken => IsSelected ? TextToken : string.Empty;
 }

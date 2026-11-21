@@ -39,6 +39,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<LoginSession>();
         builder.Services.AddSingleton<RemoteStoreFactory>();
         builder.Services.AddSingleton<ILocalFolderPicker, AndroidSafFolderPicker>();
+        builder.Services.AddSingleton<INotificationPermission, AndroidNotificationPermission>();
         builder.Services.AddSingleton<IClock, SystemClock>();
         builder.Services.AddSingleton<IHashProvider, Sha256HashProvider>(); // "same content" evidence
         builder.Services.AddSingleton(_ => new StashPolicyOptions()); // 30-day TTL — Options default

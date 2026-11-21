@@ -50,32 +50,11 @@ public sealed class MainActivity : MauiAppCompatActivity
     {
         base.OnCreate(savedInstanceState);
         ApplyBottomBarInset();
-        // Emulator, Android 16: a dataSync FGS notification is impossible without POST_NOTIFICATIONS
-        // (Android 13+), which the app never requested, so the promise "only during transfer"
-        // practice meant "none at all". One polite request at startup (Post — after MAUI
-        // initialization); a refusal = silent mode, which does not hinder synchronization.
-        Window?.DecorView.Post(() => _ = RequestNotificationsAsync());
         // a fresh toolbar (first start, light/dark recreation) must wear the current tokens at once
         Window?.DecorView.Post(AndroidAppBar.Repaint);
         TreeLauncher = RegisterForActivityResult(
             new ActivityResultContracts.OpenDocumentTree(),
             new TreePickCallback(this));
-    }
-
-    /// <summary>
-    /// Notification-permission request; any failure is silent — the app startup stays unaffected.
-    /// </summary>
-    private static async Task RequestNotificationsAsync()
-    {
-        try
-        {
-            await Microsoft.Maui.ApplicationModel.Permissions.RequestAsync<
-                Microsoft.Maui.ApplicationModel.Permissions.PostNotifications>();
-        }
-        catch (Exception)
-        {
-            // the permission is a UX improvement, not a condition for the engine to work
-        }
     }
 
     /// <summary>

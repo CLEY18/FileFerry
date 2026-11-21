@@ -28,13 +28,19 @@
             TextColor="{DynamicResource TextSecondary}"
             HorizontalOptions="Center"
             HorizontalTextAlignment="Center" />
-        <Entry
-            Placeholder="{x:Static res:AppStrings.WelcomeHostHint}"
-            Text="{Binding Host}"
-            IsFocused="{Binding IsEntryFocused}"
-            Keyboard="Url"
-            ClearButtonVisibility="WhileEditing"
-            SemanticProperties.Description="{x:Static res:AppStrings.WelcomeHostHint}" />
+        <!-- the field keeps a visible label: a placeholder cannot survive the first keystroke -->
+        <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space4}">
+            <Label
+                Text="{x:Static res:AppStrings.WelcomeHostLabel}"
+                Style="{StaticResource Body15Strong}" />
+            <Entry
+                Placeholder="{x:Static res:AppStrings.WelcomeHostHint}"
+                Text="{Binding Host}"
+                IsFocused="{Binding IsEntryFocused}"
+                Keyboard="Url"
+                ClearButtonVisibility="WhileEditing"
+                SemanticProperties.Description="{x:Static res:AppStrings.WelcomeHostHint}" />
+        </VerticalStackLayout>
         <Label
             Text="{Binding ErrorText}"
             Style="{StaticResource Caption13}"

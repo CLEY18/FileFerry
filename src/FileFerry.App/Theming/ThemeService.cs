@@ -105,5 +105,7 @@ public sealed class ThemeService : IThemeService
         }
 
         Applied?.Invoke(this, EventArgs.Empty);
+        // views resolving token names to concrete colors re-read them through this stamp
+        ThemeState.Instance.Bump();
     }
 }

@@ -23,7 +23,6 @@
             <Label
                 Text="{Binding VersionLine}"
                 Style="{StaticResource Caption13}"
-                TextColor="{DynamicResource TextDisabled}"
                 HorizontalOptions="Center" />
 
             <!-- mandatory trademark disclaimer-->

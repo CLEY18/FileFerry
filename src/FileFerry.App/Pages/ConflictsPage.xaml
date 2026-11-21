@@ -31,7 +31,8 @@
                                     Text="{x:Static tok:GlyphMapping.Merge}"
                                     Style="{StaticResource IconGlyph24}"
                                     TextColor="{DynamicResource StatusWarning}"
-                                    VerticalOptions="Center" />
+                                    VerticalOptions="Center"
+                                    tok:A11y.IsDecorative="True" />
                                 <Label
                                     Grid.Column="1"
                                     Text="{Binding PathText}"
@@ -45,8 +46,7 @@
                                 TextColor="{DynamicResource TextSecondary}" />
                             <Label
                                 Text="{Binding WhenText}"
-                                Style="{StaticResource Caption13}"
-                                TextColor="{DynamicResource TextDisabled}" />
+                                Style="{StaticResource Caption13}" />
                             <!-- state line: what the run kept, or the kept side after a resolution-->
                             <Label
                                 Text="{Binding KeptBothText}"
@@ -82,7 +82,8 @@
                         Text="{x:Static tok:GlyphMapping.CheckCircle}"
                         Style="{StaticResource IconEmptyState}"
                         TextColor="{DynamicResource StatusSuccess}"
-                        HorizontalOptions="Center" />
+                        HorizontalOptions="Center"
+                        tok:A11y.IsDecorative="True" />
                     <Label
                         Text="{x:Static res:AppStrings.ConflictsEmptyTitle}"
                         Style="{StaticResource Heading20}"

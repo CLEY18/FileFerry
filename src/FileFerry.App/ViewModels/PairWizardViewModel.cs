@@ -23,6 +23,7 @@ public sealed class PairWizardViewModel : Mvvm.ObservableObject
     private readonly INavigationService _navigation;
     private readonly IAppDialogs _dialogs;
     private readonly ISyncScheduler _scheduler;
+    private readonly INotificationPermission _notifications;
 
     private Account? _account;
     private IRemoteBrowser? _browser;
@@ -43,7 +44,8 @@ public sealed class PairWizardViewModel : Mvvm.ObservableObject
         INavigationService navigation,
         IAppDialogs dialogs,
         IGeneralSettings defaults,
-        ISyncScheduler scheduler)
+        ISyncScheduler scheduler,
+        INotificationPermission notifications)
     {
         _accounts = accounts;
         _storeFactory = storeFactory;
@@ -52,6 +54,7 @@ public sealed class PairWizardViewModel : Mvvm.ObservableObject
         _navigation = navigation;
         _dialogs = dialogs;
         _scheduler = scheduler;
+        _notifications = notifications;
         _wifiOnly = defaults.DefaultWifiOnly;
 
         UpCommand = new Mvvm.AsyncRelayCommand(_ => GoUpAsync(), () => !IsBusy);
@@ -441,6 +444,10 @@ public sealed class PairWizardViewModel : Mvvm.ObservableObject
         {
             await _pairs.SaveAsync(pair, ct);
             await _scheduler.ScheduleAsync(pair.Id, schedule, ct); // a saved pair gets its periodic run right away
+            // the saved schedule is the moment a transfer notification earns its place; the ask is
+            // fire-and-forget — its dialog must never block the way back to the pair list, and a
+            // refusal leaves the silent mode the app tolerates by design
+            _ = _notifications.RequestAsync();
             await Application.Current!.Dispatcher.DispatchAsync(() => _navigation.BackAsync(ct));
         }
         catch (OperationCanceledException)

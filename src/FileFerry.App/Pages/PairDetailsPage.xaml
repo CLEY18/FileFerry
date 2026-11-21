@@ -5,13 +5,17 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:conv="clr-namespace:FileFerry.App.Converters"
     xmlns:res="clr-namespace:FileFerry.App.Resources"
+    xmlns:theming="clr-namespace:FileFerry.App.Theming"
     xmlns:tok="clr-namespace:FileFerry.App"
     xmlns:vm="clr-namespace:FileFerry.App.ViewModels"
     x:DataType="vm:PairDetailsViewModel"
     BackgroundColor="{DynamicResource Background}"
     Title="{Binding HeaderTitle}">
     <!-- Pair details: run status + pause; section navigation; event journal; settings; destructive actions.-->
-    <ScrollView Padding="{x:Static tok:DesignTokens.ScreenPadding}">
+    <ScrollView
+        Padding="{x:Static tok:DesignTokens.ScreenPadding}"
+        MaximumWidthRequest="{x:Static tok:DesignTokens.ContentMaxWidth}"
+        HorizontalOptions="Center">
         <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.SectionSpacing}">
 
             <!-- local folder (meta line)-->
@@ -76,7 +80,8 @@
                         Text="{x:Static tok:GlyphMapping.Merge}"
                         Style="{StaticResource IconGlyph24}"
                         TextColor="{DynamicResource StatusWarning}"
-                        VerticalOptions="Center" />
+                        VerticalOptions="Center"
+                        tok:A11y.IsDecorative="True" />
                     <Label
                         Grid.Column="1"
                         Text="{x:Static res:AppStrings.DetailsConflictsTitle}"
@@ -104,7 +109,8 @@
                         Text="{x:Static tok:GlyphMapping.RestoreFromTrash}"
                         Style="{StaticResource IconGlyph24}"
                         TextColor="{DynamicResource TextSecondary}"
-                        VerticalOptions="Center" />
+                        VerticalOptions="Center"
+                        tok:A11y.IsDecorative="True" />
                     <VerticalStackLayout Grid.Column="1" Spacing="{x:Static tok:DesignTokens.Space4}">
                         <Label Text="{x:Static res:AppStrings.DetailsStashTitle}" Style="{StaticResource Body15}" />
                         <Label
@@ -117,7 +123,8 @@
                         Text="{x:Static tok:GlyphMapping.ChevronRight}"
                         Style="{StaticResource IconGlyph24}"
                         TextColor="{DynamicResource TextDisabled}"
-                        VerticalOptions="Center" />
+                        VerticalOptions="Center"
+                        tok:A11y.IsDecorative="True" />
                 </Grid>
             </Border>
 
@@ -137,13 +144,18 @@
                             <Grid ColumnDefinitions="Auto,*" ColumnSpacing="{x:Static tok:DesignTokens.Space8}">
                                 <Label
                                     Text="{Binding Time}"
-                                    Style="{StaticResource Caption13}"
-                                    TextColor="{DynamicResource TextDisabled}" />
+                                    Style="{StaticResource Caption13}" />
                                 <Label
                                     Grid.Column="1"
                                     Text="{Binding Text}"
-                                    Style="{StaticResource Caption13}"
-                                    TextColor="{Binding ColorToken, Converter={x:Static conv:TokenColorConverter.Instance}}" />
+                                    Style="{StaticResource Caption13}">
+                                    <Label.TextColor>
+                                        <MultiBinding Converter="{x:Static conv:ThemeTokenConverter.Instance}">
+                                            <Binding Path="ColorToken" />
+                                            <Binding Path="Version" Source="{x:Static theming:ThemeState.Instance}" x:DataType="theming:ThemeState" />
+                                        </MultiBinding>
+                                    </Label.TextColor>
+                                </Label>
                             </Grid>
                         </DataTemplate>
                     </BindableLayout.ItemTemplate>

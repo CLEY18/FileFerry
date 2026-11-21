@@ -21,6 +21,15 @@ public sealed class SyncStatusBadge : ContentView
         nameof(Text), typeof(string), typeof(SyncStatusBadge), string.Empty,
         propertyChanged: (b, _, n) => ((SyncStatusBadge)b)._label.Text = (string?)n ?? string.Empty);
 
+    /// <summary>
+    /// Theme stamp (the counter of palette re-maps): the chip resolves token names to concrete
+    /// colors, so it re-applies them whenever the stamp changes — otherwise a live theme switch
+    /// would leave the chip wearing the previous palette.
+    /// </summary>
+    public static readonly BindableProperty ThemeStampProperty = BindableProperty.Create(
+        nameof(ThemeStamp), typeof(int), typeof(SyncStatusBadge), 0,
+        propertyChanged: (b, _, _) => ((SyncStatusBadge)b).Apply());
+
     private readonly Border _border;
     private readonly Label _glyph;
     private readonly Label _label;
@@ -36,6 +45,8 @@ public sealed class SyncStatusBadge : ContentView
             FontSize = DesignTokens.IconSmall,
             VerticalTextAlignment = TextAlignment.Center,
         };
+        // beside the status word the glyph is decoration: a reader must not speak its codepoint
+        A11y.SetIsDecorative(_glyph, true);
         _label = new Label
         {
             FontSize = 13,
@@ -73,6 +84,15 @@ public sealed class SyncStatusBadge : ContentView
     {
         get => (string)GetValue(TextProperty);
         set => SetValue(TextProperty, value);
+    }
+
+    /// <summary>
+    /// Current palette re-map counter (bound to the theme stamp).
+    /// </summary>
+    public int ThemeStamp
+    {
+        get => (int)GetValue(ThemeStampProperty);
+        set => SetValue(ThemeStampProperty, value);
     }
 
     /// <summary>

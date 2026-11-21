@@ -51,6 +51,12 @@ public static class AppStrings
     public static string WelcomeHostHint => Get();
 
     /// <summary>
+    /// Visible label of the server-address field (welcome screen): the field keeps its name while
+    /// the user types, the hint alone cannot carry it.
+    /// </summary>
+    public static string WelcomeHostLabel => Get();
+
+    /// <summary>
     /// Button initiating Login Flow v2 (welcome screen).
     /// </summary>
     public static string WelcomeConnect => Get();
@@ -184,6 +190,12 @@ public static class AppStrings
     /// Card context-menu action: delete.
     /// </summary>
     public static string CardActionDelete => Get();
+
+    /// <summary>
+    /// Name for a reader of the card's context-menu opener (the three-dot glyph is decoration, the
+    /// action has a word).
+    /// </summary>
+    public static string CardActionMenu => Get();
 
     /// <summary>
     /// Title of the pair-deletion confirmation.

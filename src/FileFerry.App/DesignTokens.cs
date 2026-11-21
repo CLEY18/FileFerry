@@ -58,7 +58,16 @@ public static class DesignTokens
 
     public const double FabRadius = FabSize / 2;
 
-    public const double ButtonHeight = 44;
+    /// <summary>
+    /// Button height as a minimum, never a fixed one: the label must survive a large system font,
+    /// and the touch target on the Android canvas is 48 dp.
+    /// </summary>
+    public const double ButtonMinHeight = TouchTargetAndroid;
+
+    /// <summary>
+    /// Reading-width cap for single-column screens in a wide window (tablet, unfolded foldable).
+    /// </summary>
+    public const double ContentMaxWidth = 640;
 
     public const double InputHeight = 48;
 
