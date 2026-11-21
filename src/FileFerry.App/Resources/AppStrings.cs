@@ -671,9 +671,9 @@ public static class AppStrings
     public static string SettingsAboutTitle => Get();
 
     /// <summary>
-    /// Privacy-policy link (settings and about).
+    /// Privacy-policy link, in the about screen.
     /// </summary>
-    public static string SettingsPrivacyTitle => Get();
+    public static string PrivacyTitle => Get();
 
     /// <summary>
     /// Tagline of the about screen (promotional copy without "Nextcloud" — identity convention).

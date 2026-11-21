@@ -49,7 +49,7 @@
                     Command="{Binding BugsCommand}"
                     HorizontalOptions="Start" />
                 <Button
-                    Text="{x:Static res:AppStrings.SettingsPrivacyTitle}"
+                    Text="{x:Static res:AppStrings.PrivacyTitle}"
                     Style="{StaticResource TextButton}"
                     Command="{Binding PrivacyCommand}"
                     HorizontalOptions="Start" />

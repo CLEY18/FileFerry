@@ -134,7 +134,7 @@
   <data name="LogoutBody" xml:space="preserve"><value>The server session and the pair settings will be removed from this device. Files on the server and on the device stay untouched.</value></data>
   <data name="LogTitle" xml:space="preserve"><value>Sync log</value></data>
   <data name="SettingsAboutTitle" xml:space="preserve"><value>About the app</value></data>
-  <data name="SettingsPrivacyTitle" xml:space="preserve"><value>Privacy</value></data>
+  <data name="PrivacyTitle" xml:space="preserve"><value>Privacy</value></data>
   <data name="AboutTagline" xml:space="preserve"><value>Folder sync with your own server</value></data>
   <data name="AboutVersion" xml:space="preserve"><value>Version {0}</value></data>
   <data name="AboutDisclaimer" xml:space="preserve"><value>FileFerry is not affiliated with, endorsed by, or connected to Nextcloud GmbH. Nextcloud is a registered trademark of Nextcloud GmbH.</value></data>

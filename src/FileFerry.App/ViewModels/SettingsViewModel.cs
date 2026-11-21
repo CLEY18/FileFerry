@@ -70,12 +70,6 @@ public sealed class SettingsViewModel : Mvvm.ObservableObject
         BatteryCommand = new Mvvm.AsyncRelayCommand(async (_, ct) => await _battery.OpenRequestAsync(ct));
         LogoutCommand = new Mvvm.AsyncRelayCommand(LogoutAsync);
         OpenAboutCommand = new Mvvm.AsyncRelayCommand((_, ct) => _navigation.GoAsync(AppShell.AboutRoute, ct));
-        PrivacyCommand = new Mvvm.AsyncRelayCommand(
-            (_, ct) => _dialogs.ShowAlertAsync(
-                AppStrings.PendingSectionTitle,
-                string.Format(AppStrings.PendingSectionBody, AppStrings.SettingsPrivacyTitle),
-                AppStrings.HelpOk,
-                ct));
     }
 
     /// <summary>
@@ -144,11 +138,6 @@ public sealed class SettingsViewModel : Mvvm.ObservableObject
     /// Navigate to the about screen.
     /// </summary>
     public Mvvm.AsyncRelayCommand OpenAboutCommand { get; }
-
-    /// <summary>
-    /// Privacy policy — the link ships with the release (no URL in the docs yet).
-    /// </summary>
-    public Mvvm.AsyncRelayCommand PrivacyCommand { get; }
 
     /// <summary>
     /// Reload all values (OnAppearing: the user may have changed system settings outside the screen).

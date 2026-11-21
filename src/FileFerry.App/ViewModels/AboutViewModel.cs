@@ -22,7 +22,7 @@ public sealed class AboutViewModel : Mvvm.ObservableObject
         _dialogs = dialogs;
         SourceCommand = Pending(AppStrings.AboutSource);
         BugsCommand = Pending(AppStrings.AboutBugs);
-        PrivacyCommand = Pending(AppStrings.SettingsPrivacyTitle);
+        PrivacyCommand = Pending(AppStrings.PrivacyTitle);
     }
 
     /// <summary>

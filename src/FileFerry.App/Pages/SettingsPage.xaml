@@ -111,13 +111,8 @@
                     HorizontalOptions="Start" />
             </VerticalStackLayout>
 
-            <!-- navigation: privacy · about (the global log lives in the flyout)-->
+            <!-- navigation: about (privacy and the other legal links live there)-->
             <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space8}">
-                <Button
-                    Text="{x:Static res:AppStrings.SettingsPrivacyTitle}"
-                    Style="{StaticResource TextButton}"
-                    Command="{Binding PrivacyCommand}"
-                    HorizontalOptions="Start" />
                 <Button
                     Text="{x:Static res:AppStrings.SettingsAboutTitle}"
                     Style="{StaticResource TextButton}"

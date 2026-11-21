@@ -134,7 +134,7 @@
   <data name="LogoutBody" xml:space="preserve"><value>Сесію сервера буде видалено з пристрою разом з налаштуваннями пар. Файли на сервері та пристрої залишаться.</value></data>
   <data name="LogTitle" xml:space="preserve"><value>Журнал синхронізації</value></data>
   <data name="SettingsAboutTitle" xml:space="preserve"><value>Про додаток</value></data>
-  <data name="SettingsPrivacyTitle" xml:space="preserve"><value>Приватність</value></data>
+  <data name="PrivacyTitle" xml:space="preserve"><value>Приватність</value></data>
   <data name="AboutTagline" xml:space="preserve"><value>Синхронізація папок із вашим власним сервером</value></data>
   <data name="AboutVersion" xml:space="preserve"><value>Версія {0}</value></data>
   <data name="AboutDisclaimer" xml:space="preserve"><value>FileFerry не пов'язаний із Nextcloud GmbH, не є її продуктом і нею не підтримується. Nextcloud — зареєстрований торговий знак Nextcloud GmbH.</value></data>
