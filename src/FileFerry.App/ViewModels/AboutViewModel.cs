@@ -1,5 +1,5 @@
+using FileFerry.App.Navigation;
 using FileFerry.App.Resources;
-using FileFerry.App.Services;
 using Microsoft.Maui.Storage;
 
 namespace FileFerry.App.ViewModels;
@@ -8,7 +8,7 @@ namespace FileFerry.App.ViewModels;
 /// VM for the about screen: mark, version from <c>AppInfo</c>, tagline, the mandatory
 /// Nextcloud GmbH disclaimer (wording, rendered from the string resources like any other label)
 /// and three links. Source code and bug report open the project's public repository in the
-/// system browser; the privacy policy has no canonical address yet, so that link stays honest.
+/// system browser; privacy opens the in-app summary screen.
 /// </summary>
 public sealed class AboutViewModel : Mvvm.ObservableObject
 {
@@ -18,18 +18,18 @@ public sealed class AboutViewModel : Mvvm.ObservableObject
     private const string SourceUrl = "https://github.com/CLEY18/FileFerry";
     private const string IssuesUrl = SourceUrl + "/issues";
 
-    private readonly IAppDialogs _dialogs;
+    private readonly INavigationService _navigation;
 
     /// <summary>
-    /// Creates the About screen VM from dialogs; source and bug links launch the browser,
-    /// the privacy link is a stub until its address exists.
+    /// Creates the About screen VM from the navigation port; source and bug links launch the
+    /// browser, the privacy link opens the privacy screen.
     /// </summary>
-    public AboutViewModel(IAppDialogs dialogs)
+    public AboutViewModel(INavigationService navigation)
     {
-        _dialogs = dialogs;
-        SourceCommand = Link(SourceUrl);
-        BugsCommand = Link(IssuesUrl);
-        PrivacyCommand = Pending(AppStrings.PrivacyTitle);
+        _navigation = navigation;
+        SourceCommand = Mvvm.BrowserLink.To(SourceUrl);
+        BugsCommand = Mvvm.BrowserLink.To(IssuesUrl);
+        PrivacyCommand = new Mvvm.AsyncRelayCommand((_, ct) => _navigation.GoAsync(AppShell.PrivacyRoute, ct));
     }
 
     /// <summary>
@@ -42,20 +42,4 @@ public sealed class AboutViewModel : Mvvm.ObservableObject
     public Mvvm.AsyncRelayCommand BugsCommand { get; }
 
     public Mvvm.AsyncRelayCommand PrivacyCommand { get; }
-
-    /// <summary>
-    /// Link command: hands the address to the system browser.
-    /// </summary>
-    private static Mvvm.AsyncRelayCommand Link(string url) => new(
-        async (_, _) => await Browser.Default.OpenAsync(new Uri(url)));
-
-    /// <summary>
-    /// Link stub: shows the same "under development" dialog, no fabricated URLs.
-    /// </summary>
-    private Mvvm.AsyncRelayCommand Pending(string feature) => new(
-        (_, ct) => _dialogs.ShowAlertAsync(
-            AppStrings.PendingSectionTitle,
-            string.Format(AppStrings.PendingSectionBody, feature),
-            AppStrings.HelpOk,
-            ct));
 }

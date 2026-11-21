@@ -211,16 +211,6 @@ public static class AppStrings
     public static string SyncNowAction => Get();
 
     /// <summary>
-    /// Title of the "screen still under construction" dialog.
-    /// </summary>
-    public static string PendingSectionTitle => Get();
-
-    /// <summary>
-    /// Body of the "screen still under construction" dialog, with the section name.
-    /// </summary>
-    public static string PendingSectionBody => Get();
-
-    /// <summary>
     /// Title of the add-pair wizard.
     /// </summary>
     public static string WizardTitle => Get();
@@ -674,6 +664,66 @@ public static class AppStrings
     /// Privacy-policy link, in the about screen.
     /// </summary>
     public static string PrivacyTitle => Get();
+
+    /// <summary>
+    /// Privacy screen intro: the one-sentence promise.
+    /// </summary>
+    public static string PrivacyIntro => Get();
+
+    /// <summary>
+    /// Privacy section: nothing is collected from the user.
+    /// </summary>
+    public static string PrivacyNothingTitle => Get();
+
+    /// <summary>
+    /// Privacy section body: no account, analytics, ads, tracking, crash reports, SDKs.
+    /// </summary>
+    public static string PrivacyNothingBody => Get();
+
+    /// <summary>
+    /// Privacy section: what lives on the device and where the token is kept.
+    /// </summary>
+    public static string PrivacyDeviceTitle => Get();
+
+    /// <summary>
+    /// Privacy section body: files, log, baseline, trash buffer, keystore.
+    /// </summary>
+    public static string PrivacyDeviceBody => Get();
+
+    /// <summary>
+    /// Privacy section: the only network peer is the user's own server.
+    /// </summary>
+    public static string PrivacyServerTitle => Get();
+
+    /// <summary>
+    /// Privacy section body: LAN-only default, local cleartext exception.
+    /// </summary>
+    public static string PrivacyServerBody => Get();
+
+    /// <summary>
+    /// Privacy section: the requested permissions with their purpose.
+    /// </summary>
+    public static string PrivacyPermissionsTitle => Get();
+
+    /// <summary>
+    /// Privacy section body: internet, battery, notifications, foreground service; what is never asked.
+    /// </summary>
+    public static string PrivacyPermissionsBody => Get();
+
+    /// <summary>
+    /// Privacy section: what signing out and uninstalling delete.
+    /// </summary>
+    public static string PrivacyControlTitle => Get();
+
+    /// <summary>
+    /// Privacy section body: the wipe list, the untouched files, where to ask questions.
+    /// </summary>
+    public static string PrivacyControlBody => Get();
+
+    /// <summary>
+    /// Privacy screen link: the full policy document in the public repository.
+    /// </summary>
+    public static string PrivacyFullLink => Get();
 
     /// <summary>
     /// Tagline of the about screen (promotional copy without "Nextcloud" — identity convention).

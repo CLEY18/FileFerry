@@ -43,8 +43,6 @@
   <data name="DeletePairAccept" xml:space="preserve"><value>Delete</value></data>
   <data name="DialogCancel" xml:space="preserve"><value>Cancel</value></data>
         <data name="SyncNowAction" xml:space="preserve"><value>Sync now</value></data>
-  <data name="PendingSectionTitle" xml:space="preserve"><value>Still in development</value></data>
-  <data name="PendingSectionBody" xml:space="preserve"><value>{0} will appear in one of the upcoming builds.</value></data>
   <data name="WizardTitle" xml:space="preserve"><value>New folder pair</value></data>
   <data name="WizardRootCrumb" xml:space="preserve"><value>Storage root</value></data>
   <data name="WizardStepOf" xml:space="preserve"><value>Step {0} of 3</value></data>
@@ -135,6 +133,18 @@
   <data name="LogTitle" xml:space="preserve"><value>Sync log</value></data>
   <data name="SettingsAboutTitle" xml:space="preserve"><value>About the app</value></data>
   <data name="PrivacyTitle" xml:space="preserve"><value>Privacy</value></data>
+  <data name="PrivacyIntro" xml:space="preserve"><value>FileFerry moves folders between this device and your own Nextcloud server. Privacy here means: nothing goes anywhere else.</value></data>
+  <data name="PrivacyNothingTitle" xml:space="preserve"><value>Nothing collected from you</value></data>
+  <data name="PrivacyNothingBody" xml:space="preserve"><value>No account with the developer, no analytics, no ads, no tracking, no crash reports. The app ships no third-party SDKs that could phone home.</value></data>
+  <data name="PrivacyDeviceTitle" xml:space="preserve"><value>Stays on this device</value></data>
+  <data name="PrivacyDeviceBody" xml:space="preserve"><value>Files live on this device and on your server. The sync log, the comparison baseline and the trash buffer of deleted files are kept here too. The server token sits in the Android keystore - never in logs or backups.</value></data>
+  <data name="PrivacyServerTitle" xml:space="preserve"><value>One server: yours</value></data>
+  <data name="PrivacyServerBody" xml:space="preserve"><value>The app talks only to the server you add. New pairs sync over the LAN only by default, and plain HTTP stays enabled just for local names. There is no server of ours to send anything to.</value></data>
+  <data name="PrivacyPermissionsTitle" xml:space="preserve"><value>Permissions, and why</value></data>
+  <data name="PrivacyPermissionsBody" xml:space="preserve"><value>Internet: reach your server. Ignore battery optimization: optional, keeps background runs timely. Notifications: the status of long runs. Foreground service: a visible notice during an active transfer. Camera, microphone, location and contacts are never requested.</value></data>
+  <data name="PrivacyControlTitle" xml:space="preserve"><value>In your control</value></data>
+  <data name="PrivacyControlBody" xml:space="preserve"><value>Signing out deletes the token, the pairs, the baseline and the logs from this device; files on the server and on disk stay untouched. Uninstalling leaves nothing behind - we never held a copy. Questions: the issue tracker on the About screen.</value></data>
+  <data name="PrivacyFullLink" xml:space="preserve"><value>Read the full policy</value></data>
   <data name="AboutTagline" xml:space="preserve"><value>Folder sync with your own server</value></data>
   <data name="AboutVersion" xml:space="preserve"><value>Version {0}</value></data>
   <data name="AboutDisclaimer" xml:space="preserve"><value>FileFerry is not affiliated with, endorsed by, or connected to Nextcloud GmbH. Nextcloud is a registered trademark of Nextcloud GmbH.</value></data>

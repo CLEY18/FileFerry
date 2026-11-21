@@ -18,6 +18,7 @@ public sealed partial class AppShell : Shell
         Routing.RegisterRoute(ConflictsRoute, typeof(Pages.ConflictsPage));
         Routing.RegisterRoute(StashRoute, typeof(Pages.StashPage));
         Routing.RegisterRoute(AboutRoute, typeof(Pages.AboutPage));
+        Routing.RegisterRoute(PrivacyRoute, typeof(PrivacyPage));
     }
 
     /// <summary>
@@ -54,6 +55,11 @@ public sealed partial class AppShell : Shell
     /// Route of the about screen — logotype, version, disclaimers and links.
     /// </summary>
     public const string AboutRoute = "about";
+
+    /// <summary>
+    /// Route of the privacy screen — the in-app policy summary (opens from the about screen).
+    /// </summary>
+    public const string PrivacyRoute = "privacy";
 
     /// <summary>
     /// Absolute flyout route to the settings screen (the account chip leads here).

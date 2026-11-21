@@ -43,8 +43,6 @@
   <data name="DeletePairAccept" xml:space="preserve"><value>Видалити</value></data>
   <data name="DialogCancel" xml:space="preserve"><value>Скасувати</value></data>
         <data name="SyncNowAction" xml:space="preserve"><value>Синхронізувати зараз</value></data>
-  <data name="PendingSectionTitle" xml:space="preserve"><value>Розділ у розробці</value></data>
-  <data name="PendingSectionBody" xml:space="preserve"><value>{0} з'явиться в одній із наступних збірок.</value></data>
   <data name="WizardTitle" xml:space="preserve"><value>Нова пара папок</value></data>
   <data name="WizardRootCrumb" xml:space="preserve"><value>Корінь сховища</value></data>
   <data name="WizardStepOf" xml:space="preserve"><value>Крок {0} із 3</value></data>
@@ -135,6 +133,18 @@
   <data name="LogTitle" xml:space="preserve"><value>Журнал синхронізації</value></data>
   <data name="SettingsAboutTitle" xml:space="preserve"><value>Про додаток</value></data>
   <data name="PrivacyTitle" xml:space="preserve"><value>Приватність</value></data>
+  <data name="PrivacyIntro" xml:space="preserve"><value>FileFerry переносить теки між цим пристроєм і вашим власним сервером Nextcloud. Приватність тут означає: ніщо не йде нікуди далі.</value></data>
+  <data name="PrivacyNothingTitle" xml:space="preserve"><value>Нічого про вас не збираємо</value></data>
+  <data name="PrivacyNothingBody" xml:space="preserve"><value>Жодного акаунта у розробника, жодної аналітики, реклами, стеження чи аварійних звітів. Застосунок не містить сторонніх бібліотек, які могли б щось надсилати.</value></data>
+  <data name="PrivacyDeviceTitle" xml:space="preserve"><value>Лишається на цьому пристрої</value></data>
+  <data name="PrivacyDeviceBody" xml:space="preserve"><value>Файли зберігаються на цьому пристрої та на вашому сервері. Журнал синхронізації, еталонний стан і буфер видалених файлів теж тут. Токен сервера тримається в захищеному сховищі ключів системи - ніколи в логах чи резервних копіях.</value></data>
+  <data name="PrivacyServerTitle" xml:space="preserve"><value>Один сервер - ваш</value></data>
+  <data name="PrivacyServerBody" xml:space="preserve"><value>Застосунок звертається лише до сервера, який додали ви. Нові пари за замовчуванням синхронізуються лише через LAN, а простий (незашифрований) зв'язок лишається дозволеним тільки для локальних імен. Нашого сервера, куди щось надсилається, не існує.</value></data>
+  <data name="PrivacyPermissionsTitle" xml:space="preserve"><value>Дозволи і навіщо</value></data>
+  <data name="PrivacyPermissionsBody" xml:space="preserve"><value>Інтернет - зв'язок із вашим сервером. Ігнорування оптимізації батареї - на ваше бажання, щоб фонові прогони працювали вчасно. Сповіщення - статус тривалих синхронізацій. Передній план - видиме сповіщення під час активного трансферу. Камера, мікрофон, геолокація й контакти не запитуються ніколи.</value></data>
+  <data name="PrivacyControlTitle" xml:space="preserve"><value>У ваших руках</value></data>
+  <data name="PrivacyControlBody" xml:space="preserve"><value>Вихід видаляє з пристрою токен, пари, еталон і журнали; файли на сервері й на диску лишаються недоторканні. Після видалення застосунку нічого не залишається - копій у нас ніколи не було. Питання - до трекера завдань на екрані «Про додаток».</value></data>
+  <data name="PrivacyFullLink" xml:space="preserve"><value>Читати повну політику</value></data>
   <data name="AboutTagline" xml:space="preserve"><value>Синхронізація папок із вашим власним сервером</value></data>
   <data name="AboutVersion" xml:space="preserve"><value>Версія {0}</value></data>
   <data name="AboutDisclaimer" xml:space="preserve"><value>FileFerry не пов'язаний із Nextcloud GmbH, не є її продуктом і нею не підтримується. Nextcloud — зареєстрований торговий знак Nextcloud GmbH.</value></data>

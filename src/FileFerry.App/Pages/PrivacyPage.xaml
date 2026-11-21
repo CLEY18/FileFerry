@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage
+    x:Class="FileFerry.App.Pages.PrivacyPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:res="clr-namespace:FileFerry.App.Resources"
+    xmlns:tok="clr-namespace:FileFerry.App"
+    xmlns:vm="clr-namespace:FileFerry.App.ViewModels"
+    x:DataType="vm:PrivacyViewModel"
+    BackgroundColor="{DynamicResource Background}"
+    Title="{x:Static res:AppStrings.PrivacyTitle}">
+    <!-- privacy screen: the calm summary of what the app does not do; the full policy
+         document opens from the repository -->
+    <ScrollView Padding="{x:Static tok:DesignTokens.ScreenPadding}">
+        <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space20}">
+            <Label
+                Text="{x:Static res:AppStrings.PrivacyIntro}"
+                Style="{StaticResource Body15}"
+                TextColor="{DynamicResource TextSecondary}" />
+
+            <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space4}">
+                <Label Text="{x:Static res:AppStrings.PrivacyNothingTitle}" Style="{StaticResource Body15Strong}" />
+                <Label
+                    Text="{x:Static res:AppStrings.PrivacyNothingBody}"
+                    Style="{StaticResource Body15}"
+                    TextColor="{DynamicResource TextSecondary}" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space4}">
+                <Label Text="{x:Static res:AppStrings.PrivacyDeviceTitle}" Style="{StaticResource Body15Strong}" />
+                <Label
+                    Text="{x:Static res:AppStrings.PrivacyDeviceBody}"
+                    Style="{StaticResource Body15}"
+                    TextColor="{DynamicResource TextSecondary}" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space4}">
+                <Label Text="{x:Static res:AppStrings.PrivacyServerTitle}" Style="{StaticResource Body15Strong}" />
+                <Label
+                    Text="{x:Static res:AppStrings.PrivacyServerBody}"
+                    Style="{StaticResource Body15}"
+                    TextColor="{DynamicResource TextSecondary}" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space4}">
+                <Label Text="{x:Static res:AppStrings.PrivacyPermissionsTitle}" Style="{StaticResource Body15Strong}" />
+                <Label
+                    Text="{x:Static res:AppStrings.PrivacyPermissionsBody}"
+                    Style="{StaticResource Body15}"
+                    TextColor="{DynamicResource TextSecondary}" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space4}">
+                <Label Text="{x:Static res:AppStrings.PrivacyControlTitle}" Style="{StaticResource Body15Strong}" />
+                <Label
+                    Text="{x:Static res:AppStrings.PrivacyControlBody}"
+                    Style="{StaticResource Body15}"
+                    TextColor="{DynamicResource TextSecondary}" />
+            </VerticalStackLayout>
+
+            <Button
+                Text="{x:Static res:AppStrings.PrivacyFullLink}"
+                Style="{StaticResource TextButton}"
+                Command="{Binding FullPolicyCommand}"
+                HorizontalOptions="Start" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
