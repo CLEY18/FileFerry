@@ -249,6 +249,11 @@ public static class AppStrings
     public static string WizardFoldersEmpty => Get();
 
     /// <summary>
+    /// Quiet notice (a snackbar) shown as the wizard hands the brand-new pair back to the list.
+    /// </summary>
+    public static string WizardPairCreatedNotify => Get();
+
+    /// <summary>
     /// Primary action of step 1 (verb-as-button).
     /// </summary>
     public static string WizardChooseThisFolder => Get();

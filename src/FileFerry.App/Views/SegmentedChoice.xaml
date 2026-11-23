@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Border
+    x:Class="FileFerry.App.Views.SegmentedChoice"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:conv="clr-namespace:FileFerry.App.Converters"
+    xmlns:theming="clr-namespace:FileFerry.App.Theming"
+    xmlns:tok="clr-namespace:FileFerry.App"
+    xmlns:vm="clr-namespace:FileFerry.App.ViewModels"
+    xmlns:views="clr-namespace:FileFerry.App.Views"
+    Padding="2"
+    BackgroundColor="Transparent"
+    Stroke="{DynamicResource Border}"
+    StrokeThickness="1">
+    <!-- Segmented choice for an exclusive pick (theme mode, schedule, log filter): one shared
+         outline, equal cells that squeeze to the screen width, the selected one filled. Every
+         choice in the app answers "which one" - a filter row included - so this is the only
+         choice control; the row mounts the platform pressed highlight through PressableBorder. -->
+    <Border.StrokeShape>
+        <RoundRectangle CornerRadius="{x:Static tok:DesignTokens.RadiusControl}" />
+    </Border.StrokeShape>
+    <views:SegmentedRow
+        x:Name="SegmentRow">
+        <BindableLayout.ItemTemplate>
+            <DataTemplate x:DataType="vm:OptionChip">
+                <views:PressableBorder Padding="{x:Static tok:DesignTokens.Space8}">
+                    <!-- the token names the color, the stamp re-reads it when the palette is re-mapped -->
+                    <views:PressableBorder.BackgroundColor>
+                        <MultiBinding Converter="{x:Static conv:ThemeTokenConverter.Instance}">
+                            <Binding Path="BackgroundToken" />
+                            <Binding Path="Version" Source="{x:Static theming:ThemeState.Instance}" x:DataType="theming:ThemeState" />
+                        </MultiBinding>
+                    </views:PressableBorder.BackgroundColor>
+                    <views:PressableBorder.StrokeShape>
+                        <RoundRectangle CornerRadius="{x:Static tok:DesignTokens.RadiusControl}" />
+                    </views:PressableBorder.StrokeShape>
+                    <views:PressableBorder.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding SelectCommand}" />
+                    </views:PressableBorder.GestureRecognizers>
+                    <!-- the mark keeps its slot always (a cell never changes width when the
+                         selection moves) and there is no trailing balancer: mark plus label is
+                         the whole group, so even the longest label stays inside the cell -
+                         a balancer on top of the mark pushed the widest segment's mark past
+                         the fill edge -->
+                    <HorizontalStackLayout
+                        Spacing="{x:Static tok:DesignTokens.Space4}"
+                        HorizontalOptions="Center">
+                        <Label
+                            Text="{x:Static tok:GlyphMapping.CheckCircle}"
+                            Style="{StaticResource IconGlyph24}"
+                            VerticalOptions="Center"
+                            tok:A11y.IsDecorative="True">
+                            <Label.TextColor>
+                                <MultiBinding Converter="{x:Static conv:ThemeTokenConverter.Instance}">
+                                    <Binding Path="MarkToken" />
+                                    <Binding Path="Version" Source="{x:Static theming:ThemeState.Instance}" x:DataType="theming:ThemeState" />
+                                </MultiBinding>
+                            </Label.TextColor>
+                        </Label>
+                        <Label
+                            Text="{Binding Label}"
+                            Style="{StaticResource Body15}"
+                            VerticalOptions="Center">
+                            <Label.TextColor>
+                                <MultiBinding Converter="{x:Static conv:ThemeTokenConverter.Instance}">
+                                    <Binding Path="TextToken" />
+                                    <Binding Path="Version" Source="{x:Static theming:ThemeState.Instance}" x:DataType="theming:ThemeState" />
+                                </MultiBinding>
+                            </Label.TextColor>
+                        </Label>
+                    </HorizontalStackLayout>
+                </views:PressableBorder>
+            </DataTemplate>
+        </BindableLayout.ItemTemplate>
+    </views:SegmentedRow>
+</Border>

@@ -448,7 +448,13 @@ public sealed class PairWizardViewModel : Mvvm.ObservableObject
             // fire-and-forget — its dialog must never block the way back to the pair list, and a
             // refusal leaves the silent mode the app tolerates by design
             _ = _notifications.RequestAsync();
-            await Application.Current!.Dispatcher.DispatchAsync(() => _navigation.BackAsync(ct));
+            await Application.Current!.Dispatcher.DispatchAsync(async () =>
+            {
+                // the list is already re-loading behind the way back - a quiet notice carries
+                // the moment, no confirmation dialog in the path to the new pair
+                await _dialogs.NotifyAsync(AppStrings.WizardPairCreatedNotify, ct);
+                await _navigation.BackAsync(ct);
+            });
         }
         catch (OperationCanceledException)
         {

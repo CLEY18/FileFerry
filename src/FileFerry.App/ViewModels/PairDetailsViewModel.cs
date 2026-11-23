@@ -469,7 +469,8 @@ public sealed class PairDetailsViewModel : Mvvm.ObservableObject
         _navigation.GoAsync($"{route}?id={_pairId:N}", ct);
 
     /// <summary>
-    /// Action sheet of intervals → store the new <see cref="SyncSchedule"/> (config only).
+    /// Choice dialog of intervals with the pair's current one marked → store the new
+    /// <see cref="SyncSchedule"/> (config only).
     /// </summary>
     private async Task ChangeIntervalAsync(CancellationToken ct)
     {
@@ -479,8 +480,8 @@ public sealed class PairDetailsViewModel : Mvvm.ObservableObject
         }
 
         var known = ChoiceOption.KnownSchedules();
-        var choice = await _dialogs.ShowActionAsync(
-            AppStrings.DetailsIntervalTitle, AppStrings.DialogCancel, known.Select(k => k.Label).ToList(), ct);
+        var choice = await _dialogs.ShowChoiceAsync(
+            AppStrings.DetailsIntervalTitle, known.Select(k => k.Label).ToList(), ChoiceOption.IndexOf(pair.Schedule), ct);
         if (choice >= 0 && known[choice].Value != pair.Schedule)
         {
             await SaveAsync(pair with { Schedule = known[choice].Value }, ct);
@@ -510,7 +511,7 @@ public sealed class PairDetailsViewModel : Mvvm.ObservableObject
     private async Task DeleteAsync(CancellationToken ct)
     {
         var confirmed = await _dialogs.ConfirmAsync(
-            AppStrings.DetailsDeletePair, AppStrings.DetailsDeletePairBody, AppStrings.DeletePairAccept, AppStrings.DialogCancel, ct);
+            AppStrings.DetailsDeletePair, AppStrings.DetailsDeletePairBody, AppStrings.DeletePairAccept, AppStrings.DialogCancel, ct, destructive: true);
         if (confirmed)
         {
             await _scheduler.CancelAsync(_pairId, ct); // cancel periodic/one-shot jobs before deleting the config

@@ -210,7 +210,7 @@ public sealed class PairListViewModel : Mvvm.ObservableObject
     private async Task DeleteAsync(Guid pairId, CancellationToken ct)
     {
         var confirmed = await _dialogs.ConfirmAsync(
-            AppStrings.DeletePairTitle, AppStrings.DeletePairBody, AppStrings.DeletePairAccept, AppStrings.DialogCancel, ct);
+            AppStrings.DeletePairTitle, AppStrings.DeletePairBody, AppStrings.DeletePairAccept, AppStrings.DialogCancel, ct, destructive: true);
         if (confirmed)
         {
             await _scheduler.CancelAsync(pairId, ct); // cancel periodic/one-shot jobs before deleting the config

@@ -1,8 +1,9 @@
 namespace FileFerry.App.ViewModels;
 
 /// <summary>
-/// Base of a segment chip (segments/chips): label, selected state, and colors
-/// as token names. The concrete value type lives in the derived chips.
+/// Base of a segment option (theme mode, schedule, log filter): label, selected state, and
+/// colors as token names. An unselected option carries no fill - the token converter resolves
+/// an unknown name to transparent - because the shared outline, not a tint, holds the structure.
 /// </summary>
 public abstract class OptionChip : Mvvm.ObservableObject
 {
@@ -37,9 +38,13 @@ public abstract class OptionChip : Mvvm.ObservableObject
         }
     }
 
-    public string BackgroundToken => IsSelected ? "PrimaryContainer" : "SurfaceVariant";
+    /// <summary>
+    /// The selected option is filled and wears the primary text tone; an unselected one is
+    /// transparent and wears the primary ink of the surface it sits on.
+    /// </summary>
+    public string BackgroundToken => IsSelected ? "PrimaryContainer" : string.Empty;
 
-    public string TextToken => IsSelected ? "PrimaryText" : "TextSecondary";
+    public string TextToken => IsSelected ? "PrimaryText" : "TextPrimary";
 
     /// <summary>
     /// Color of the selected-mark: the mark always occupies its place (a chip must not change

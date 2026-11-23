@@ -156,8 +156,9 @@ public sealed class ConflictsViewModel : Mvvm.ObservableObject
             return;
         }
 
-        await _dialogs.ShowAlertAsync(
-            AppStrings.ConflictResolvedTitle, AppStrings.ConflictResolvedBody, AppStrings.HelpOk, ct);
+        // the resolved pair needs no confirmation tap - the list itself changes and the notice
+        // says what happened; dialogs stay for the outcomes that genuinely stop the user
+        await _dialogs.NotifyAsync(AppStrings.ConflictResolvedBody, ct);
         await LoadAsync(_pairId, CancellationToken.None);
     }
 }

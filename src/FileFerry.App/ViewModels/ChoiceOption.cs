@@ -26,4 +26,22 @@ public sealed class ChoiceOption : OptionChip
         (SyncSchedule.Hourly, AppStrings.Schedule60),
         (SyncSchedule.Manual, AppStrings.ScheduleManual),
     ];
+
+    /// <summary>
+    /// Position of a schedule in <see cref="KnownSchedules"/> (the mark of the current value
+    /// in a choice dialog); −1 when the value is none of the known ones.
+    /// </summary>
+    public static int IndexOf(SyncSchedule value)
+    {
+        var known = KnownSchedules();
+        for (var i = 0; i < known.Count; i++)
+        {
+            if (known[i].Value == value)
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
 }

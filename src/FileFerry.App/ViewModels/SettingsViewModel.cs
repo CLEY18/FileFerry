@@ -167,13 +167,14 @@ public sealed class SettingsViewModel : Mvvm.ObservableObject
     }
 
     /// <summary>
-    /// Sheet of the four known intervals → store the default (does not affect already-created pairs).
+    /// Choice dialog of the four known intervals, the current one marked → store the default
+    /// (does not affect already-created pairs).
     /// </summary>
     private async Task ChangeDefaultIntervalAsync(CancellationToken ct)
     {
         var known = ChoiceOption.KnownSchedules();
-        var choice = await _dialogs.ShowActionAsync(
-            AppStrings.SettingsDefaultIntervalTitle, AppStrings.DialogCancel, known.Select(k => k.Label).ToList(), ct);
+        var choice = await _dialogs.ShowChoiceAsync(
+            AppStrings.SettingsDefaultIntervalTitle, known.Select(k => k.Label).ToList(), ChoiceOption.IndexOf(_settings.DefaultSchedule), ct);
         if (choice >= 0)
         {
             await _settings.SetDefaultScheduleAsync(known[choice].Value, ct);

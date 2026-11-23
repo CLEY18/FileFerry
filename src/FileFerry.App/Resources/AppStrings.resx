@@ -51,6 +51,7 @@
   <data name="WizardUp" xml:space="preserve"><value>Up</value></data>
   <data name="WizardChooseThisFolder" xml:space="preserve"><value>Choose this folder</value></data>
   <data name="WizardFoldersEmpty" xml:space="preserve"><value>No subfolders here. "Choose this folder" still syncs this folder as it is.</value></data>
+  <data name="WizardPairCreatedNotify" xml:space="preserve"><value>Folder pair created — the first sync starts now</value></data>
   <data name="WizardNext" xml:space="preserve"><value>Next</value></data>
   <data name="WizardCreatePair" xml:space="preserve"><value>Create pair</value></data>
   <data name="WizardNoAccountTitle" xml:space="preserve"><value>No server connected</value></data>

@@ -15,64 +15,7 @@
     <!-- Global log: filter chips on top; 13 Caption rows; no autoscroll.-->
     <Grid Padding="{x:Static tok:DesignTokens.ScreenPadding}" RowDefinitions="Auto,*" RowSpacing="{x:Static tok:DesignTokens.Space12}">
 
-        <HorizontalStackLayout
-            Grid.Row="0"
-            Spacing="{x:Static tok:DesignTokens.Space8}"
-            BindableLayout.ItemsSource="{Binding Filters}">
-            <BindableLayout.ItemTemplate>
-                <DataTemplate x:DataType="vm:LogFilterChip">
-                    <views:PressableBorder
-                        Padding="{x:Static tok:DesignTokens.Space12}, {x:Static tok:DesignTokens.Space8}">
-                        <!-- the token names the color, the stamp re-reads it when the palette is re-mapped -->
-                        <views:PressableBorder.BackgroundColor>
-                            <MultiBinding Converter="{x:Static conv:ThemeTokenConverter.Instance}">
-                                <Binding Path="BackgroundToken" />
-                                <Binding Path="Version" Source="{x:Static theming:ThemeState.Instance}" x:DataType="theming:ThemeState" />
-                            </MultiBinding>
-                        </views:PressableBorder.BackgroundColor>
-                        <views:PressableBorder.StrokeShape>
-                            <RoundRectangle CornerRadius="{x:Static tok:DesignTokens.RadiusChip}" />
-                        </views:PressableBorder.StrokeShape>
-                        <views:PressableBorder.GestureRecognizers>
-                            <TapGestureRecognizer Command="{Binding SelectCommand}" />
-                        </views:PressableBorder.GestureRecognizers>
-                        <HorizontalStackLayout Spacing="{x:Static tok:DesignTokens.Space4}">
-                            <!-- the selected segment wears a mark, not only a color; the glyph keeps its
-                                 place always (constant chip width) and is transparent until selected -->
-                            <Label
-                                Text="{x:Static tok:GlyphMapping.CheckCircle}"
-                                Style="{StaticResource IconGlyph24}"
-                                VerticalOptions="Center"
-                                tok:A11y.IsDecorative="True">
-                                <Label.TextColor>
-                                    <MultiBinding Converter="{x:Static conv:ThemeTokenConverter.Instance}">
-                                        <Binding Path="MarkToken" />
-                                        <Binding Path="Version" Source="{x:Static theming:ThemeState.Instance}" x:DataType="theming:ThemeState" />
-                                    </MultiBinding>
-                                </Label.TextColor>
-                            </Label>
-                            <Label
-                                Text="{Binding Label}"
-                                Style="{StaticResource Body15}"
-                                VerticalOptions="Center">
-                                <Label.TextColor>
-                                    <MultiBinding Converter="{x:Static conv:ThemeTokenConverter.Instance}">
-                                        <Binding Path="TextToken" />
-                                        <Binding Path="Version" Source="{x:Static theming:ThemeState.Instance}" x:DataType="theming:ThemeState" />
-                                    </MultiBinding>
-                                </Label.TextColor>
-                            </Label>
-                            <!-- the trailing spacer balances the mark slot (the row spacing sits
-                                 on both sides of it): an unselected chip reads as centered -->
-                            <BoxView
-                                Color="Transparent"
-                                WidthRequest="{x:Static tok:DesignTokens.IconMedium}"
-                                tok:A11y.IsDecorative="True" />
-                        </HorizontalStackLayout>
-                    </views:PressableBorder>
-                </DataTemplate>
-            </BindableLayout.ItemTemplate>
-        </HorizontalStackLayout>
+        <views:SegmentedChoice Grid.Row="0" ItemsSource="{Binding Filters}" />
 
         <CollectionView
             Grid.Row="1"
