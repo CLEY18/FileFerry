@@ -50,6 +50,7 @@
   <data name="WizardStepOf" xml:space="preserve"><value>Крок {0} із 3</value></data>
   <data name="WizardUp" xml:space="preserve"><value>Вгору</value></data>
   <data name="WizardChooseThisFolder" xml:space="preserve"><value>Вибрати цю папку</value></data>
+  <data name="WizardFoldersEmpty" xml:space="preserve"><value>У цій папці немає підпапок — «Вибрати цю папку» синхронізує її як є.</value></data>
   <data name="WizardNext" xml:space="preserve"><value>Далі</value></data>
   <data name="WizardCreatePair" xml:space="preserve"><value>Створити пару</value></data>
   <data name="WizardNoAccountTitle" xml:space="preserve"><value>Сервер не підключено</value></data>

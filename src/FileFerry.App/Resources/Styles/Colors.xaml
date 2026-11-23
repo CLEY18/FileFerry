@@ -51,5 +51,5 @@
     <Color x:Key="StatusWarningDark">#FFB300</Color>
     <Color x:Key="StatusInfoDark">#33A1DC</Color> <!-- ≈ NC semantics-->
     <Color x:Key="StatusWarningContainerDark">#4A3413</Color> <!-- ≈ warning tone on dark-->
-    <Color x:Key="StatusErrorContainerDark">#4A2322</Color> <!-- ≈ error tone on dark-->
+    <Color x:Key="StatusErrorContainerDark">#331111</Color> <!-- ≈ error tone on dark; deep enough that the 13sp chip text clears the body contrast floor-->
 </ResourceDictionary>

@@ -89,36 +89,48 @@
             VerticalScrollBarVisibility="Never">
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="vm:RemoteBrowserRow">
-                    <Grid
-                        ColumnDefinitions="Auto,*,Auto"
-                        ColumnSpacing="{x:Static tok:DesignTokens.Space12}"
-                        MinimumHeightRequest="{x:Static tok:DesignTokens.ListRowHeight}"
-                        BackgroundColor="Transparent">
-                        <Grid.GestureRecognizers>
+                    <!-- the pressable host gives the row the platform touch highlight; the row keeps its 64 dp height-->
+                    <views:PressableBorder BackgroundColor="Transparent">
+                        <views:PressableBorder.GestureRecognizers>
                             <TapGestureRecognizer Command="{Binding OpenCommand}" CommandParameter="{Binding .}" />
-                        </Grid.GestureRecognizers>
-                        <Label
-                            Text="{x:Static tok:GlyphMapping.Folder}"
-                            Style="{StaticResource IconGlyph24}"
-                            TextColor="{DynamicResource TextSecondary}"
-                            VerticalOptions="Center"
-                            tok:A11y.IsDecorative="True" />
-                        <Label
-                            Grid.Column="1"
-                            Text="{Binding Name}"
-                            Style="{StaticResource Body15}"
-                            LineBreakMode="TailTruncation"
-                            VerticalOptions="Center" />
-                        <Label
-                            Grid.Column="2"
-                            Text="{x:Static tok:GlyphMapping.ChevronRight}"
-                            Style="{StaticResource IconGlyph24}"
-                            TextColor="{DynamicResource TextDisabled}"
-                            VerticalOptions="Center"
-                            tok:A11y.IsDecorative="True" />
-                    </Grid>
+                        </views:PressableBorder.GestureRecognizers>
+                        <Grid
+                            ColumnDefinitions="Auto,*,Auto"
+                            ColumnSpacing="{x:Static tok:DesignTokens.Space12}"
+                            MinimumHeightRequest="{x:Static tok:DesignTokens.ListRowHeight}">
+                            <Label
+                                Text="{x:Static tok:GlyphMapping.Folder}"
+                                Style="{StaticResource IconGlyph24}"
+                                TextColor="{DynamicResource TextSecondary}"
+                                VerticalOptions="Center"
+                                tok:A11y.IsDecorative="True" />
+                            <Label
+                                Grid.Column="1"
+                                Text="{Binding Name}"
+                                Style="{StaticResource Body15}"
+                                LineBreakMode="TailTruncation"
+                                VerticalOptions="Center" />
+                            <Label
+                                Grid.Column="2"
+                                Text="{x:Static tok:GlyphMapping.ChevronRight}"
+                                Style="{StaticResource IconGlyph24}"
+                                TextColor="{DynamicResource TextDisabled}"
+                                VerticalOptions="Center"
+                                tok:A11y.IsDecorative="True" />
+                        </Grid>
+                    </views:PressableBorder>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
+            <CollectionView.EmptyView>
+                <Label
+                    Text="{x:Static res:AppStrings.WizardFoldersEmpty}"
+                    Style="{StaticResource Body15}"
+                    TextColor="{DynamicResource TextSecondary}"
+                    Padding="{x:Static tok:DesignTokens.ScreenPadding}"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Center"
+                    HorizontalTextAlignment="Center" />
+            </CollectionView.EmptyView>
         </CollectionView>
 
         <!-- step 2: SAF pick of the local folder-->
@@ -191,7 +203,7 @@
                                 <HorizontalStackLayout Spacing="{x:Static tok:DesignTokens.Space4}">
                                     <Label
                                         Text="{x:Static tok:GlyphMapping.CheckCircle}"
-                                        Style="{StaticResource IconGlyph20}"
+                                        Style="{StaticResource IconGlyph24}"
                                         VerticalOptions="Center"
                                         tok:A11y.IsDecorative="True">
                                         <Label.TextColor>
@@ -214,7 +226,7 @@
                                     </Label>
                                     <BoxView
                                         Color="Transparent"
-                                        WidthRequest="{x:Static tok:DesignTokens.IconSmall}"
+                                        WidthRequest="{x:Static tok:DesignTokens.IconMedium}"
                                         tok:A11y.IsDecorative="True" />
                                 </HorizontalStackLayout>
                             </views:PressableBorder>

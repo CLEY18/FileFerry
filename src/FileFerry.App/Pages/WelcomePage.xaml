@@ -59,13 +59,18 @@
             IsRunning="{Binding IsBusy}"
             IsVisible="{Binding IsBusy}"
             HorizontalOptions="Center" />
-        <Label
-            Text="{x:Static res:AppStrings.HelpTitle}"
-            Style="{StaticResource Caption13}"
+        <!-- the help row is a 48 dp touch box; the caption is its content, not the target-->
+        <Grid
+            MinimumHeightRequest="{x:Static tok:DesignTokens.TouchTargetAndroid}"
             HorizontalOptions="Center">
-            <Label.GestureRecognizers>
+            <Grid.GestureRecognizers>
                 <TapGestureRecognizer Command="{Binding HelpCommand}" />
-            </Label.GestureRecognizers>
-        </Label>
+            </Grid.GestureRecognizers>
+            <Label
+                Text="{x:Static res:AppStrings.HelpTitle}"
+                Style="{StaticResource Caption13}"
+                VerticalOptions="Center"
+                HorizontalOptions="Center" />
+        </Grid>
     </VerticalStackLayout>
 </ContentPage>

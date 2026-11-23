@@ -7,6 +7,7 @@
     xmlns:res="clr-namespace:FileFerry.App.Resources"
     xmlns:theming="clr-namespace:FileFerry.App.Theming"
     xmlns:tok="clr-namespace:FileFerry.App"
+    xmlns:views="clr-namespace:FileFerry.App.Views"
     xmlns:vm="clr-namespace:FileFerry.App.ViewModels"
     x:DataType="vm:PairDetailsViewModel"
     BackgroundColor="{DynamicResource Background}"
@@ -68,13 +69,13 @@
             </Border>
 
             <!-- section nav: Conflicts → the conflicts screen (Warning-event counter)-->
-            <Border BackgroundColor="{DynamicResource Surface}" Padding="{x:Static tok:DesignTokens.Space16}">
-                <Border.StrokeShape>
+            <views:PressableBorder BackgroundColor="{DynamicResource Surface}" Padding="{x:Static tok:DesignTokens.Space16}">
+                <views:PressableBorder.StrokeShape>
                     <RoundRectangle CornerRadius="{x:Static tok:DesignTokens.RadiusControl}" />
-                </Border.StrokeShape>
-                <Border.GestureRecognizers>
+                </views:PressableBorder.StrokeShape>
+                <views:PressableBorder.GestureRecognizers>
                     <TapGestureRecognizer Command="{Binding OpenConflictsCommand}" />
-                </Border.GestureRecognizers>
+                </views:PressableBorder.GestureRecognizers>
                 <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="{x:Static tok:DesignTokens.Space12}">
                     <Label
                         Text="{x:Static tok:GlyphMapping.Merge}"
@@ -94,16 +95,16 @@
                         TextColor="{DynamicResource TextSecondary}"
                         VerticalOptions="Center" />
                 </Grid>
-            </Border>
+            </views:PressableBorder>
 
             <!-- section nav: deletion stash → the trash-buffer screen (count + TTL)-->
-            <Border BackgroundColor="{DynamicResource Surface}" Padding="{x:Static tok:DesignTokens.Space16}">
-                <Border.StrokeShape>
+            <views:PressableBorder BackgroundColor="{DynamicResource Surface}" Padding="{x:Static tok:DesignTokens.Space16}">
+                <views:PressableBorder.StrokeShape>
                     <RoundRectangle CornerRadius="{x:Static tok:DesignTokens.RadiusControl}" />
-                </Border.StrokeShape>
-                <Border.GestureRecognizers>
+                </views:PressableBorder.StrokeShape>
+                <views:PressableBorder.GestureRecognizers>
                     <TapGestureRecognizer Command="{Binding OpenStashCommand}" />
-                </Border.GestureRecognizers>
+                </views:PressableBorder.GestureRecognizers>
                 <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="{x:Static tok:DesignTokens.Space12}">
                     <Label
                         Text="{x:Static tok:GlyphMapping.RestoreFromTrash}"
@@ -126,7 +127,7 @@
                         VerticalOptions="Center"
                         tok:A11y.IsDecorative="True" />
                 </Grid>
-            </Border>
+            </views:PressableBorder>
 
             <!-- pair journal: latest events of the last run-->
             <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space8}">
@@ -165,13 +166,13 @@
             <!-- pair settings: interval (tap → sheet)-->
             <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space8}">
                 <Label Text="{x:Static res:AppStrings.DetailsSettingsTitle}" Style="{StaticResource Body15Strong}" />
-                <Border BackgroundColor="{DynamicResource Surface}" Padding="{x:Static tok:DesignTokens.Space16}">
-                    <Border.StrokeShape>
+                <views:PressableBorder BackgroundColor="{DynamicResource Surface}" Padding="{x:Static tok:DesignTokens.Space16}">
+                    <views:PressableBorder.StrokeShape>
                         <RoundRectangle CornerRadius="{x:Static tok:DesignTokens.RadiusControl}" />
-                    </Border.StrokeShape>
-                    <Border.GestureRecognizers>
+                    </views:PressableBorder.StrokeShape>
+                    <views:PressableBorder.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding ChangeIntervalCommand}" />
-                    </Border.GestureRecognizers>
+                    </views:PressableBorder.GestureRecognizers>
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{x:Static tok:DesignTokens.Space8}">
                         <Label Text="{x:Static res:AppStrings.DetailsIntervalTitle}" Style="{StaticResource Body15}" />
                         <Label
@@ -181,7 +182,7 @@
                             TextColor="{DynamicResource PrimaryText}"
                             VerticalOptions="Center" />
                     </Grid>
-                </Border>
+                </views:PressableBorder>
             </VerticalStackLayout>
 
             <!-- actions (no Filled on this screen — only Tonal/Text/Destructive)-->

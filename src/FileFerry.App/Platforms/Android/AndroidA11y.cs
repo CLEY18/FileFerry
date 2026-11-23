@@ -41,5 +41,5 @@ public static class A11y
     }
 
     private static void Hide(AndroidView platform) =>
-        platform.ImportantForAccessibility = Android.Views.ImportantForAccessibility.No;
+        platform.ImportantForAccessibility = Android.Views.ImportantForAccessibility.NoHideDescendants;
 }

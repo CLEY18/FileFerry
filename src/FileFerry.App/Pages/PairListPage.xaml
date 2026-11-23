@@ -33,7 +33,7 @@
                 VerticalOptions="Start">
                 <Label
                     Text="{x:Static tok:GlyphMapping.Dns}"
-                    Style="{StaticResource IconGlyph20}"
+                    Style="{StaticResource IconGlyph24}"
                     TextColor="{DynamicResource TextSecondary}"
                     VerticalOptions="Center"
                     tok:A11y.IsDecorative="True" />
@@ -55,81 +55,101 @@
                 VerticalScrollBarVisibility="Never">
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="vm:PairListItem">
-                        <!-- PairCard Surface, radius 8; tap → details; long-press → context menu-->
-                        <Border
-                            BackgroundColor="{DynamicResource Surface}"
-                            Padding="{x:Static tok:DesignTokens.Space16}"
-                            Margin="{StaticResource CardBottomMargin}"
-                            SemanticProperties.Description="{Binding SemanticDescription}">
-                            <Border.StrokeShape>
-                                <RoundRectangle CornerRadius="{x:Static tok:DesignTokens.RadiusControl}" />
-                            </Border.StrokeShape>
-                            <Border.GestureRecognizers>
-                                <TapGestureRecognizer Command="{Binding TapCommand}" CommandParameter="{Binding .}" />
-                            </Border.GestureRecognizers>
-                            <!-- long-press => native context menu (FlyoutBase.ContextFlyout, Android)-->
-                            <FlyoutBase.ContextFlyout>
-                                <MenuFlyout>
-                                    <MenuFlyoutItem
-                                        Text="{Binding MenuPauseLabel}"
-                                        Command="{Binding PauseCommand}"
-                                        CommandParameter="{Binding .}" />
-                                    <MenuFlyoutItem
-                                        Text="{x:Static res:AppStrings.SyncNowAction}"
-                                        Command="{Binding SyncNowCommand}"
-                                        CommandParameter="{Binding .}" />
-                                    <MenuFlyoutItem
-                                        Text="{x:Static res:AppStrings.CardActionDelete}"
-                                        Command="{Binding DeleteCommand}"
-                                        CommandParameter="{Binding .}" />
-                                </MenuFlyout>
-                            </FlyoutBase.ContextFlyout>
-                            <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space4}">
-                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{x:Static tok:DesignTokens.Space8}">
-                                    <Label
-                                        Text="{Binding RemotePath}"
-                                        Style="{StaticResource Body15Strong}"
-                                        LineBreakMode="TailTruncation"
-                                        VerticalOptions="Center" />
-                                    <!-- context-menu opener: a 48 dp touch box carries the glyph and the name -->
-                                    <Grid
-                                        Grid.Column="1"
-                                        WidthRequest="{x:Static tok:DesignTokens.TouchTargetAndroid}"
-                                        HeightRequest="{x:Static tok:DesignTokens.TouchTargetAndroid}"
-                                        SemanticProperties.Description="{x:Static res:AppStrings.CardActionMenu}">
-                                        <Grid.GestureRecognizers>
-                                            <TapGestureRecognizer Command="{Binding MenuCommand}" CommandParameter="{Binding .}" />
-                                        </Grid.GestureRecognizers>
-                                        <!-- the glyph sits flush with the card's 16dp inset (like the text
-                                             on the left); the 48dp box around it is invisible touch margin -->
+                        <!-- PairCard Surface, radius 8, in three layers: the visual below, a transparent
+                             Button above it for the platform press feedback (ripple and keyboard focus),
+                             the menu opener topmost so its own tap stays separate from the card tap.
+                             The reader hears the Button's single description; the visual subtree is decoration. -->
+                        <Grid>
+                            <Border
+                                BackgroundColor="{DynamicResource Surface}"
+                                Padding="{x:Static tok:DesignTokens.Space16}"
+                                Margin="{StaticResource CardBottomMargin}"
+                                tok:A11y.IsDecorative="True">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="{x:Static tok:DesignTokens.RadiusControl}" />
+                                </Border.StrokeShape>
+                                <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space4}">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{x:Static tok:DesignTokens.Space8}">
                                         <Label
-                                            Text="{x:Static tok:GlyphMapping.MoreVert}"
-                                            Style="{StaticResource IconGlyph24}"
-                                            TextColor="{DynamicResource TextSecondary}"
-                                            HorizontalOptions="End"
-                                            VerticalOptions="Center"
+                                            Text="{Binding RemotePath}"
+                                            Style="{StaticResource Body15Strong}"
+                                            LineBreakMode="TailTruncation"
+                                            VerticalOptions="Center" />
+                                        <!-- the opener's slot; the opener itself sits in the top layer, in this column -->
+                                        <BoxView
+                                            Grid.Column="1"
+                                            WidthRequest="{x:Static tok:DesignTokens.TouchTargetAndroid}"
+                                            HeightRequest="{x:Static tok:DesignTokens.TouchTargetAndroid}"
+                                            Color="Transparent"
                                             tok:A11y.IsDecorative="True" />
                                     </Grid>
+                                    <Label Text="{Binding LocalSummary}" Style="{StaticResource Caption13}" />
+                                    <views:SyncStatusBadge
+                                        State="{Binding Status}"
+                                        Text="{Binding StatusText}"
+                                        ThemeStamp="{Binding Version, Source={x:Static theming:ThemeState.Instance}, x:DataType=theming:ThemeState}"
+                                        HorizontalOptions="Start" />
+                                    <!-- progress bar — only during a run; fed by the live run feed-->
+                                    <ProgressBar
+                                        Progress="{Binding Progress}"
+                                        ProgressColor="{DynamicResource Primary}"
+                                        HeightRequest="{x:Static tok:DesignTokens.Space4}"
+                                        IsVisible="{Binding IsSyncing}" />
+                                    <Label
+                                        Text="{Binding ProgressText}"
+                                        Style="{StaticResource Caption13}"
+                                        TextColor="{DynamicResource TextSecondary}"
+                                        IsVisible="{Binding IsSyncing}" />
+                                </VerticalStackLayout>
+                            </Border>
+                            <Button
+                                BackgroundColor="Transparent"
+                                Margin="{StaticResource CardBottomMargin}"
+                                tok:PressRipple.Enabled="True"
+                                Command="{Binding TapCommand}"
+                                CommandParameter="{Binding .}"
+                                SemanticProperties.Description="{Binding SemanticDescription}">
+                                <!-- long-press => native context menu (FlyoutBase.ContextFlyout, Android)-->
+                                <FlyoutBase.ContextFlyout>
+                                    <MenuFlyout>
+                                        <MenuFlyoutItem
+                                            Text="{Binding MenuPauseLabel}"
+                                            Command="{Binding PauseCommand}"
+                                            CommandParameter="{Binding .}" />
+                                        <MenuFlyoutItem
+                                            Text="{x:Static res:AppStrings.SyncNowAction}"
+                                            Command="{Binding SyncNowCommand}"
+                                            CommandParameter="{Binding .}" />
+                                        <MenuFlyoutItem
+                                            Text="{x:Static res:AppStrings.CardActionDelete}"
+                                            Command="{Binding DeleteCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    </MenuFlyout>
+                                </FlyoutBase.ContextFlyout>
+                            </Button>
+                            <!-- the glyph sits flush with the card's 16dp inset (like the text
+                                 on the left); the 48dp box around it is invisible touch margin -->
+                            <Grid
+                                Padding="{x:Static tok:DesignTokens.Space16}"
+                                HorizontalOptions="End"
+                                VerticalOptions="Start">
+                                <Grid
+                                    WidthRequest="{x:Static tok:DesignTokens.TouchTargetAndroid}"
+                                    HeightRequest="{x:Static tok:DesignTokens.TouchTargetAndroid}"
+                                    SemanticProperties.Description="{x:Static res:AppStrings.CardActionMenu}">
+                                    <Grid.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding MenuCommand}" CommandParameter="{Binding .}" />
+                                    </Grid.GestureRecognizers>
+                                    <Label
+                                        Text="{x:Static tok:GlyphMapping.MoreVert}"
+                                        Style="{StaticResource IconGlyph24}"
+                                        TextColor="{DynamicResource TextSecondary}"
+                                        HorizontalOptions="End"
+                                        VerticalOptions="Center"
+                                        tok:A11y.IsDecorative="True" />
                                 </Grid>
-                                <Label Text="{Binding LocalSummary}" Style="{StaticResource Caption13}" />
-                                <views:SyncStatusBadge
-                                    State="{Binding Status}"
-                                    Text="{Binding StatusText}"
-                                    ThemeStamp="{Binding Version, Source={x:Static theming:ThemeState.Instance}, x:DataType=theming:ThemeState}"
-                                    HorizontalOptions="Start" />
-                                <!-- progress bar — only during a run; fed by the live run feed-->
-                                <ProgressBar
-                                    Progress="{Binding Progress}"
-                                    ProgressColor="{DynamicResource Primary}"
-                                    HeightRequest="{x:Static tok:DesignTokens.Space4}"
-                                    IsVisible="{Binding IsSyncing}" />
-                                <Label
-                                    Text="{Binding ProgressText}"
-                                    Style="{StaticResource Caption13}"
-                                    TextColor="{DynamicResource TextSecondary}"
-                                    IsVisible="{Binding IsSyncing}" />
-                            </VerticalStackLayout>
-                        </Border>
+                            </Grid>
+                        </Grid>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
 
@@ -164,6 +184,13 @@
                             HorizontalOptions="Center" />
                     </VerticalStackLayout>
                 </CollectionView.EmptyView>
+                <!-- scroll clearance: the last card ends a FAB above the screen edge, never under it-->
+                <CollectionView.Footer>
+                    <BoxView
+                        HeightRequest="{x:Static tok:DesignTokens.FabClearance}"
+                        Color="Transparent"
+                        tok:A11y.IsDecorative="True" />
+                </CollectionView.Footer>
             </CollectionView>
         </RefreshView>
 

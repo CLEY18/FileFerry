@@ -56,6 +56,12 @@ public static class DesignTokens
 
     public const double FabMargin = Space16;
 
+    /// <summary>
+    /// Bottom clearance full-height lists give their scroll content so the last card
+    /// scrolls free of the FAB (its size plus its edge margin).
+    /// </summary>
+    public const double FabClearance = FabSize + FabMargin;
+
     public const double FabRadius = FabSize / 2;
 
     /// <summary>
@@ -90,12 +96,7 @@ public static class DesignTokens
     public const double RadiusPill = 999;
 
     /// <summary>
-    /// Icons in lists/buttons.
-    /// </summary>
-    public const double IconSmall = 20;
-
-    /// <summary>
-    /// Icons in dialogs/empty states.
+    /// Icons: list glyphs, buttons, chips, status badges - the floor for a meaningful glyph.
     /// </summary>
     public const double IconMedium = 24;
 

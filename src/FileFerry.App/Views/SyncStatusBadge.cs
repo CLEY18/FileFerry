@@ -42,17 +42,14 @@ public sealed class SyncStatusBadge : ContentView
         _glyph = new Label
         {
             FontFamily = GlyphMapping.FontFamily,
-            FontSize = DesignTokens.IconSmall,
+            FontSize = DesignTokens.IconMedium,
             VerticalTextAlignment = TextAlignment.Center,
         };
         // beside the status word the glyph is decoration: a reader must not speak its codepoint
         A11y.SetIsDecorative(_glyph, true);
-        _label = new Label
-        {
-            FontSize = 13,
-            LineHeight = 1.3,
-            VerticalTextAlignment = TextAlignment.Center,
-        };
+        // the caption role carries the size and leading; the literal here would drift from the type system
+        _label = new Label { VerticalTextAlignment = TextAlignment.Center };
+        _label.SetDynamicResource(StyleProperty, "ChipLabel");
         _border = new Border
         {
             StrokeThickness = 0,

@@ -243,6 +243,12 @@ public static class AppStrings
     public static string WizardUp => Get();
 
     /// <summary>
+    /// Empty state of the step 1 folder list: the opened folder has no subfolders, the primary
+    /// action still applies to it.
+    /// </summary>
+    public static string WizardFoldersEmpty => Get();
+
+    /// <summary>
     /// Primary action of step 1 (verb-as-button).
     /// </summary>
     public static string WizardChooseThisFolder => Get();

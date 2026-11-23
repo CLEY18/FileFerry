@@ -31,6 +31,13 @@ public static class MauiProgram
             .ConfigureFonts(fonts =>
                 fonts.AddFont("MaterialSymbolsOutlined.ttf", GlyphMapping.FontFamily)); // icons 
 
+#if ANDROID
+        // tappable rows/chips draw the platform pressed highlight; the stock container never
+        // enters the pressed state under the framework gesture pipeline, so the view gets its handler
+        builder.ConfigureMauiHandlers(handlers =>
+            handlers.AddHandler<Views.PressableBorder, PressableBorderHandler>());
+#endif
+
         // UI services (the port is declared by its consumer — App).
         builder.Services.AddSingleton<INavigationService, ShellNavigationService>();
         builder.Services.AddSingleton<IThemePaletteSource, AndroidThemePalette>();

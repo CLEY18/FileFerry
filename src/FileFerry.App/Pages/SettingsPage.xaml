@@ -45,7 +45,7 @@
                                 <HorizontalStackLayout Spacing="{x:Static tok:DesignTokens.Space4}">
                                     <Label
                                         Text="{x:Static tok:GlyphMapping.CheckCircle}"
-                                        Style="{StaticResource IconGlyph20}"
+                                        Style="{StaticResource IconGlyph24}"
                                         VerticalOptions="Center"
                                         tok:A11y.IsDecorative="True">
                                         <Label.TextColor>
@@ -68,7 +68,7 @@
                                     </Label>
                                     <BoxView
                                         Color="Transparent"
-                                        WidthRequest="{x:Static tok:DesignTokens.IconSmall}"
+                                        WidthRequest="{x:Static tok:DesignTokens.IconMedium}"
                                         tok:A11y.IsDecorative="True" />
                                 </HorizontalStackLayout>
                             </views:PressableBorder>
@@ -79,13 +79,13 @@
 
             <!-- defaults for new pairs-->
             <VerticalStackLayout Spacing="{x:Static tok:DesignTokens.Space8}">
-                <Border BackgroundColor="{DynamicResource Surface}" Padding="{x:Static tok:DesignTokens.Space16}">
-                    <Border.StrokeShape>
+                <views:PressableBorder BackgroundColor="{DynamicResource Surface}" Padding="{x:Static tok:DesignTokens.Space16}">
+                    <views:PressableBorder.StrokeShape>
                         <RoundRectangle CornerRadius="{x:Static tok:DesignTokens.RadiusControl}" />
-                    </Border.StrokeShape>
-                    <Border.GestureRecognizers>
+                    </views:PressableBorder.StrokeShape>
+                    <views:PressableBorder.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding ChangeDefaultIntervalCommand}" />
-                    </Border.GestureRecognizers>
+                    </views:PressableBorder.GestureRecognizers>
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{x:Static tok:DesignTokens.Space8}">
                         <Label Text="{x:Static res:AppStrings.SettingsDefaultIntervalTitle}" Style="{StaticResource Body15}" />
                         <Label
@@ -95,7 +95,7 @@
                             TextColor="{DynamicResource PrimaryText}"
                             VerticalOptions="Center" />
                     </Grid>
-                </Border>
+                </views:PressableBorder>
                 <Border BackgroundColor="{DynamicResource Surface}" Padding="{x:Static tok:DesignTokens.Space16}">
                     <Border.StrokeShape>
                         <RoundRectangle CornerRadius="{x:Static tok:DesignTokens.RadiusControl}" />

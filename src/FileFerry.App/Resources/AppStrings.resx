@@ -50,6 +50,7 @@
   <data name="WizardStepOf" xml:space="preserve"><value>Step {0} of 3</value></data>
   <data name="WizardUp" xml:space="preserve"><value>Up</value></data>
   <data name="WizardChooseThisFolder" xml:space="preserve"><value>Choose this folder</value></data>
+  <data name="WizardFoldersEmpty" xml:space="preserve"><value>No subfolders here. "Choose this folder" still syncs this folder as it is.</value></data>
   <data name="WizardNext" xml:space="preserve"><value>Next</value></data>
   <data name="WizardCreatePair" xml:space="preserve"><value>Create pair</value></data>
   <data name="WizardNoAccountTitle" xml:space="preserve"><value>No server connected</value></data>
@@ -171,7 +172,7 @@
   <data name="EventResumeStopped" xml:space="preserve"><value>Resuming the interrupted sync · journal steps: {0}</value></data>
   <data name="EventConflictDetected" xml:space="preserve"><value>Conflict {0} — both versions kept</value></data>
   <data name="EventPlanSummary" xml:space="preserve"><value>Plan · operations: {0}</value></data>
-  <data name="EventAppliedBaseline" xml:space="preserve"><value>Applied {0} operations — reference state updated</value></data>
+  <data name="EventAppliedBaseline" xml:space="preserve"><value>Applied {0} operations — baseline updated</value></data>
   <data name="EventRunStopped" xml:space="preserve"><value>Sync stopped · {0} — applied changes are kept; the next sync replans</value></data>
   <data name="EventRunFailed" xml:space="preserve"><value>Sync failed · {0}</value></data>
   <data name="EventFailScope" xml:space="preserve"><value>Pair folder unavailable · {0}</value></data>
