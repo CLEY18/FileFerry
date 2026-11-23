@@ -105,6 +105,23 @@ public sealed class MultistatusParserTests
     }
 
     [Fact]
+    public void Parse_HrefOfNeighbouringAccount_FailsWithUnknown()
+    {
+        // the prefix trims to ".../anna": ".../anna2/..." is somebody else's tree and may not
+        // join this pair's namespace just because the two names start alike
+        var xml = $$"""
+            <d:multistatus xmlns:d="DAV:"><d:response><d:href>/remote.php/dav/files/anna2/x.txt</d:href>
+            <d:propstat><d:prop><d:getetag>"n1"</d:getetag></d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response></d:multistatus>
+            """;
+
+        var parsed = MultistatusParser.Parse(xml, Prefix);
+
+        Assert.True(parsed.IsFailure);
+        Assert.Equal(ErrorKind.Unknown, parsed.Error.Kind);
+    }
+
+    [Fact]
     public void Parse_MalformedXml_FailsWithUnknown()
     {
         var parsed = MultistatusParser.Parse("<d:multistatus><d:response>", Prefix);

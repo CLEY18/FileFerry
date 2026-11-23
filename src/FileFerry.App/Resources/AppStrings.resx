@@ -16,6 +16,10 @@
   <data name="WelcomeManualIp" xml:space="preserve"><value>Enter the IP manually</value></data>
   <data name="SettingsTitle" xml:space="preserve"><value>Settings</value></data>
   <data name="ErrorHostInvalid" xml:space="preserve"><value>The server address doesn't look valid. Check it and try again.</value></data>
+  <data name="WelcomeCleartextTitle" xml:space="preserve"><value>Connect without encryption?</value></data>
+  <data name="WelcomeCleartextBody" xml:space="preserve"><value>Your sign-in and every sync run would cross the network in plain text. Continue only on a network you trust.</value></data>
+  <data name="WelcomeHttpsFailedBody" xml:space="preserve"><value>The server didn't answer over HTTPS. Try without encryption? Your sign-in and every sync run would then cross the network in plain text — continue only on a network you trust.</value></data>
+  <data name="WelcomeCleartextAccept" xml:space="preserve"><value>Connect unencrypted</value></data>
   <data name="ErrorSessionExpired" xml:space="preserve"><value>The sign-in session has expired. Start connecting again.</value></data>
   <data name="HelpTitle" xml:space="preserve"><value>Need help?</value></data>
   <data name="HelpBody" xml:space="preserve"><value>If the server isn't found by name, enable private DNS in your Wi-Fi settings or enter the address manually — as an IP, e.g. 192.0.2.1.</value></data>
@@ -34,6 +38,7 @@
   <data name="StatusErrorChip" xml:space="preserve"><value>Error</value></data>
   <data name="StatusOffline" xml:space="preserve"><value>Server unavailable</value></data>
   <data name="AccountChipEmpty" xml:space="preserve"><value>No server connected</value></data>
+  <data name="AccountInsecure" xml:space="preserve"><value>Unencrypted</value></data>
   <data name="PairCardLocalPrefix" xml:space="preserve"><value>Device files</value></data>
   <data name="PairListAdd" xml:space="preserve"><value>Add a pair</value></data>
   <data name="CardActionPause" xml:space="preserve"><value>Pause</value></data>

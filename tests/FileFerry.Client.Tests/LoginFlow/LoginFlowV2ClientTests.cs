@@ -103,6 +103,52 @@ public sealed class LoginFlowV2ClientTests
     }
 
     [Fact]
+    public async Task Start_LoginUrlOnForeignHost_RefusesBeforeAnyWebViewOpens()
+    {
+        // the password screen must open on the host the user typed: a login URL from elsewhere
+        // is a lying server or a rewriting attacker in flight — the flow stops at the init
+        var foreign = InitFixture.Replace(
+            "https://cloud.example/login/v2/flow", "https://evil.example/login/v2/flow");
+        var flow = new LoginFlowV2Client(new HttpClient(new ScriptedHandler(
+            Json(HttpStatusCode.OK, foreign))));
+
+        var error = (await flow.StartAsync(ServerBase, CT)).Error;
+
+        Assert.Equal(ErrorKind.Unknown, error.Kind);
+        Assert.DoesNotContain("evil.example", error.Message, StringComparison.Ordinal); // the line names the trusted host, not the foreign one
+    }
+
+    [Fact]
+    public async Task Start_PollEndpointOnForeignHost_Refuses()
+    {
+        // the poll would carry the secret token away: an off-origin endpoint is refused the same way
+        var foreign = InitFixture.Replace(
+            "https://cloud.example/index.php/login/v2/poll", "https://evil.example/index.php/login/v2/poll");
+        var flow = new LoginFlowV2Client(new HttpClient(new ScriptedHandler(
+            Json(HttpStatusCode.OK, foreign))));
+
+        var error = (await flow.StartAsync(ServerBase, CT)).Error;
+
+        Assert.Equal(ErrorKind.Unknown, error.Kind);
+        Assert.DoesNotContain(PollToken, error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Poll_CredentialsCarryTheEnteredBase_NotAServerUrl()
+    {
+        // the account's server is the address the user entered; a "server" field pointing
+        // elsewhere decorates the name but never relocates the account
+        var flow = new LoginFlowV2Client(new HttpClient(new ScriptedHandler(
+            Json(HttpStatusCode.OK, PollApprovedFixture))));
+
+        var outcome = await flow.PollAsync(
+            Challenge() with { ServerBaseUrl = new Uri("https://cloud.example/cloud/") }, CT);
+
+        outcome.AssertOk();
+        Assert.Equal("https://cloud.example/cloud/", outcome.Value.Credentials!.ServerBaseUrl.ToString());
+    }
+
+    [Fact]
     public async Task Poll_WhileUserDecides_ReturnsPending()
     {
         // the poll endpoint answers 404 until the user has consented — that is Pending, not an error
@@ -285,6 +331,7 @@ public sealed class LoginFlowV2ClientTests
     /// Challenge stitched from the same fixture pair.
     /// </summary>
     private static LoginChallenge Challenge() => new(
+        ServerBase,
         new Uri("https://cloud.example/login/v2/flow?token=4TsAHHGhvH5RChDyV9zBbD6WdkEqeP-p"),
         new Uri("https://cloud.example/index.php/login/v2/poll"),
         PollToken,

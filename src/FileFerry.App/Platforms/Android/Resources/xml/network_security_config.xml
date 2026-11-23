@@ -3,6 +3,9 @@
   Cleartext HTTP is allowed only as a domain exception, for hosts the user typed in.
   A static NSC cannot do runtime lists: use the narrowest static approximation,
   private mDNS/local suffixes. Public traffic stays HTTPS-only (base-config = false).
+  Scope note: the NSC governs the Java network stack (the login client, the WebView) only -
+  the managed WebDAV stack reads none of this; its cleartext gate is the app-level
+  confirmation on the welcome screen, and both stacks then use only the stored account scheme.
 -->
 <network-security-config>
     <base-config cleartextTrafficPermitted="false" />

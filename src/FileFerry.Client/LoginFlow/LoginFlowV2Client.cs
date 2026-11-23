@@ -15,7 +15,8 @@ namespace FileFerry.Client.LoginFlow;
 /// until the user approves in the browser, poll returns <b>404</b> ("still waiting"),
 /// after consent — exactly one 200 with <c>loginName</c> + <c>appPassword</c>
 /// ("server" in that response is a URL string). 400 is tolerated as pending on legacy builds.
-/// Secrets (poll token, app password) never reach <c>SyncError</c> messages.
+/// The login/poll URLs the response carries must share the origin of the entered address or the
+/// flow refuses to run. Secrets (poll token, app password) never reach <c>SyncError</c> messages.
 /// </summary>
 public sealed class LoginFlowV2Client : ILoginFlow
 {
@@ -67,9 +68,27 @@ public sealed class LoginFlowV2Client : ILoginFlow
                     ErrorKind.Unknown, $"{initUrl.Host}: the login/v2 response does not look like Nextcloud (poll/login missing)."));
             }
 
+            if (!Uri.TryCreate(init.Login, UriKind.Absolute, out var loginUrl)
+                || !Uri.TryCreate(init.Poll.Endpoint, UriKind.Absolute, out var pollEndpoint))
+            {
+                return Result<LoginChallenge, SyncError>.Failure(SyncError.Of(
+                    ErrorKind.Unknown, $"{initUrl.Host}: the login/v2 response carries a malformed login or poll URL."));
+            }
+
+            // The sign-in must stay on the host the user typed: a response that points the WebView
+            // or the poll somewhere else is either a malicious server or an attacker rewriting it
+            // in flight — either way the flow stops before the password screen would open.
+            if (!SameOrigin(loginUrl, initUrl) || !SameOrigin(pollEndpoint, initUrl))
+            {
+                return Result<LoginChallenge, SyncError>.Failure(SyncError.Of(
+                    ErrorKind.Unknown,
+                    $"{initUrl.Host}: the login/v2 response points the sign-in at a foreign address — connection refused."));
+            }
+
             return Result<LoginChallenge, SyncError>.Success(new LoginChallenge(
-                new Uri(init.Login),
-                new Uri(init.Poll.Endpoint),
+                Normalize(serverBaseUrl),
+                loginUrl,
+                pollEndpoint,
                 init.Poll.Token,
                 init.Server?.Name ?? initUrl.Host,
                 init.Server?.Version ?? string.Empty));
@@ -109,7 +128,7 @@ public sealed class LoginFlowV2Client : ILoginFlow
             }
 
             return Result<LoginPollOutcome, SyncError>.Success(LoginPollOutcome.Authorized(new LoginCredentials(
-                ServerOf(challenge),
+                challenge.ServerBaseUrl,
                 poll.LoginName,
                 poll.AppPassword,
                 ServerNameOf(poll.Server) ?? challenge.ServerName,
@@ -177,17 +196,13 @@ public sealed class LoginFlowV2Client : ILoginFlow
     }
 
     /// <summary>
-    /// Options define the base URL only via <see cref="StartAsync"/> — here we rebuild the
-    /// host prefix from the poll endpoint.
+    /// Same scheme + host + port. The account's server is only ever the address the user
+    /// entered; the login/poll URLs from the response must live on it or the flow refuses to run.
     /// </summary>
-    private static Uri ServerOf(LoginChallenge challenge)
-    {
-        var endpoint = challenge.PollEndpoint;
-        var path = endpoint.AbsolutePath;
-        var marker = "/index.php/login/v2/poll";
-        var basePath = path.EndsWith(marker, StringComparison.Ordinal) ? path[..^marker.Length] : string.Empty;
-        return new UriBuilder(endpoint) { Path = string.IsNullOrEmpty(basePath) ? "/" : basePath, Query = string.Empty }.Uri;
-    }
+    private static bool SameOrigin(Uri candidate, Uri expected) =>
+        candidate.Scheme.Equals(expected.Scheme, StringComparison.OrdinalIgnoreCase)
+        && candidate.Host.Equals(expected.Host, StringComparison.OrdinalIgnoreCase)
+        && candidate.Port == expected.Port;
 
     private static Uri Normalize(Uri serverBaseUrl)
         => new(serverBaseUrl.GetLeftPart(UriPartial.Path).TrimEnd('/') + "/");

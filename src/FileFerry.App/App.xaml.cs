@@ -24,14 +24,9 @@ public sealed partial class App : Application
         AndroidAppBar.Attach(theme); // the app bar lives outside the resource tree: it repaints on the event
         theme.Initialize();
         var shell = new AppShell();
-        shell.Loaded += async (_, _) =>
-        {
-            AndroidAppBar.Repaint(); // the toolbar exists only now: paint it with the stored palette
-            await StartupGateAsync();
-        };
-        // MAUI re-applies the default toolbar appearance for every navigation — the token paint
-        // must land after that pass, or the header falls back to the framework tone.
-        shell.Navigated += (_, _) => AndroidAppBar.RepaintAfterNavigation();
+        shell.Loaded += async (_, _) => await StartupGateAsync();
+        // (toolbar and status strip repaint with the stored palette from the shell's own
+        // Loaded/Navigated wiring - see AppShell)
         return new Window(shell);
     }
 

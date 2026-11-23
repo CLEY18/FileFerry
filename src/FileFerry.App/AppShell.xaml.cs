@@ -19,6 +19,13 @@ public sealed partial class AppShell : Shell
         Routing.RegisterRoute(StashRoute, typeof(Pages.StashPage));
         Routing.RegisterRoute(AboutRoute, typeof(Pages.AboutPage));
         Routing.RegisterRoute(PrivacyRoute, typeof(PrivacyPage));
+
+        // The shell paints its own chrome: it is replaced wholesale on logout, and a repaint
+        // wired to only the first instance leaves every later one with the framework's default
+        // status strip and drawer edge. MAUI re-applies that default on every navigation, so
+        // the token paint must land after each pass; Loaded paints the toolbar once it exists.
+        Loaded += (_, _) => AndroidAppBar.Repaint();
+        Navigated += (_, _) => AndroidAppBar.RepaintAfterNavigation();
     }
 
     /// <summary>

@@ -82,13 +82,21 @@ public static class MultistatusParser
 
         var decoded = Uri.UnescapeDataString(trimmed);
         var prefix = hrefPrefix.TrimEnd('/');
-        if (!decoded.StartsWith(prefix, StringComparison.Ordinal))
+        if (decoded == prefix)
+        {
+            path = RemotePath.Root; // the pair's root entry itself
+            return true;
+        }
+
+        // a segment boundary, not a bare prefix: an ".../anna2/x" is a neighbouring account,
+        // not the "anna" this pair owns, however it starts
+        if (!decoded.StartsWith(prefix + '/', StringComparison.Ordinal))
         {
             path = RemotePath.Root;
             return false;
         }
 
-        path = RemotePath.ParseDecoded(decoded[prefix.Length..].TrimStart('/'));
+        path = RemotePath.ParseDecoded(decoded[(prefix.Length + 1)..].TrimStart('/'));
         return true;
     }
 

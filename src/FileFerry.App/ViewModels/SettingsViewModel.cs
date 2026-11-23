@@ -211,8 +211,10 @@ public sealed class SettingsViewModel : Mvvm.ObservableObject
 
         await _secrets.RemoveAsync(account.TokenRef, ct);
         await _accounts.DeleteAsync(account.Id, ct);
-        await Application.Current!.Dispatcher.DispatchAsync(() =>
-            Application.Current.Windows[0].Page = new AppShell());
+        // The stack resets to the pair list - recreating the Shell wholesale would tear down
+        // native views the render thread may still be drawing (a fatal hwui abort). The list
+        // finds no account and lands the user on the welcome screen itself.
+        await _navigation.GoAsync(AppShell.PairListRoute, ct);
     }
 
     /// <summary>

@@ -41,6 +41,23 @@
                     Text="{Binding AccountLabel}"
                     Style="{StaticResource Caption13}"
                     VerticalOptions="Center" />
+                <!-- cleartext account: the warning rides the chip itself, not a one-off dialog -->
+                <HorizontalStackLayout
+                    Spacing="{x:Static tok:DesignTokens.Space4}"
+                    VerticalOptions="Center"
+                    IsVisible="{Binding IsInsecure}">
+                    <Label
+                        Text="{x:Static tok:GlyphMapping.Error}"
+                        Style="{StaticResource IconGlyph24}"
+                        TextColor="{DynamicResource StatusWarning}"
+                        VerticalOptions="Center"
+                        tok:A11y.IsDecorative="True" />
+                    <Label
+                        Text="{x:Static res:AppStrings.AccountInsecure}"
+                        Style="{StaticResource Caption13}"
+                        TextColor="{DynamicResource StatusWarning}"
+                        VerticalOptions="Center" />
+                </HorizontalStackLayout>
             </HorizontalStackLayout>
         </HorizontalStackLayout>
 

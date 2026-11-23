@@ -120,7 +120,12 @@ public sealed class WelcomeViewModel : Mvvm.ObservableObject
         IsBusy = true;
         try
         {
-            var started = await _loginFlow.StartAsync(baseUrl, ct);
+            var attempt = await ConnectWithConsentAsync(baseUrl, ServerUrl.HasExplicitScheme(Host), ct);
+            if (attempt is not { } started)
+            {
+                return; // the user declined an unencrypted connection — stay on the field, no error
+            }
+
             // The Client runs with ConfigureAwait(false) — continuations touch Shell only via the UI dispatcher.
             await Application.Current!.Dispatcher.DispatchAsync(() =>
             {
@@ -148,4 +153,39 @@ public sealed class WelcomeViewModel : Mvvm.ObservableObject
             });
         }
     }
+
+    /// <summary>
+    /// Flow start under the scheme rule: https runs silently; cleartext runs only on the
+    /// user's explicit yes — typed in full, or accepted after the encrypted attempt failed
+    /// on a bare address (a LAN server without TLS is common, and a dead field helps nobody).
+    /// Null — the user declined cleartext and nothing was attempted with it.
+    /// </summary>
+    private async Task<Core.Domain.Result<Core.Ports.LoginChallenge, Core.Domain.SyncError>?> ConnectWithConsentAsync(
+        Uri baseUrl, bool explicitScheme, CancellationToken ct)
+    {
+        if (baseUrl.Scheme == Uri.UriSchemeHttp
+            && !await ConfirmCleartextAsync(AppStrings.WelcomeCleartextBody, ct))
+        {
+            return null;
+        }
+
+        var started = await _loginFlow.StartAsync(baseUrl, ct);
+        if (started.IsFailure
+            && baseUrl.Scheme == Uri.UriSchemeHttps
+            && !explicitScheme
+            && started.Error.Kind is Core.Domain.ErrorKind.Network or Core.Domain.ErrorKind.ServerGone
+            && await ConfirmCleartextAsync(AppStrings.WelcomeHttpsFailedBody, ct))
+        {
+            return await _loginFlow.StartAsync(ServerUrl.WithScheme(baseUrl, Uri.UriSchemeHttp), ct);
+        }
+
+        return started;
+    }
+
+    /// <summary>
+    /// The one cleartext warning (its body names the occasion); true — connect unencrypted.
+    /// </summary>
+    private Task<bool> ConfirmCleartextAsync(string body, CancellationToken ct) =>
+        _dialogs.ConfirmAsync(
+            AppStrings.WelcomeCleartextTitle, body, AppStrings.WelcomeCleartextAccept, AppStrings.DialogCancel, ct);
 }

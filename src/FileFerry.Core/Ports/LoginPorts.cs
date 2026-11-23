@@ -7,12 +7,14 @@ namespace FileFerry.Core.Ports;
 /// and a token+endpoint pair for polling. <see cref="PollToken"/> is a secret: never into
 /// logs or messages (invariant); <see cref="ToString"/> is masked.
 /// </summary>
-/// <param name="LoginUrl">URL shown to the user (WebView / QR code).</param>
-/// <param name="PollEndpoint">URL to POST-poll for consent.</param>
+/// <param name="ServerBaseUrl">The base URL the user entered — the account's canonical server address;
+/// a server response never rewrites it, it only travels back inside the challenge.</param>
+/// <param name="LoginUrl">URL shown to the user (WebView / QR code); same-origin as <see cref="ServerBaseUrl"/>.</param>
+/// <param name="PollEndpoint">URL to POST-poll for consent; same-origin as <see cref="ServerBaseUrl"/>.</param>
 /// <param name="PollToken">Poll token (secret).</param>
 /// <param name="ServerName">Server name from the response ("Home", "Cloud @ home") — for the UI.</param>
 /// <param name="ServerVersion">Server version from the response — for diagnostics and the account row.</param>
-public sealed record LoginChallenge(Uri LoginUrl, Uri PollEndpoint, string PollToken, string ServerName, string ServerVersion)
+public sealed record LoginChallenge(Uri ServerBaseUrl, Uri LoginUrl, Uri PollEndpoint, string PollToken, string ServerName, string ServerVersion)
 {
     /// <summary>
     /// Masked output: no token even in an accidental <c>{challenge}</c> in a log line.

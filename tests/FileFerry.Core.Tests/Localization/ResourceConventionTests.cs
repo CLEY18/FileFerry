@@ -31,7 +31,7 @@ public class ResourceConventionTests
     /// with no shorter everyday form. Anything else of Latin letters inside a foreign-script locale is
     /// an untranslated intruder, not a term.
     /// </summary>
-    private static readonly string[] AllowedLatinTokens = ["FileFerry", "Nextcloud", "GmbH", "IP", "DNS", "Wi-Fi", "LAN", "v1"];
+    private static readonly string[] AllowedLatinTokens = ["FileFerry", "Nextcloud", "GmbH", "IP", "DNS", "HTTPS", "Wi-Fi", "LAN", "v1"];
 
     private static readonly HashSet<string> XmlFlavors =
         new(StringComparer.OrdinalIgnoreCase) { ".xaml", ".xml", ".resx", ".csproj", ".props" };

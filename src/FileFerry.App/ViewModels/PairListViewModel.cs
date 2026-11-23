@@ -23,6 +23,7 @@ public sealed class PairListViewModel : Mvvm.ObservableObject
     private readonly SyncStatusService _status;
     private readonly HashSet<Guid> _running = []; // pairs with an active run per the hub's last event
     private string _accountLabel = AppStrings.AccountChipEmpty;
+    private bool _isInsecure;
 
     private bool _gatePending;
     private bool _isRefreshing;
@@ -83,6 +84,16 @@ public sealed class PairListViewModel : Mvvm.ObservableObject
     {
         get => _accountLabel;
         private set => Set(ref _accountLabel, value);
+    }
+
+    /// <summary>
+    /// The account is reachable only in cleartext — the header wears the "unencrypted" badge
+    /// (a LAN server without TLS is legitimate, but the user must see the price every screen).
+    /// </summary>
+    public bool IsInsecure
+    {
+        get => _isInsecure;
+        private set => Set(ref _isInsecure, value);
     }
 
     /// <summary>
@@ -251,9 +262,11 @@ public sealed class PairListViewModel : Mvvm.ObservableObject
 
         await Application.Current!.Dispatcher.DispatchAsync(async () =>
         {
+            var accountUri = account is null ? null : new Uri(account.BaseUrl);
             AccountLabel = account is null
                 ? AppStrings.AccountChipEmpty
-                : $"{account.UserName}@{new Uri(account.BaseUrl).Host}";
+                : $"{account.UserName}@{accountUri!.Host}";
+            IsInsecure = accountUri?.Scheme == Uri.UriSchemeHttp;
             Items.Clear();
             foreach (var item in items)
             {

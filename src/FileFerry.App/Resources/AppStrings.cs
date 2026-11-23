@@ -77,6 +77,21 @@ public static class AppStrings
     public static string ErrorHostInvalid => Get();
 
     /// <summary>
+    /// The one cleartext warning on the welcome screen (typed http, or https failed on a bare
+    /// address); the body differs, the question and the accept are the same.
+    /// </summary>
+    public static string WelcomeCleartextTitle => Get();
+
+    /// <summary>Body of the warning for an address the user typed in as http.</summary>
+    public static string WelcomeCleartextBody => Get();
+
+    /// <summary>Body of the warning after the encrypted attempt to a bare address failed.</summary>
+    public static string WelcomeHttpsFailedBody => Get();
+
+    /// <summary>Accept of the cleartext warning (the danger named out loud, no euphemism).</summary>
+    public static string WelcomeCleartextAccept => Get();
+
+    /// <summary>
     /// WebView screen with no active flow session (Activity restart etc.).
     /// </summary>
     public static string ErrorSessionExpired => Get();
@@ -165,6 +180,9 @@ public static class AppStrings
     /// Header DNS chip on the pair list when there is no account at all.
     /// </summary>
     public static string AccountChipEmpty => Get();
+
+    /// <summary>Header badge: this account's server is reached without TLS.</summary>
+    public static string AccountInsecure => Get();
 
     /// <summary>
     /// Prefix of the local line of PairCard ("Device files › …").

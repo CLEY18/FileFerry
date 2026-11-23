@@ -16,6 +16,10 @@
   <data name="WelcomeManualIp" xml:space="preserve"><value>Ввести IP вручну</value></data>
   <data name="SettingsTitle" xml:space="preserve"><value>Налаштування</value></data>
   <data name="ErrorHostInvalid" xml:space="preserve"><value>Адреса сервера виглядає недійсною. Перевірте її й спробуйте ще раз.</value></data>
+  <data name="WelcomeCleartextTitle" xml:space="preserve"><value>Під'єднатися без шифрування?</value></data>
+  <data name="WelcomeCleartextBody" xml:space="preserve"><value>Ваш вхід і кожен прогін синхронізації йтимуть мережею відкритим текстом. Продовжуйте лише в мережі, якій довіряєте.</value></data>
+  <data name="WelcomeHttpsFailedBody" xml:space="preserve"><value>Сервер не відповів через HTTPS. Спробувати без шифрування? Вхід і кожен прогін синхронізації йтимуть мережею відкритим текстом — продовжуйте лише в мережі, якій довіряєте.</value></data>
+  <data name="WelcomeCleartextAccept" xml:space="preserve"><value>Під'єднатися без шифрування</value></data>
   <data name="ErrorSessionExpired" xml:space="preserve"><value>Сесію входу вичерпано. Почніть підключення спочатку.</value></data>
   <data name="HelpTitle" xml:space="preserve"><value>Потрібна допомога?</value></data>
   <data name="HelpBody" xml:space="preserve"><value>Якщо сервер не знаходиться за іменем, увімкніть приватний DNS у Wi-Fi або введіть адресу вручну — у форматі IP, наприклад 192.0.2.1.</value></data>
@@ -34,6 +38,7 @@
   <data name="StatusErrorChip" xml:space="preserve"><value>Помилка</value></data>
   <data name="StatusOffline" xml:space="preserve"><value>Сервер недоступний</value></data>
   <data name="AccountChipEmpty" xml:space="preserve"><value>Сервер не підключено</value></data>
+  <data name="AccountInsecure" xml:space="preserve"><value>Без шифрування</value></data>
   <data name="PairCardLocalPrefix" xml:space="preserve"><value>Файли пристрою</value></data>
   <data name="PairListAdd" xml:space="preserve"><value>Додати пару</value></data>
   <data name="CardActionPause" xml:space="preserve"><value>Пауза</value></data>
