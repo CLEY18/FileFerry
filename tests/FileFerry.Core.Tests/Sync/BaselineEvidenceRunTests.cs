@@ -218,6 +218,80 @@ public sealed class BaselineEvidenceRunTests
         Assert.Contains(await RemoteNamesAsync(), static n => n.Contains("conflicted copy"));
     }
 
+    [Fact]
+    public async Task WithHasher_LocalRename_MovesWithoutTrashOrReupload()
+    {
+        // the device renamed the file: the baseline row carries the server's evidence, the device
+        // arrives with a new name and nothing to prove identity. The run hashes the rename shape
+        // and moves the file on the server — no buffer copy, no delete, no re-upload of the same bytes
+        await SeedRemoteAsync("big.bin", "PAYLOAD-PAYLOAD");
+        await _state.ReplaceBaselineAsync(
+            _pair.Id,
+            [new FileSnapshot(RelativePath.Parse("big.bin"), EntryKind.File, 15, ETag: await RemoteEtagAsync("big.bin"))],
+            CancellationToken.None);
+        // the server's moment and the device's moment never coincide in the field —
+        // the moved row's evidence must not inherit one side's bare mtime and call the other "changed"
+        _clock.Advance(TimeSpan.FromMinutes(3));
+        await SeedLocalAsync("moved.bin", "PAYLOAD-PAYLOAD");
+
+        var result = await Engine(hasher: new Sha256HashProvider()).RunAsync(_pair.Id, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, result.Value.Planned); // one MOVE and nothing else
+        Assert.Equal(0, result.Value.Conflicts);
+        Assert.Contains("moved.bin", await RemoteNamesAsync());
+        Assert.DoesNotContain("big.bin", await RemoteNamesAsync());
+        var locals = (await _local.SnapshotAsync(CancellationToken.None)).Value;
+        Assert.DoesNotContain(locals, static s => s.Path.StartsWith(RelativePath.Parse("FileFerry Trash")));
+        Assert.Contains("moved.bin", await LocalNamesAsync());
+        Assert.DoesNotContain("big.bin", await LocalNamesAsync());
+
+        var second = await Engine(hasher: new Sha256HashProvider()).RunAsync(_pair.Id, CancellationToken.None);
+        Assert.Equal(0, second.Value.Planned); // the healed row holds the evidence — no churn after
+    }
+
+    [Fact]
+    public async Task WithHasher_LocalRenameWithEditedContent_IsNotAMove()
+    {
+        // the mirror of trust: the hashing pass did its job and said "different" — an edited
+        // rename is not a move: the stale server row goes the honest deletion road (buffer first),
+        // the edited content travels up
+        await SeedRemoteAsync("doc.txt", "AAAA");
+        await _state.ReplaceBaselineAsync(
+            _pair.Id,
+            [new FileSnapshot(RelativePath.Parse("doc.txt"), EntryKind.File, 4, ETag: await RemoteEtagAsync("doc.txt"))],
+            CancellationToken.None);
+        await SeedLocalAsync("doc-new.txt", "BBBB"); // same size, other bytes — exactly what the hash decides
+
+        var result = await Engine(hasher: new Sha256HashProvider()).RunAsync(_pair.Id, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(0, result.Value.Conflicts);
+        Assert.DoesNotContain("doc.txt", await RemoteNamesAsync());
+        Assert.Contains("doc-new.txt", await RemoteNamesAsync());
+        var locals = (await _local.SnapshotAsync(CancellationToken.None)).Value;
+        Assert.Contains(locals, static s => s.Path.StartsWith(RelativePath.Parse("FileFerry Trash"))); // the old version is kept
+    }
+
+    [Fact]
+    public async Task WithHasher_NoRenameInSameSizeWindow_HashesNothing()
+    {
+        // the pass pays only for rename shapes: a vanished baseline row and a new device row of
+        // the same size. Unrelated content asks the hasher for nothing
+        await SeedRemoteAsync("big.bin", "XXXXXXXXXX");
+        await _state.ReplaceBaselineAsync(
+            _pair.Id,
+            [new FileSnapshot(RelativePath.Parse("big.bin"), EntryKind.File, 10, ETag: await RemoteEtagAsync("big.bin"))],
+            CancellationToken.None);
+        await SeedLocalAsync("small.txt", "ab"); // different size — no window, no reads
+        var hasher = new CountingHashProvider(new Sha256HashProvider());
+
+        var result = await Engine(hasher: hasher).RunAsync(_pair.Id, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(0, hasher.Count);
+    }
+
     // ── mechanics ────────────────────────────────────────────────────────────────
 
     private SyncRun Engine(IHashProvider? hasher = null) =>

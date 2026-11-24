@@ -199,6 +199,26 @@ public sealed class ScenarioCatalogTests
         Assert.Equal("b.txt", op.Path.ToString());
     }
 
+    /// <summary>
+    /// The real device shape of a rename: the new path carries a device row with no evidence at
+    /// all, and only the run's hashing pass over the rename shape can produce the shared proof —
+    /// the planner must read through that hash instead of deleting the bytes and uploading them back.
+    /// </summary>
+    [Fact]
+    public void Rename_OnDevice_WithHashedShape_PlansOneMove()
+    {
+        var plan = Plan(
+            local: [new FileSnapshot(RelativePath.Parse("b.txt"), EntryKind.File, 8, ContentHash: "h1")],
+            remote: [new FileSnapshot(RelativePath.Parse("a.txt"), EntryKind.File, 8, ETag: "e1", ContentHash: "h1")],
+            baseline: [new FileSnapshot(RelativePath.Parse("a.txt"), EntryKind.File, 8, ETag: "e1", ContentHash: "h1")]);
+
+        var op = Assert.Single(plan.Operations);
+        Assert.Equal(OperationKind.MoveRemote, op.Kind);
+        Assert.Equal("a.txt", op.SourcePath!.ToString());
+        Assert.Equal("b.txt", op.Path.ToString());
+        Assert.Empty(plan.Conflicts);
+    }
+
     [Fact]
     public void Rename_chain_orders_moves_target_freeing_first()
     {

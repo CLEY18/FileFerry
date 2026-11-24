@@ -159,59 +159,86 @@ public sealed class MergePlanner
         var baseline = context.Baseline;
         var changesByPath = pending.GroupBy(static c => c.Path).ToDictionary(static g => g.Key, static g => g.First());
 
-        // a baseline record "missing from the side" by the same content → candidate source; mirrored — candidate target
+        // a baseline record "missing from the side" → candidate source; mirrored — candidate target.
+        // Evidence may live in different spaces on the two rows (the server speaks ETag, the device
+        // only a content hash the hatch produced) — matching therefore compares rows pairwise,
+        // hash when both have one, server tag when both have one. Bare size never matches; the
+        // hatch only ever hashed rows inside the same-size window, so pairwise stays cheap.
         var sources = baseline
-            .Where(kv => !target.TryGetValue(kv.Key, out var t) || !kv.Value.SameContentAs(t))
-            .Where(kv => IdentityKey(kv.Value) is not null)
+            .Where(kv => (!target.TryGetValue(kv.Key, out var t) || !kv.Value.SameContentAs(t))
+                && !kv.Value.IsDirectory
+                && (kv.Value.ETag is not null || kv.Value.ContentHash is not null))
             .OrderBy(static kv => kv.Key)
             .ToList();
         var targets = target
-            .Where(kv => !baseline.TryGetValue(kv.Key, out var b) || !kv.Value.SameContentAs(b))
-            .Where(kv => IdentityKey(kv.Value) is not null)
+            .Where(kv => (!baseline.TryGetValue(kv.Key, out var b) || !kv.Value.SameContentAs(b))
+                && !kv.Value.IsDirectory
+                && (kv.Value.ETag is not null || kv.Value.ContentHash is not null))
             .OrderBy(static kv => kv.Key)
             .ToList();
 
-        var sourceByKey = sources
-            .GroupBy(kv => IdentityKey(kv.Value)!)
-            .Where(static g => g.Count() == 1)
-            .ToDictionary(static g => g.Key, static g => g.First(), StringComparer.Ordinal);
-        var targetByKey = targets
-            .GroupBy(kv => IdentityKey(kv.Value)!)
-            .Where(static g => g.Count() == 1)
-            .ToDictionary(static g => g.Key, static g => g.First(), StringComparer.Ordinal);
-
         var moves = new List<(RelativePath Old, RelativePath New, FileSnapshot After)>();
         var consumedPaths = new HashSet<RelativePath>();
-        foreach (var (oldPath, sourceEntry) in sources)
+
+        // per-source candidates: same size, shared evidence, the opposite side untouched at both
+        // paths (otherwise it's a conflict zone, not a rename), no Both-changed on either path
+        var claims = new List<(KeyValuePair<RelativePath, FileSnapshot> Source, KeyValuePair<RelativePath, FileSnapshot> Target)>();
+        foreach (var source in sources)
         {
-            var key = IdentityKey(sourceEntry)!;
-            // the key must be unique on both sides (otherwise "the same content" isn't proven)
-            if (!sourceByKey.TryGetValue(key, out var uniqueSource) || !ReferenceEquals(uniqueSource.Value, sourceEntry)
-                || !targetByKey.TryGetValue(key, out var newPair) || Equals(newPair.Key, oldPath))
+            if (!MatchesBaseline(other, baseline, source.Key)
+                || (changesByPath.TryGetValue(source.Key, out var oldChange) && oldChange.Kind == ChangeKind.Both))
             {
                 continue;
             }
 
-            // a target taken by another rename source means a chain — allowed (TopoSort orders it);
-            // the opposite side of both paths must match the baseline — otherwise it's a conflict zone, not a rename
-            if (!MatchesBaseline(other, baseline, oldPath) || !MatchesBaseline(other, baseline, newPair.Key))
+            foreach (var candidate in targets)
+            {
+                if (Equals(candidate.Key, source.Key)
+                    || candidate.Value.Size != source.Value.Size
+                    || !SameMoveEvidence(source.Value, candidate.Value)
+                    || !MatchesBaseline(other, baseline, candidate.Key)
+                    || (changesByPath.TryGetValue(candidate.Key, out var newChange) && newChange.Kind == ChangeKind.Both))
+                {
+                    continue;
+                }
+
+                claims.Add((source, candidate));
+            }
+        }
+
+        // "the same content" must be proven on both sides: a source with two candidate targets or
+        // a target two sources claim is an unproven guess — no move (a chain stays unambiguous:
+        // each row has its own content, and TopoSort orders the moves that free each other's targets)
+        var claimsPerSource = claims.GroupBy(static c => c.Source.Key).ToDictionary(static g => g.Key, static g => g.ToList());
+        var claimsPerTarget = claims.GroupBy(static c => c.Target.Key).ToDictionary(static g => g.Key, static g => g.ToList());
+        foreach (var claim in claims.DistinctBy(static c => c.Source.Key))
+        {
+            if (claimsPerSource[claim.Source.Key].Count != 1 || claimsPerTarget[claim.Target.Key].Count != 1)
             {
                 continue;
             }
 
-            // a change on either path is a two-sided conflict → no move
-            if ((changesByPath.TryGetValue(oldPath, out var oldChange) && oldChange.Kind == ChangeKind.Both)
-                || (changesByPath.TryGetValue(newPair.Key, out var newChange) && newChange.Kind == ChangeKind.Both))
-            {
-                continue;
-            }
+            var (source, newPair) = claim;
+            // The projected row reads the device's clock and the server's tag together: the device
+            // mtime (so its next scan still says "unchanged") plus the evidence the remote scan
+            // will report at the destination. Inheriting one side's bare mtime would make the
+            // other side "change" on the next run and re-transfer the moved file.
+            static FileSnapshot AfterEvidence(RelativePath path, FileSnapshot deviceRow, FileSnapshot? remoteEvidence) =>
+                new(path, deviceRow.Kind, deviceRow.Size, deviceRow.ModifiedAt,
+                    remoteEvidence?.ETag ?? deviceRow.ETag,
+                    deviceRow.ContentHash ?? remoteEvidence?.ContentHash);
 
-            // after the move, the target side holds the source side's record under the new path
             var after = propagateToRemote
-                ? (context.Remote.TryGetValue(oldPath, out var remoteEntry) ? remoteEntry : sourceEntry) with { Path = newPair.Key }
-                : (context.Local.TryGetValue(oldPath, out var localEntry) ? localEntry : sourceEntry) with { Path = newPair.Key };
-            moves.Add((oldPath, newPair.Key, after));
-            consumedPaths.Add(oldPath);
+                ? AfterEvidence(
+                    newPair.Key,
+                    context.Local.TryGetValue(newPair.Key, out var deviceRow) ? deviceRow : source.Value,
+                    context.Remote.TryGetValue(source.Key, out var serverSource) ? serverSource : null)
+                : AfterEvidence(
+                    newPair.Key,
+                    context.Local.TryGetValue(source.Key, out var deviceOld) ? deviceOld : source.Value,
+                    context.Remote.TryGetValue(newPair.Key, out var serverTarget) ? serverTarget : null);
+            moves.Add((source.Key, newPair.Key, after));
+            consumedPaths.Add(source.Key);
             consumedPaths.Add(newPair.Key);
         }
 
@@ -230,9 +257,15 @@ public sealed class MergePlanner
     }
 
     /// <summary>
-    /// Evidence key of "the same content": ETag, else ContentHash; bare size is not evidence.
+    /// Whether two rows prove "the same content" through a shared evidence space: the content
+    /// hash when both carry one, the server tag when both carry one. A row pair living in
+    /// different spaces (device hash versus server tag) is unproven — that shape is exactly
+    /// what the evidence hatch hashes before planning, never compared blind here.
     /// </summary>
-    private static string? IdentityKey(FileSnapshot snapshot) => snapshot.ETag ?? snapshot.ContentHash;
+    private static bool SameMoveEvidence(FileSnapshot from, FileSnapshot to) =>
+        from.ContentHash is { } fh && to.ContentHash is { } th
+            ? string.Equals(fh, th, StringComparison.Ordinal)
+            : from.ETag is { } fe && to.ETag is { } te && string.Equals(fe, te, StringComparison.Ordinal);
 
     /// <summary>
     /// Whether the opposite side matches the baseline at a path (both absent — also a match).

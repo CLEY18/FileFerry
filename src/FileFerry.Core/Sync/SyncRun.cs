@@ -236,8 +236,9 @@ public sealed class SyncRun
             var remoteEvidence = remoteScan.Value;
             if (_hasher is { } hasher)
             {
-                // Before planning, backfill hash evidence wherever "the same?" hangs on bare size.
-                (localEvidence, remoteEvidence) = await EvidenceHatch.HatchAsync(
+                // Before planning, backfill hash evidence wherever "the same?" hangs on bare size
+                // or a rename shape waits to be proven — the patched baseline feeds the planner too.
+                (localEvidence, remoteEvidence, baseline) = await EvidenceHatch.HatchAsync(
                     scope.Local, scope.Remote, hasher, localEvidence, remoteEvidence, baseline,
                     RemotePath.Parse(scope.Pair.RemoteRootPath), ct).ConfigureAwait(false);
             }
