@@ -112,12 +112,8 @@ public sealed class WebDavRemoteStore : IWritableRemoteStore
     /// <inheritdoc />
     public async Task<Result<RemoteEntry, SyncError>> WriteAsync(RemotePath file, Stream content, CancellationToken ct)
     {
-        var ancestorError = await EnsureAncestorDirectoriesAsync(file, ct).ConfigureAwait(false);
-        if (ancestorError is not null)
-        {
-            return Result<RemoteEntry, SyncError>.Failure(ancestorError);
-        }
-
+        // No ancestor re-ensuring: the plan creates folders in its own phase, a write into a
+        // missing collection fails with the server's 409 (the plan's ordering is the contract).
         long? size = content.CanSeek ? content.Length - content.Position : null;
         if (_chunked is not null && _chunked.ShouldUseChunked(size))
         {
@@ -321,39 +317,6 @@ public sealed class WebDavRemoteStore : IWritableRemoteStore
             ? parsed.Value.FirstOrDefault(static e => e.Kind == EntryKind.File)
             : null;
         return Result<RemoteEntry, SyncError>.Success(entry ?? fallback);
-    }
-
-    /// <summary>
-    /// MKCOL parent collections top-down; never touches the object's own existence.
-    /// </summary>
-    private async Task<SyncError?> EnsureAncestorDirectoriesAsync(RemotePath file, CancellationToken ct)
-    {
-        var ancestors = new List<string>();
-        for (var current = file.Parent; !current.IsRoot; current = current.Parent)
-        {
-            ancestors.Add(current.ToEncodedPath());
-        }
-
-        ancestors.Reverse();
-        foreach (var segment in ancestors)
-        {
-            var sent = await _transport.SendAsync(
-                () => new HttpRequestMessage(new HttpMethod("MKCOL"), new Uri(_transport.BaseAddress, segment + "/")),
-                ct: ct).ConfigureAwait(false);
-            if (sent.IsFailure)
-            {
-                return sent.Error;
-            }
-
-            using var response = sent.Value;
-            // 201 created / 405 already there — fine; anything else — a real write obstacle.
-            if (response.StatusCode is not (HttpStatusCode.Created or HttpStatusCode.MethodNotAllowed))
-            {
-                return DavTransport.ToSyncError("MKCOL", segment, response);
-            }
-        }
-
-        return null;
     }
 
     /// <summary>

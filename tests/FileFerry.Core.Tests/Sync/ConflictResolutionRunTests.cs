@@ -232,7 +232,7 @@ public sealed class ConflictResolutionRunTests
             RelativePath.Parse(path), new MemoryStream(Encoding.UTF8.GetBytes(content)), CancellationToken.None)).IsSuccess);
 
     private async Task SeedRemoteAsync(string name, string content) =>
-        Assert.True((await _remote.WriteAsync(
+        Assert.True((await _remote.SeedAsync(
             RemotePath.Parse("sync").Combine(name), new MemoryStream(Encoding.UTF8.GetBytes(content)), CancellationToken.None)).IsSuccess);
 
     private async Task<string> ReadLocalAsync(string path)

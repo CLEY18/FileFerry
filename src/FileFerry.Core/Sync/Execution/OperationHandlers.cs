@@ -173,10 +173,17 @@ public sealed class MoveLocalHandler : IOperationHandler
             return HandlerResult.Evidenceless(moved);
         }
 
-        var snapshot = await sides.Local.SnapshotAsync(ct).ConfigureAwait(false);
-        return snapshot.IsSuccess && snapshot.Value.Any(s => s.Path.Equals(op.Path))
-            ? Result<FileSnapshot?, SyncError>.Success(null)
-            : HandlerResult.Evidenceless(moved);
+        // One open answers "was the move already applied?" — a full tree snapshot would cost more
+        // than the move it checks. The planner emits this move only for files, so opening is the
+        // right probe; an unreadable target stays an honest failure.
+        var probe = await sides.Local.ReadAsync(op.Path, ct).ConfigureAwait(false);
+        if (probe.IsSuccess)
+        {
+            probe.Value.Dispose();
+            return Result<FileSnapshot?, SyncError>.Success(null);
+        }
+
+        return HandlerResult.Evidenceless(moved);
     }
 }
 

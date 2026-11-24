@@ -152,6 +152,28 @@ public sealed class OperationExecutorTests
         Assert.DoesNotContain(LocalSnapshot(), static s => s.Path.ToString() == "bulk");
     }
 
+    /// <summary>
+    /// A move already executed: the move answers NotFound, one open probe says "the target is here."
+    /// The idempotence check must never re-walk the tree — on a device that rescan costs more than
+    /// the move it is checking.
+    /// </summary>
+    [Fact]
+    public async Task MoveLocal_AlreadyExecuted_ProbesWithOneOpen_NotATreeScan()
+    {
+        await SeedLocalAsync("new.txt", "PAYLOAD"); // the move happened before the break
+
+        var local = new MoveFailingFileSystem(_local);
+        var plan = new List<SyncOperation>
+        {
+            new(OperationKind.MoveLocal, RelativePath.Parse("new.txt"), RelativePath.Parse("old.txt")),
+        };
+
+        var report = await Executor(local).ExecuteAsync(Ctx(), plan, CancellationToken.None);
+
+        Assert.True(report.Completed);
+        Assert.Equal(0, local.SnapshotCalls); // the probe opens the target; it never enumerates the pair
+    }
+
     [Fact]
     public async Task Resume_SkipsApplied_ReplaysMoveIdempotently()
     {
@@ -227,7 +249,7 @@ public sealed class OperationExecutorTests
     /// </summary>
     private async Task SeedRemoteAsync(string name, string content)
     {
-        var written = await _remote.WriteAsync(RemotePath.Parse("sync").Combine(name), new MemoryStream(Encoding.UTF8.GetBytes(content)), CancellationToken.None);
+        var written = await _remote.SeedAsync(RemotePath.Parse("sync").Combine(name), new MemoryStream(Encoding.UTF8.GetBytes(content)), CancellationToken.None);
         Assert.True(written.IsSuccess);
     }
 
@@ -249,5 +271,41 @@ public sealed class OperationExecutorTests
         var listing = await _remote.ListAsync(RemotePath.Parse(folder), CancellationToken.None);
         Assert.True(listing.IsSuccess);
         return listing.Value;
+    }
+
+    /// <summary>
+    /// Local side whose moves always answer NotFound (the shape of a replayed move) and that
+    /// counts tree snapshots — an idempotence probe must never reach the walk.
+    /// </summary>
+    private sealed class MoveFailingFileSystem(InMemoryFileSystem inner) : ILocalFileSystem
+    {
+        /// <summary>
+        /// Number of full-tree walks so far.
+        /// </summary>
+        public int SnapshotCalls { get; private set; }
+
+        public Task<Result<IReadOnlyList<FileSnapshot>, SyncError>> SnapshotAsync(CancellationToken ct)
+        {
+            SnapshotCalls++;
+            return inner.SnapshotAsync(ct);
+        }
+
+        public Task<Result<Stream, SyncError>> ReadAsync(RelativePath path, CancellationToken ct) =>
+            inner.ReadAsync(path, ct);
+
+        public Task<Result<FileSnapshot, SyncError>> WriteAsync(RelativePath path, Stream content, CancellationToken ct) =>
+            inner.WriteAsync(path, content, ct);
+
+        public Task<Result<Ok, SyncError>> CreateFolderAsync(RelativePath path, CancellationToken ct) =>
+            inner.CreateFolderAsync(path, ct);
+
+        public Task<Result<FileSnapshot, SyncError>> CopyAsync(RelativePath from, RelativePath to, CancellationToken ct) =>
+            inner.CopyAsync(from, to, ct);
+
+        public Task<Result<Ok, SyncError>> MoveAsync(RelativePath from, RelativePath to, CancellationToken ct) =>
+            Task.FromResult(Result<Ok, SyncError>.Failure(SyncError.Of(ErrorKind.NotFound, $"'{from}' is gone — already moved.")));
+
+        public Task<Result<Ok, SyncError>> DeleteAsync(RelativePath path, CancellationToken ct) =>
+            inner.DeleteAsync(path, ct);
     }
 }

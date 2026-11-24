@@ -52,6 +52,7 @@ public sealed class ChunkedUploadTests : IDisposable
         var store = _server.CreateStore(TinyChunks);
         var payload = RandomBytes(500); // 8 chunks of 64 (the last one — 52)
 
+        (await store.CreateFolderAsync(RemotePath.Parse("big"), CT)).AssertOk(); // folders are the plan's phase
         var written = await store.WriteAsync(RemotePath.Parse("big/big.bin"), new MemoryStream(payload), CT);
 
         written.AssertOk();

@@ -30,6 +30,8 @@ public interface IRemoteWriter
 {
     /// <summary>
     /// Write a file (large ones — chunked v2 inside the adapter); returns a fresh <see cref="RemoteEntry"/> with the new ETag.
+    /// The destination collection must already exist (folders are the plan's own phase) — a write
+    /// into a missing parent fails with the server's refusal and creates nothing.
     /// </summary>
     /// <param name="file">Destination from the user's DAV root.</param>
     /// <param name="content">Content stream (the adapter does not close the input stream).</param>

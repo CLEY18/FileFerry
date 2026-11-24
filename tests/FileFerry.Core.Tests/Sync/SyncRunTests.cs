@@ -114,7 +114,8 @@ public sealed class SyncRunTests
         Assert.Equal(ErrorKind.ServerGone, result.Error.Kind);
         Assert.Equal(1, _probe.ProbeCount);
         Assert.Empty(await _state.LoadJournalAsync(_pair.Id, CancellationToken.None));
-        Assert.True((await _remote.ListAsync(RemotePath.Parse("sync"), CancellationToken.None)).IsFailure); // the server was not touched
+        // the pair root exists before any run (the wizard created it) — the dead-server run adds nothing to it
+        Assert.Empty((await _remote.ListAsync(RemotePath.Parse("sync"), CancellationToken.None)).Value);
         var log = (await _state.RecentRunsAsync(_pair.Id, 5, CancellationToken.None)).Single();
         Assert.Equal(SyncRunOutcome.Failed, log.Outcome);
     }
@@ -362,7 +363,7 @@ public sealed class SyncRunTests
             RelativePath.Parse(path), new MemoryStream(Encoding.UTF8.GetBytes(content)), CancellationToken.None);
 
     private async Task SeedRemoteAsync(string name, string content) =>
-        await _remote.WriteAsync(
+        await _remote.SeedAsync(
             RemotePath.Parse("sync").Combine(name), new MemoryStream(Encoding.UTF8.GetBytes(content)), CancellationToken.None);
 
     private async Task<IReadOnlyList<string>> NamesOnRemoteAsync(string folder) =>

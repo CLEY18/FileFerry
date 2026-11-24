@@ -321,7 +321,10 @@ public sealed class FakeDavServer : IDisposable
         _transfers.TryRemove(tid, out _); // the server cleans up the transaction after assembly
         if (written.IsFailure)
         {
-            await RespondAsync(response, HttpStatusCode.InternalServerError).ConfigureAwait(false);
+            // a missing destination collection is the same 409 a plain PUT gets; the rest is server trouble
+            await RespondAsync(response, written.Error.Kind == ErrorKind.Conflict
+                ? HttpStatusCode.Conflict
+                : HttpStatusCode.InternalServerError).ConfigureAwait(false);
             return;
         }
 

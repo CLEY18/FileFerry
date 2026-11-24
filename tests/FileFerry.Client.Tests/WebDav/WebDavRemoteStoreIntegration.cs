@@ -120,6 +120,12 @@ public sealed class WebDavRemoteStoreIntegration : IAsyncLifetime
     public Task CreateFolder_Twice_IsIdempotent() => RemoteStoreContractSuite.CreateFolderTwiceIdempotent(Create);
 
     /// <summary>
+    /// A write into a missing collection is refused without creating a file (the live server answers 404).
+    /// </summary>
+    [IntegrationFact]
+    public Task Write_MissingParent_Refused() => RemoteStoreContractSuite.WriteMissingParentRefused(Create);
+
+    /// <summary>
     /// MOVE relocates a subtree + Conflict on an occupied target (412).
     /// </summary>
     [IntegrationFact]

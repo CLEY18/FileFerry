@@ -49,6 +49,13 @@ public abstract class RemoteStoreContract
     public Task CreateFolder_Twice_IsIdempotent() => RemoteStoreContractSuite.CreateFolderTwiceIdempotent(Create);
 
     /// <summary>
+    /// A write into a missing collection is refused (<see cref="ErrorKind.Conflict"/> on the fake):
+    /// folders are the plan's own phase, never a side effect of a file write.
+    /// </summary>
+    [Fact]
+    public Task Write_MissingParent_Refused() => RemoteStoreContractSuite.WriteMissingParentRefused(Create);
+
+    /// <summary>
     /// MOVE relocates a subtree; occupied target — <see cref="ErrorKind.Conflict"/>.
     /// </summary>
     [Fact]
@@ -76,6 +83,7 @@ public static class RemoteStoreContractSuite
         var path = RemotePath.Parse("Docs/héllo wörld.txt");
         var payload = new byte[] { 5, 6, 7 };
 
+        Assert.True((await store.CreateFolderAsync(RemotePath.Parse("Docs"), CancellationToken.None)).IsSuccess);
         var written = await store.WriteAsync(path, new MemoryStream(payload), CancellationToken.None);
         written.AssertOk();
         Assert.Equal(payload.Length, written.Value.Size);
@@ -117,6 +125,8 @@ public static class RemoteStoreContractSuite
     public static async Task ListRootChildrenOnly(Func<IWritableRemoteStore> create)
     {
         var store = create();
+        await store.CreateFolderAsync(RemotePath.Parse("sub"), CancellationToken.None);
+        await store.CreateFolderAsync(RemotePath.Parse("sub/deep"), CancellationToken.None);
         await store.WriteAsync(RemotePath.Parse("a.txt"), new MemoryStream([1]), CancellationToken.None);
         await store.WriteAsync(RemotePath.Parse("sub/deep/b.txt"), new MemoryStream([2]), CancellationToken.None);
 
@@ -157,6 +167,8 @@ public static class RemoteStoreContractSuite
     public static async Task MoveRelocatesSubtree(Func<IWritableRemoteStore> create)
     {
         var store = create();
+        await store.CreateFolderAsync(RemotePath.Parse("src"), CancellationToken.None);
+        await store.CreateFolderAsync(RemotePath.Parse("src/deep"), CancellationToken.None);
         await store.WriteAsync(RemotePath.Parse("src/a.txt"), new MemoryStream([1]), CancellationToken.None);
         await store.WriteAsync(RemotePath.Parse("src/deep/b.txt"), new MemoryStream([2]), CancellationToken.None);
 
@@ -177,6 +189,8 @@ public static class RemoteStoreContractSuite
     public static async Task DeleteRemovesSubtree(Func<IWritableRemoteStore> create)
     {
         var store = create();
+        await store.CreateFolderAsync(RemotePath.Parse("dir"), CancellationToken.None);
+        await store.CreateFolderAsync(RemotePath.Parse("dir/sub"), CancellationToken.None);
         await store.WriteAsync(RemotePath.Parse("dir/a.txt"), new MemoryStream([1]), CancellationToken.None);
         await store.WriteAsync(RemotePath.Parse("dir/sub/b.txt"), new MemoryStream([2]), CancellationToken.None);
         await store.WriteAsync(RemotePath.Parse("sibling.txt"), new MemoryStream([3]), CancellationToken.None);
@@ -184,5 +198,21 @@ public static class RemoteStoreContractSuite
         Assert.True((await store.DeleteAsync(RemotePath.Parse("dir"), CancellationToken.None)).IsSuccess);
         Assert.True((await store.ReadAsync(RemotePath.Parse("dir/sub/b.txt"), CancellationToken.None)).IsFailure);
         Assert.True((await store.ReadAsync(RemotePath.Parse("sibling.txt"), CancellationToken.None)).IsSuccess);
+    }
+
+    /// <summary>
+    /// A write into a missing collection is refused without creating anything. Servers answer the
+    /// refusal differently (the fake mirrors RFC 4918's 409, the live server responds 404) — the
+    /// honest contract is "no file appears", whatever the status.
+    /// </summary>
+    public static async Task WriteMissingParentRefused(Func<IWritableRemoteStore> create)
+    {
+        var store = create();
+
+        var result = await store.WriteAsync(RemotePath.Parse("nowhere/file.bin"), new MemoryStream([1]), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.True(result.Error.Kind is ErrorKind.Conflict or ErrorKind.NotFound);
+        Assert.True((await store.ReadAsync(RemotePath.Parse("nowhere/file.bin"), CancellationToken.None)).IsFailure);
     }
 }

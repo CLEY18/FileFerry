@@ -28,7 +28,7 @@ public sealed class RemoteScannerTests
     public async Task SubtreeListingFailure_StopsScan()
     {
         var remote = new InMemoryRemoteStore();
-        await remote.WriteAsync(RemotePath.Parse("sync/sub/x.txt"), new MemoryStream([1]), CancellationToken.None);
+        await remote.SeedAsync(RemotePath.Parse("sync/sub/x.txt"), new MemoryStream([1]), CancellationToken.None);
         var broken = new CountingBrowser(remote) { FailOn = RemotePath.Parse("sync/sub") };
 
         var scan = await RemoteScanner.ScanAsync(broken, Root, [], CancellationToken.None);
@@ -41,8 +41,8 @@ public sealed class RemoteScannerTests
     public async Task Pruning_SkipsUnchangedCollection_AndSplicesBaselineSubtree()
     {
         var remote = new InMemoryRemoteStore();
-        await remote.WriteAsync(RemotePath.Parse("sync/keep/x.txt"), new MemoryStream([1]), CancellationToken.None);
-        await remote.WriteAsync(RemotePath.Parse("sync/fresh/y.txt"), new MemoryStream([2]), CancellationToken.None);
+        await remote.SeedAsync(RemotePath.Parse("sync/keep/x.txt"), new MemoryStream([1]), CancellationToken.None);
+        await remote.SeedAsync(RemotePath.Parse("sync/fresh/y.txt"), new MemoryStream([2]), CancellationToken.None);
 
         var rootList = (await remote.ListAsync(Root, CancellationToken.None)).Value;
         var keepEtag = rootList.Single(static e => e.Path.Name == "keep").ETag!;
@@ -68,7 +68,7 @@ public sealed class RemoteScannerTests
     public async Task Pruning_Descends_WhenCollectionEtagChanged()
     {
         var remote = new InMemoryRemoteStore();
-        await remote.WriteAsync(RemotePath.Parse("sync/keep/x.txt"), new MemoryStream([1]), CancellationToken.None);
+        await remote.SeedAsync(RemotePath.Parse("sync/keep/x.txt"), new MemoryStream([1]), CancellationToken.None);
 
         var baseline = new[]
         {
@@ -89,7 +89,7 @@ public sealed class RemoteScannerTests
     public async Task BaselineWithoutEtags_NeverPrunes()
     {
         var remote = new InMemoryRemoteStore();
-        await remote.WriteAsync(RemotePath.Parse("sync/keep/x.txt"), new MemoryStream([1]), CancellationToken.None);
+        await remote.SeedAsync(RemotePath.Parse("sync/keep/x.txt"), new MemoryStream([1]), CancellationToken.None);
         var baseline = new[] { new FileSnapshot(RelativePath.Parse("keep"), EntryKind.Directory, 0) };
 
         var counter = new CountingBrowser(remote);

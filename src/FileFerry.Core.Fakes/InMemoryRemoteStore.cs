@@ -77,9 +77,31 @@ public sealed class InMemoryRemoteStore : IWritableRemoteStore
                     SyncError.Of(ErrorKind.Conflict, $"'{file}' is a collection.")));
             }
 
-            EnsureParents(file);
+            if (!HasLiveParent(file))
+            {
+                return Task.FromResult(Result<RemoteEntry, SyncError>.Failure(
+                    SyncError.Of(ErrorKind.Conflict, $"The collection of '{file}' does not exist — MKCOL first.")));
+            }
+
             var entry = new Node(buffer.ToArray(), NextETag(), _clock.UtcNow);
             _files[key] = entry;
+            return Task.FromResult(Result<RemoteEntry, SyncError>.Success(EntryOf(file, entry)));
+        }
+    }
+
+    /// <summary>
+    /// Fixture pre-population: store a file together with its ancestor collections — what a bare
+    /// MKCOL chain does on a real server before the first test write. Not the port's contract.
+    /// </summary>
+    public Task<Result<RemoteEntry, SyncError>> SeedAsync(RemotePath file, Stream content, CancellationToken ct)
+    {
+        using var buffer = new MemoryStream();
+        content.CopyTo(buffer);
+        lock (_gate)
+        {
+            EnsureParents(file);
+            var entry = new Node(buffer.ToArray(), NextETag(), _clock.UtcNow);
+            _files[file.ToString()] = entry;
             return Task.FromResult(Result<RemoteEntry, SyncError>.Success(EntryOf(file, entry)));
         }
     }
@@ -236,7 +258,21 @@ public sealed class InMemoryRemoteStore : IWritableRemoteStore
     }
 
     /// <summary>
-    /// Create parent collections before a write (like a real PUT with intermediate MKCOLs).
+    /// Fixture pre-registration of an existing collection — the wizard creates the pair root on
+    /// the server before the first run, so the fake starts with it. Ancestors are registered too.
+    /// </summary>
+    public void SeedCollection(RemotePath folder)
+    {
+        lock (_gate)
+        {
+            EnsureParents(folder);
+            _folders.Add(folder.ToString());
+        }
+    }
+
+    /// <summary>
+    /// Create parent collections for MKCOL/MOVE targets (the plan creates folders top-down, so
+    /// in a real run the parent already exists; the fake tolerates a directly created subtree).
     /// </summary>
     private void EnsureParents(RemotePath path)
     {
@@ -244,6 +280,23 @@ public sealed class InMemoryRemoteStore : IWritableRemoteStore
         {
             _folders.Add(parent.ToString());
         }
+    }
+
+    /// <summary>
+    /// Whether every collection above the path exists: a PUT into a missing collection is the
+    /// server's 409 — the fake must refuse it too, folders are the plan's own phase.
+    /// </summary>
+    private bool HasLiveParent(RemotePath path)
+    {
+        for (var parent = path.Parent; !parent.IsRoot; parent = parent.Parent)
+        {
+            if (!_folders.Contains(parent.ToString()))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /// <summary>

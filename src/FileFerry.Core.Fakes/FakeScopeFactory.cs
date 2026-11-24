@@ -1,4 +1,5 @@
 using FileFerry.Core.Domain;
+using FileFerry.Core.Domain.Paths;
 using FileFerry.Core.Ports;
 
 namespace FileFerry.Core.Fakes;
@@ -39,10 +40,17 @@ public sealed class FakeSyncScopeFactory : ISyncScopeFactory
     private readonly Dictionary<Guid, SyncRunScope> _scopes = new();
 
     /// <summary>
-    /// Register a ready-made pair environment (the test seeds both sides itself).
+    /// Register a ready-made pair environment (the test seeds both sides itself). An in-memory
+    /// server gains the pair root as an existing collection — the wizard creates it on a real
+    /// server before the first run, so every run starts under a live folder.
     /// </summary>
     public void Add(SyncRunScope scope)
     {
+        if (scope.Remote is InMemoryRemoteStore server)
+        {
+            server.SeedCollection(RemotePath.Parse(scope.Pair.RemoteRootPath));
+        }
+
         lock (_gate)
         {
             _scopes[scope.Pair.Id] = scope;

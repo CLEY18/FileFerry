@@ -313,7 +313,7 @@ public sealed class BaselineEvidenceRunTests
             RelativePath.Parse(path), new MemoryStream(Encoding.UTF8.GetBytes(content)), CancellationToken.None);
 
     private async Task SeedRemoteAsync(string name, string content) =>
-        await _remote.WriteAsync(
+        await _remote.SeedAsync(
             RemotePath.Parse("sync").Combine(name), new MemoryStream(Encoding.UTF8.GetBytes(content)), CancellationToken.None);
 
     private async Task<string?> RemoteEtagAsync(string name) =>

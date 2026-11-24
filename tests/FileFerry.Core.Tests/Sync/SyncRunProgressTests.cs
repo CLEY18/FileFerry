@@ -99,7 +99,7 @@ public sealed class SyncRunProgressTests
             CancellationToken.None);
 
     private Task SeedRemoteAsync(string path, string content) =>
-        _remote.WriteAsync(
+        _remote.SeedAsync(
             RemotePath.Parse($"sync/{path}"),
             new MemoryStream(System.Text.Encoding.UTF8.GetBytes(content)),
             CancellationToken.None);

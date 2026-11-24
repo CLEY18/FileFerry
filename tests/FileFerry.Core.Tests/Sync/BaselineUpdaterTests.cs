@@ -58,6 +58,7 @@ public sealed class BaselineUpdaterTests
         var clock = new MutableClock();
         var local = new InMemoryFileSystem(clock);
         var remote = new InMemoryRemoteStore(clock);
+        remote.SeedCollection(RemotePath.Parse("sync")); // the wizard's folder exists before the first run
         var state = new InMemorySyncStateRepository();
         var stash = new StashPolicy(new StashPolicyOptions());
 
