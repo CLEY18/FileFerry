@@ -75,6 +75,125 @@ public sealed class RetryingRemoteStoreTests
         Assert.Equal(TimeSpan.FromMilliseconds(expectedMs), RetryingRemoteStore.NextDelay(Options, attempt, unit));
 
     /// <summary>
+    /// The reviewed truncation: a write body that cannot rewind (the SAF content:// stream) makes
+    /// a retry physically empty — after a half-sent attempt the stream is spent, and a second
+    /// PUT would stamp an empty file over the target with a "success". The retry must not run
+    /// at all; the failure reaches the scheduler, and the next job reopens the source fresh.
+    /// </summary>
+    [Fact]
+    public async Task NonRewindableWrite_FailsOnce_NeverRetries()
+    {
+        var inner = new RecordingWriteStore(failures: 1, SyncError.Of(ErrorKind.Network, "half-sent, wifi died"));
+        var delay = new RecordingDelay();
+        var store = new RetryingRemoteStore(inner, Options, delay, new Random(7));
+
+        var result = await store.WriteAsync(
+            RemotePath.Parse("doc.bin"), new ForwardOnlyStream("payload"u8.ToArray()), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorKind.Network, result.Error.Kind);
+        Assert.Equal(1, inner.WriteCalls); // no second attempt: an empty retry would overwrite the target
+        Assert.Empty(delay.Delays);
+    }
+
+    /// <summary>
+    /// A rewindable body retries — and resends from the point the caller handed the stream at,
+    /// not from an arbitrary zero (a body read from mid-stream must not gain the skipped head).
+    /// </summary>
+    [Fact]
+    public async Task RewindableWrite_RetryResendsFromTheStartingPoint()
+    {
+        var inner = new RecordingWriteStore(failures: 1, SyncError.Of(ErrorKind.Network, "connection reset"));
+        var delay = new RecordingDelay();
+        var store = new RetryingRemoteStore(inner, Options, delay, new Random(7));
+        using var body = new MemoryStream("skip-me-tail"u8.ToArray());
+        body.Position = 8; // the caller's stream starts mid-content
+
+        var result = await store.WriteAsync(RemotePath.Parse("doc.bin"), body, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, inner.WriteBodies.Count);
+        Assert.Equal("tail"u8.ToArray(), inner.WriteBodies[0]); // first attempt: from the starting point
+        Assert.Equal("tail"u8.ToArray(), inner.WriteBodies[1]); // retry: the same range again, not zero, not empty
+    }
+
+    /// <summary>
+    /// Store that fails the first N writes with the given error and records the exact bytes
+    /// each attempt read out of the body.
+    /// </summary>
+    private sealed class RecordingWriteStore(int failures, SyncError error) : IWritableRemoteStore
+    {
+        private readonly InMemoryRemoteStore _inner = new();
+        private int _writeCalls;
+
+        /// <summary>
+        /// Number of WriteAsync calls (attempt-count assertions).
+        /// </summary>
+        public int WriteCalls => _writeCalls;
+
+        /// <summary>
+        /// Body bytes each attempt managed to read, in attempt order.
+        /// </summary>
+        public List<byte[]> WriteBodies { get; } = [];
+
+        public Task<Result<IReadOnlyList<RemoteEntry>, SyncError>> ListAsync(RemotePath folder, CancellationToken ct) => _inner.ListAsync(folder, ct);
+
+        public Task<Result<Stream, SyncError>> ReadAsync(RemotePath file, CancellationToken ct) => _inner.ReadAsync(file, ct);
+
+        public async Task<Result<RemoteEntry, SyncError>> WriteAsync(RemotePath file, Stream content, CancellationToken ct)
+        {
+            var seen = Interlocked.Increment(ref _writeCalls);
+            using var drained = new MemoryStream();
+            await content.CopyToAsync(drained, ct).ConfigureAwait(false);
+            WriteBodies.Add(drained.ToArray());
+            return seen <= failures
+                ? Result<RemoteEntry, SyncError>.Failure(error)
+                : await _inner.WriteAsync(file, content, ct).ConfigureAwait(false);
+        }
+
+        public Task<Result<RemoteEntry, SyncError>> CreateFolderAsync(RemotePath folder, CancellationToken ct) => _inner.CreateFolderAsync(folder, ct);
+
+        public Task<Result<Ok, SyncError>> MoveAsync(RemotePath from, RemotePath to, CancellationToken ct) => _inner.MoveAsync(from, to, ct);
+
+        public Task<Result<Ok, SyncError>> DeleteAsync(RemotePath path, CancellationToken ct) => _inner.DeleteAsync(path, ct);
+    }
+
+    /// <summary>
+    /// Forward-only body (CanSeek false) — the shape of a SAF content:// input stream.
+    /// </summary>
+    private sealed class ForwardOnlyStream : Stream
+    {
+        private readonly MemoryStream _inner;
+
+        /// <summary>
+        /// Wrapper over <paramref name="payload"/> hiding every seek affordance.
+        /// </summary>
+        internal ForwardOnlyStream(byte[] payload) => _inner = new MemoryStream(payload);
+
+        public override bool CanRead => true;
+
+        public override bool CanSeek => false;
+
+        public override bool CanWrite => false;
+
+        public override long Length => throw new NotSupportedException();
+
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+
+        public override void Flush()
+        {
+        }
+
+        public override int Read(byte[] buffer, int offset, int count) => _inner.Read(buffer, offset, count);
+
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
+
+    /// <summary>
     /// Store whose first N CreateFolder calls fail with the given (transient or arbitrary)
     /// error; calls after that succeed.
     /// </summary>

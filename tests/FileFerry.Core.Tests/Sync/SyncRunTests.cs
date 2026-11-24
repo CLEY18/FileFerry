@@ -320,6 +320,30 @@ public sealed class SyncRunTests
         Assert.Equal(0, third.Value.Planned); // the state truly converged — nothing waits for the next run
     }
 
+    [Fact]
+    public async Task InterruptedWriteFragments_NeverUpload_TheSweepClearsThem()
+    {
+        // litter of a write the process never finished: the fragment must neither climb to the
+        // server nor stay on the device forever; a name that only looks similar is user data
+        await SeedLocalAsync("notes.txt", "N");
+        await SeedLocalAsync("notes.txt.tmp-0123456789abcdef0123456789abcdef", "fragment");
+        await SeedLocalAsync("legacy.tmp-hello", "user content keeps its name");
+
+        var run = await Engine().RunAsync(_pair.Id, CancellationToken.None);
+
+        Assert.True(run.IsSuccess);
+        Assert.Equal(SyncRunOutcome.Success, run.Value.Outcome);
+        var local = await _local.SnapshotAsync(CancellationToken.None);
+        var localPaths = local.Value.Select(static s => s.Path.ToString()).ToList();
+        Assert.DoesNotContain("notes.txt.tmp-0123456789abcdef0123456789abcdef", localPaths); // swept off the disk
+        Assert.Contains("legacy.tmp-hello", localPaths);
+        var remote = await _remote.ListAsync(RemotePath.Parse("sync"), CancellationToken.None);
+        var remotePaths = remote.Value.Select(static e => e.Path.ToString()).ToList();
+        Assert.Contains("sync/notes.txt", remotePaths);
+        Assert.Contains("sync/legacy.tmp-hello", remotePaths);
+        Assert.DoesNotContain("sync/notes.txt.tmp-0123456789abcdef0123456789abcdef", remotePaths); // never uploaded
+    }
+
     private SyncRun Engine(IEnumerable<IOperationHandler>? handlers = null, ISyncStateRepository? state = null) =>
         new(
             _scopes,

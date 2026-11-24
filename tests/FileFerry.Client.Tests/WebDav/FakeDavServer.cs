@@ -105,6 +105,29 @@ public sealed class FakeDavServer : IDisposable
     public int LiveTransferCount => _transfers.Count;
 
     /// <summary>
+    /// Stages an abandoned transaction the way a killed client would leave one: chunks aligned
+    /// on the 64-byte chunk bounds under the deterministic site name — the fixture mirrors the
+    /// uploader's id rule (hash of "destination|size", 16 hex) so a same-name, same-size retry
+    /// walks straight into the stranger's bytes.
+    /// </summary>
+    public void SeedAbandonedTransfer(string destination, long size, byte[] staleContent)
+    {
+        var hash = System.Security.Cryptography.SHA256.HashData(
+            Encoding.UTF8.GetBytes($"{destination}|{size.ToString(CultureInfo.InvariantCulture)}"));
+        var tid = Convert.ToHexString(hash).ToLowerInvariant()[..16];
+        var chunks = new ConcurrentDictionary<long, byte[]>();
+        for (long offset = 0; offset < staleContent.Length; offset += 64)
+        {
+            var length = (int)Math.Min(64, staleContent.Length - offset);
+            var data = new byte[length];
+            Array.Copy(staleContent, offset, data, 0, length);
+            chunks[offset] = data;
+        }
+
+        _transfers[tid] = chunks;
+    }
+
+    /// <summary>
     /// Stop the server.
     /// </summary>
     public void Dispose() => _listener.Stop();

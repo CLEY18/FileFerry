@@ -51,9 +51,9 @@ public sealed class SyncPlanner
             return Result<PlanningResult, SyncError>.Failure(remoteScan.Error);
         }
 
-        var local = ToIndex(WithoutStash(localScan.Value));
+        var local = ToIndex(WithoutLocalNoise(localScan.Value));
         var remote = ToIndex(remoteScan.Value);
-        var baseIndex = ToIndex(WithoutStash(baseline));
+        var baseIndex = ToIndex(WithoutLocalNoise(baseline));
         var changes = _diff.Diff(local, remote, baseIndex);
         var context = new SyncRunContext(pair, now, local, remote, baseIndex);
         return Result<PlanningResult, SyncError>.Success(_planner.Plan(context, changes));
@@ -66,8 +66,10 @@ public sealed class SyncPlanner
         snapshots.ToDictionary(static s => s.Path, static s => s);
 
     /// <summary>
-    /// Drops the stash-buffer subtree: local pre-deletion copies are not sync state.
+    /// Drops the local-only noise from the diff inputs: the stash-buffer subtree (pre-deletion
+    /// copies are not sync state) and interrupted-write fragments ("<c>name.tmp-&lt;id&gt;</c>" —
+    /// the app's own litter, never user content; the sweep at the end of the run clears them).
     /// </summary>
-    private IReadOnlyList<FileSnapshot> WithoutStash(IReadOnlyList<FileSnapshot> snapshots) =>
-        snapshots.Where(s => !s.Path.StartsWith(_stash.StashRoot)).ToArray();
+    private IReadOnlyList<FileSnapshot> WithoutLocalNoise(IReadOnlyList<FileSnapshot> snapshots) =>
+        snapshots.Where(static s => !LocalTempNames.IsFragment(s.Path.Name)).Where(s => !s.Path.StartsWith(_stash.StashRoot)).ToArray();
 }

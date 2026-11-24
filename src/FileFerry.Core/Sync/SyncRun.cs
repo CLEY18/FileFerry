@@ -296,6 +296,16 @@ public sealed class SyncRun
             }
         }
 
+        // Fragments of interrupted writes — ".tmp-<id>" litter our own write path left when a
+        // process died mid-download. The planner already refuses to see them (nothing uploads
+        // upward); this pass clears them off the disk so the litter cannot pile up in silence.
+        // A run resumed from the journal scanned nothing — it sweeps nothing; the fragments wait
+        // for a run with a fresh scan.
+        if (localScanned is { } sweepEvidence)
+        {
+            await LocalTempSweeper.SweepAsync(scope.Local, _stash, sweepEvidence, ct).ConfigureAwait(false);
+        }
+
         var outcome = report.Completed
             ? SyncRunOutcome.Success
             : report.Applied.Count > 0 ? SyncRunOutcome.Partial : SyncRunOutcome.Failed;

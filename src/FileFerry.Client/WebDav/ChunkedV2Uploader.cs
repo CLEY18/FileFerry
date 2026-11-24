@@ -12,8 +12,9 @@ namespace FileFerry.Client.WebDav;
 /// chunks to the temporary directory <c>uploads/{user}/{transferId}/</c> — a chunk named
 /// "&lt;offset:D16&gt;" + the <c>OC-Chunk-Offset</c> header — and a one-shot <c>PUT …/end</c>
 /// with <c>Destination</c> and <c>OC-Total-Length</c> aggregates them into the target file.
-/// The deterministic <see cref="TransferIdFor"/> (hash of destination+size) makes a retry after
-/// an abort cheaper: chunks already uploaded in the same transaction are not rewritten.
+/// The deterministic <see cref="TransferIdFor"/> (hash of destination+size) ties a dead
+/// transaction to its (destination, size) pair: the next attempt finds the leftover site by name
+/// and wipes it — an upload never resumes from half-written chunks of a stranger, it starts clean.
 /// </summary>
 internal sealed class ChunkedV2Uploader
 {
@@ -41,9 +42,9 @@ internal sealed class ChunkedV2Uploader
 
     /// <summary>
     /// Uploads <paramref name="content"/> to <paramref name="destination"/>; on success, the actual
-    /// number of bytes uploaded. <paramref name="contentLength"/> (when known) enables resume:
-    /// chunks are size-aligned, so a retry of a same-size file lines up with the bounds of the
-    /// previous transaction.
+    /// number of bytes uploaded. The transaction always starts from an empty site: chunks a dead
+    /// process left behind may belong to another file of the same name and size, and content is
+    /// only ever trusted from this stream.
     /// </summary>
     public async Task<Result<long, SyncError>> UploadAsync(
         RemotePath destination,
@@ -53,15 +54,11 @@ internal sealed class ChunkedV2Uploader
     {
         var transferId = TransferIdFor(destination, contentLength);
 
-        var directoryError = await EnsureTransferDirectoryAsync(transferId, ct).ConfigureAwait(false);
-        if (directoryError is not null)
+        var stagingError = await ResetTransferSiteAsync(transferId, ct).ConfigureAwait(false);
+        if (stagingError is not null)
         {
-            return Result<long, SyncError>.Failure(directoryError);
+            return Result<long, SyncError>.Failure(stagingError);
         }
-
-        var uploadedOffsets = contentLength is > 0
-            ? await ListUploadedOffsetsAsync(transferId, ct).ConfigureAwait(false)
-            : new HashSet<long>();
 
         var buffer = new byte[_options.ChunkSizeBytes];
         long offset = 0;
@@ -71,12 +68,6 @@ internal sealed class ChunkedV2Uploader
             if (filled == 0)
             {
                 break; // EOF earlier than expected — the consistency check is below
-            }
-
-            if (uploadedOffsets.Contains(offset))
-            {
-                offset += filled; // chunk already on the server from a previous attempt — skip without traffic
-                continue;
             }
 
             var putError = await PutChunkAsync(transferId, offset, buffer.AsMemory(0, filled), ct)
@@ -108,8 +99,9 @@ internal sealed class ChunkedV2Uploader
     }
 
     /// <summary>
-    /// Transaction id: the same (destination, size) yields the same site with its already-uploaded
-    /// chunks; unknown length — random (nothing to resume).
+    /// Transaction id: the same (destination, size) maps to the same site, so leftovers of an
+    /// interrupted transaction are findable — and they only ever get deleted, never reused;
+    /// unknown length — random (a stream with no declared size is never retryable anyway).
     /// </summary>
     public static string TransferIdFor(RemotePath destination, long? contentLength)
     {
@@ -124,11 +116,21 @@ internal sealed class ChunkedV2Uploader
     }
 
     /// <summary>
-    /// Creates the transaction directory; 405 = already exists (retry after an abort) — also fine.
+    /// Clean-stages the transaction site: any leftover under this transfer name — a dead
+    /// transaction's chunks, possibly of another file (same name and size is not the same
+    /// content) — is deleted, then an empty directory is <c>MKCOL</c>-ed. Uploads never resume
+    /// from half-written chunks; they start fresh against this stream.
     /// </summary>
-    private async Task<SyncError?> EnsureTransferDirectoryAsync(string transferId, CancellationToken ct)
+    private async Task<SyncError?> ResetTransferSiteAsync(string transferId, CancellationToken ct)
     {
         var url = _transport.UploadsUrlFor(transferId + "/");
+        var wiped = await _transport.SendAsync(
+            () => new HttpRequestMessage(HttpMethod.Delete, url), ct: ct).ConfigureAwait(false);
+        if (wiped.IsSuccess)
+        {
+            wiped.Value.Dispose(); // 204 gone or 404 never existed — either way the site reads clean after MKCOL
+        }
+
         var sent = await _transport.SendAsync(
             () => new HttpRequestMessage(new HttpMethod("MKCOL"), url), ct: ct).ConfigureAwait(false);
         if (sent.IsFailure)
@@ -140,55 +142,6 @@ internal sealed class ChunkedV2Uploader
         return response.StatusCode is HttpStatusCode.Created or HttpStatusCode.MethodNotAllowed
             ? null
             : DavTransport.ToSyncError("MKCOL uploads", transferId, response);
-    }
-
-    /// <summary>
-    /// Offsets of already-uploaded chunks, from a PROPFIND Depth:1 over the transaction directory.
-    /// </summary>
-    private async Task<HashSet<long>> ListUploadedOffsetsAsync(string transferId, CancellationToken ct)
-    {
-        var url = _transport.UploadsUrlFor(transferId + "/");
-        var sent = await _transport.SendAsync(
-            () =>
-            {
-                var request = new HttpRequestMessage(new HttpMethod("PROPFIND"), url);
-                request.Headers.TryAddWithoutValidation("Depth", "1");
-                request.Content = new StringContent(DavTransport.PropfindBody, Encoding.UTF8, "application/xml");
-                return request;
-            },
-            ct: ct).ConfigureAwait(false);
-
-        if (sent.IsFailure)
-        {
-            return new HashSet<long>(); // the network is down — no resume, everything uploads from scratch
-        }
-
-        if (sent.Value.StatusCode != (HttpStatusCode)207)
-        {
-            sent.Value.Dispose();
-            return new HashSet<long>(); // no transaction yet (404) — everything uploads from scratch
-        }
-
-        using var response = sent.Value;
-        var body = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-        var parsed = MultistatusParser.Parse(body, _transport.UploadsBaseAddress.AbsolutePath);
-        if (parsed.IsFailure)
-        {
-            return new HashSet<long>();
-        }
-
-        var offsets = new HashSet<long>();
-        foreach (var entry in parsed.Value)
-        {
-            // A chunk is a second-level file "{transferId}/{offset:D16}"; the transaction's own entry — skip.
-            if (entry.Path.Depth == 2 && entry.Path.Parent.Name == transferId
-                && long.TryParse(entry.Path.Name, NumberStyles.None, CultureInfo.InvariantCulture, out var offset))
-            {
-                offsets.Add(offset);
-            }
-        }
-
-        return offsets;
     }
 
     /// <summary>

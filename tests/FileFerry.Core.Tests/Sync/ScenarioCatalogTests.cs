@@ -327,6 +327,28 @@ public sealed class ScenarioCatalogTests
     }
 
     [Fact]
+    public void TempWriteFragments_AreNotSyncState()
+    {
+        // a fragment of an interrupted local write is nobody's content: never uploaded, never
+        // a conflict candidate; names that only look similar remain honest sync state
+        var plan = Plan(
+            local:
+            [
+                File("report.txt.tmp-0123456789abcdef0123456789abcdef", "junk"),
+                File("keeps.tmp-hello", "k"),
+            ],
+            remote: [],
+            baseline: []);
+
+        Assert.Collection(plan.Operations,
+            op =>
+            {
+                Assert.Equal(OperationKind.UploadToRemote, op.Kind);
+                Assert.Equal("keeps.tmp-hello", op.Path.ToString());
+            });
+    }
+
+    [Fact]
     public void Partial_scan_failure_halts_before_any_operation()
     {
         var planner = Engine();

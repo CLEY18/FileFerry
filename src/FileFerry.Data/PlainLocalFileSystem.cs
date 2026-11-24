@@ -88,7 +88,9 @@ public sealed class PlainLocalFileSystem : ILocalFileSystem
     public async Task<Result<FileSnapshot, SyncError>> WriteAsync(RelativePath path, Stream content, CancellationToken ct)
     {
         var full = ToFull(path);
-        var tmp = full + ".tmp-" + Guid.NewGuid().ToString("n");
+        var tmp = Path.Combine(
+            Path.GetDirectoryName(full)!,
+            LocalTempNames.ForPlainFile(Path.GetFileName(full)));
         try
         {
             if (Directory.Exists(full))

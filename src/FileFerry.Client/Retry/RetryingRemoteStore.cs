@@ -96,12 +96,27 @@ public sealed class RetryingRemoteStore : IWritableRemoteStore
         WithRetryAsync(token => _inner.ReadAsync(file, token), ct);
 
     /// <inheritdoc cref="IRemoteWriter.WriteAsync"/>
-    public async Task<Result<RemoteEntry, SyncError>> WriteAsync(RemotePath file, Stream content, CancellationToken ct) =>
-        await WithRetryAsync(async token =>
+    /// <remarks>
+    /// A retry may resend the body only when the stream can return to the point the caller
+    /// handed it at. A non-rewindable body (a SAF <c>content://</c> stream) is single-shot: after
+    /// a half-sent attempt the stream is spent, and a second attempt would PUT an empty file
+    /// over the target while the baseline stamped that zero as truth. Such a failure goes
+    /// straight to the scheduler — the next attempt reopens the source and writes it fresh.
+    /// </remarks>
+    public async Task<Result<RemoteEntry, SyncError>> WriteAsync(RemotePath file, Stream content, CancellationToken ct)
+    {
+        if (!content.CanSeek)
         {
-            Rewind(content); // before each retry — otherwise the second PUT would send an empty body
+            return await _inner.WriteAsync(file, content, ct).ConfigureAwait(false);
+        }
+
+        var start = content.Position;
+        return await WithRetryAsync(async token =>
+        {
+            content.Position = start; // resend the very same range, not an arbitrary zero
             return await _inner.WriteAsync(file, content, token).ConfigureAwait(false);
         }, ct);
+    }
 
     /// <inheritdoc cref="IRemoteWriter.CreateFolderAsync"/>
     public Task<Result<RemoteEntry, SyncError>> CreateFolderAsync(RemotePath folder, CancellationToken ct) =>
@@ -137,17 +152,6 @@ public sealed class RetryingRemoteStore : IWritableRemoteStore
 
             spent += next;
             await _delay.DelayAsync(next, ct).ConfigureAwait(false);
-        }
-    }
-
-    /// <summary>
-    /// Rewinds the stream to the start (restarting a repeatable PUT).
-    /// </summary>
-    private static void Rewind(Stream content)
-    {
-        if (content.CanSeek)
-        {
-            content.Position = 0;
         }
     }
 }

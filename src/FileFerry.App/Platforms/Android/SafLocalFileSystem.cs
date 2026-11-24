@@ -119,7 +119,8 @@ public sealed class SafLocalFileSystem : ILocalFileSystem
             }
 
             var parentUri = DocUri(EnsureDirectory(path.Parent, ct));
-            var tmpUri = DocumentsContract.CreateDocument(_resolver, parentUri, "application/octet-stream", $".tmp-{Guid.NewGuid():N}")
+            var tmpUri = DocumentsContract.CreateDocument(
+                             _resolver, parentUri, "application/octet-stream", LocalTempNames.ForSafDocument())
                          ?? throw Fail(ErrorKind.Unknown, $"Provider refused to create the temporary file for '{path}'.");
             long written;
             try

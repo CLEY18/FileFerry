@@ -62,11 +62,12 @@ public sealed class ChunkedUploadTests : IDisposable
     }
 
     /// <summary>
-    /// Interrupted on chunk 3 → retrying the same file does not rewrite the first two
-    /// (deterministic transfer id).
+    /// Interrupted on chunk 3 → the retry does not trust what survived: it clears the site and
+    /// writes all 8 chunks again (3 + 8 = 11 PUTs; chunks of a half-dead transaction may carry
+    /// another file's bytes, so nothing is reused).
     /// </summary>
     [Fact]
-    public async Task Retry_after_interrupt_reuses_uploaded_chunks()
+    public async Task Retry_after_interrupt_restages_the_site_from_scratch()
     {
         var store = _server.CreateStore(TinyChunks);
         var payload = RandomBytes(500);
@@ -79,10 +80,31 @@ public sealed class ChunkedUploadTests : IDisposable
         var second = await store.WriteAsync(RemotePath.Parse("resume.bin"), new MemoryStream(payload), CT);
         second.AssertOk();
 
-        // The file is 8 chunks; the first run did 3 PUTs (2 held). The resumed retry writes
-        // the remaining 6, not all 8: 9 PUTs total vs 11 without reuse.
-        Assert.Equal(9, _server.CountChunkPuts());
+        // Every chunk of the file travels again: the leftover two chunks are wiped with the site,
+        // never skipped. 11 chunk PUTs total — reuse would make it 9.
+        Assert.Equal(11, _server.CountChunkPuts());
         await AssertFileBytesAsync(store, "resume.bin", payload);
+        Assert.Equal(0, _server.LiveTransferCount);
+    }
+
+    /// <summary>
+    /// The reviewed regression: an abandoned transaction with the same name-and-size but different
+    /// content must not seed the new upload — the site is cleared before a chunk flies, so the
+    /// target ends up byte-exact instead of a mix of two files.
+    /// </summary>
+    [Fact]
+    public async Task Leftover_site_of_other_content_is_cleared_before_upload()
+    {
+        var store = _server.CreateStore(TinyChunks);
+        var stale = new byte[128]; // different content on the same chunk bounds — offset 0 and 64
+        Array.Fill(stale, (byte)0xA5);
+        _server.SeedAbandonedTransfer("mixed.bin", 500, stale); // a same-size transaction from another file
+
+        var payload = RandomBytes(500);
+        var written = await store.WriteAsync(RemotePath.Parse("mixed.bin"), new MemoryStream(payload), CT);
+
+        written.AssertOk();
+        await AssertFileBytesAsync(store, "mixed.bin", payload); // bytes of the new file only, no stale head
         Assert.Equal(0, _server.LiveTransferCount);
     }
 
