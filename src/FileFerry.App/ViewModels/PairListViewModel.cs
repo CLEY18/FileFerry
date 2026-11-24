@@ -4,6 +4,7 @@ using FileFerry.App.Resources;
 using FileFerry.App.Services;
 using FileFerry.Core.Domain;
 using FileFerry.Core.Ports;
+using FileFerry.Core.Sync;
 
 namespace FileFerry.App.ViewModels;
 
@@ -246,7 +247,7 @@ public sealed class PairListViewModel : Mvvm.ObservableObject
 
         var items = pairs
             .Zip(runWindows, (pair, runs) =>
-                PairListItem.From(pair, StatusFromRuns(pair, runs), Services.ConflictEvents.CountUnresolved(runs)))
+                PairListItem.From(pair, StatusFromRuns(pair, runs), ConflictEvents.CountUnresolved(runs)))
             .Select(p => p with
             {
                 // MAUI 10 has no ancestor bindings in templates — the card carries the VM's commands itself.
@@ -335,7 +336,7 @@ public sealed class PairListViewModel : Mvvm.ObservableObject
             return PairStatus.Idle; // "Paused" is Idle, not a separate chip
         }
 
-        var conflicts = Services.ConflictEvents.CountUnresolved(runs);
+        var conflicts = ConflictEvents.CountUnresolved(runs);
         var latest = runs.FirstOrDefault(r => r.Outcome is not (SyncRunOutcome.Running or SyncRunOutcome.Cancelled));
         return latest?.Outcome switch
         {

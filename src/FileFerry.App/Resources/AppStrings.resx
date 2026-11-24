@@ -91,6 +91,9 @@
   <data name="DetailsSettingsTitle" xml:space="preserve"><value>Pair settings</value></data>
   <data name="DetailsIntervalTitle" xml:space="preserve"><value>Sync interval</value></data>
   <data name="DetailsChangeFolder" xml:space="preserve"><value>Change device folder</value></data>
+  <data name="DetailsChangeFolderAccept" xml:space="preserve"><value>Change</value></data>
+  <data name="DetailsChangeFolderBody" xml:space="preserve"><value>FileFerry will treat the new folder as the truth. It forgets the sync state of the old folder. The next run deletes nothing on the server. It copies files that exist on one side only.</value></data>
+  <data name="DetailsChangeFolderTitle" xml:space="preserve"><value>Change device folder?</value></data>
   <data name="DetailsDeletePair" xml:space="preserve"><value>Delete pair</value></data>
   <data name="DetailsDeletePairBody" xml:space="preserve"><value>The pair settings will be removed. Files on your device and server stay untouched; deleted copies remain in the trash buffer for 30 days.</value></data>
   <data name="DetailsGoneBody" xml:space="preserve"><value>This pair has already been deleted.</value></data>

@@ -91,6 +91,9 @@
   <data name="DetailsSettingsTitle" xml:space="preserve"><value>Налаштування пари</value></data>
   <data name="DetailsIntervalTitle" xml:space="preserve"><value>Інтервал синхронізації</value></data>
   <data name="DetailsChangeFolder" xml:space="preserve"><value>Оновити локальну папку</value></data>
+  <data name="DetailsChangeFolderAccept" xml:space="preserve"><value>Оновити</value></data>
+  <data name="DetailsChangeFolderBody" xml:space="preserve"><value>FileFerry вважатиме нову папку істиною. Він забуде стан синхронізації старої папки. Наступний прогін нічого не видалить на сервері. Він перенесе файли, які є лише на одному боці.</value></data>
+  <data name="DetailsChangeFolderTitle" xml:space="preserve"><value>Оновити локальну папку?</value></data>
   <data name="DetailsDeletePair" xml:space="preserve"><value>Видалити пару</value></data>
   <data name="DetailsDeletePairBody" xml:space="preserve"><value>Налаштування пари буде видалено. Файли на пристрої та сервері залишаться, копії видалень — у сховищі ще 30 днів.</value></data>
   <data name="DetailsGoneBody" xml:space="preserve"><value>Цю пару вже видалено.</value></data>

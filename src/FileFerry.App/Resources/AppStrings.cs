@@ -447,6 +447,21 @@ public static class AppStrings
     public static string DetailsChangeFolder => Get();
 
     /// <summary>
+    /// Rebind confirmation, accept: the folder changes and the sync state starts over.
+    /// </summary>
+    public static string DetailsChangeFolderAccept => Get();
+
+    /// <summary>
+    /// Rebind confirmation: the new folder becomes the truth, nothing is deleted on the server.
+    /// </summary>
+    public static string DetailsChangeFolderBody => Get();
+
+    /// <summary>
+    /// Rebind confirmation title — the question naming the consequence to come.
+    /// </summary>
+    public static string DetailsChangeFolderTitle => Get();
+
+    /// <summary>
     /// Destructive action of the pair details — deleting the pair configuration.
     /// </summary>
     public static string DetailsDeletePair => Get();

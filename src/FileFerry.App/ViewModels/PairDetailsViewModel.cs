@@ -72,7 +72,8 @@ public sealed class PairDetailsViewModel : Mvvm.ObservableObject
         SyncNowCommand = new Mvvm.AsyncRelayCommand(
             (_, ct) => _pair is null ? Task.CompletedTask : _scheduler.RunNowAsync(_pairId, ct),
             _ => _pair is not null && !IsRunActive);
-        ChangeFolderCommand = new Mvvm.AsyncRelayCommand((_, ct) => ChangeFolderAsync(ct), _ => !IsBusy && _pair is not null);
+        ChangeFolderCommand = new Mvvm.AsyncRelayCommand(
+            (_, ct) => ChangeFolderAsync(ct), _ => !IsBusy && !IsRunActive && _pair is not null);
         DeleteCommand = new Mvvm.AsyncRelayCommand((_, ct) => DeleteAsync(ct), _ => !IsBusy && _pair is not null);
         CancelRunCommand = new Mvvm.AsyncRelayCommand(
             (_, _) =>
@@ -160,7 +161,8 @@ public sealed class PairDetailsViewModel : Mvvm.ObservableObject
     }
 
     /// <summary>
-    /// Conflict counter (Warning events of recent runs) in the conflicts screen-navigation section.
+    /// Conflict counter (unresolved conflict events of recent runs — the shared rule) shown in
+    /// the conflicts screen-navigation section.
     /// </summary>
     public string ConflictsLine
     {
@@ -318,6 +320,8 @@ public sealed class PairDetailsViewModel : Mvvm.ObservableObject
     private void ApplyRunStatus(PairRunStatus? status)
     {
         IsRunActive = status is not null;
+        // rebinding the folder while a run projects its baseline would race the wipe — re-query the gate
+        ChangeFolderCommand.RaiseCanExecuteChanged();
         if (status is null)
         {
             SyncNowCommand.RaiseCanExecuteChanged();
@@ -404,9 +408,9 @@ public sealed class PairDetailsViewModel : Mvvm.ObservableObject
                     : string.Empty);
         NextRunLine = NextRunText(pair, latest, now);
 
-        // Counter rule = ConflictsPage: Warning events that carry a file (no service Warnings).
-        ConflictsLine = runs.Sum(r => r.Events.Count(
-            e => e.Outcome == SyncEventOutcome.Warning && e.Path is { IsEmpty: false })).ToString();
+        // the one counting rule every screen shares — resolved conflicts stop here too,
+        // or the numbers on this screen and the conflicts screen diverge after a resolution
+        ConflictsLine = ConflictEvents.CountUnresolved(runs).ToString();
         StashLine = stashCount > 0
             ? $"{stashCount} · {string.Format(AppStrings.DetailsStashNote, (int)_stashOptions.Ttl.TotalDays)}"
             : string.Format(AppStrings.DetailsStashNote, (int)_stashOptions.Ttl.TotalDays);
@@ -489,7 +493,10 @@ public sealed class PairDetailsViewModel : Mvvm.ObservableObject
     }
 
     /// <summary>
-    /// SAF folder re-pick: a new persistable tree-URI in <c>LocalTreeKey</c>; the pair's baseline is untouched.
+    /// SAF folder re-pick with confirmation: a new persistable tree-URI in <c>LocalTreeKey</c>.
+    /// The baseline and the write-ahead journal are cleared first, so the next run reads the new
+    /// folder as the truth instead of reading every difference from the old folder as a deletion.
+    /// Blocked while a run is active — its projection would overwrite the cleared state.
     /// </summary>
     private async Task ChangeFolderAsync(CancellationToken ct)
     {
@@ -498,10 +505,35 @@ public sealed class PairDetailsViewModel : Mvvm.ObservableObject
             return;
         }
 
-        var picked = await _picker.PickAsync(ct);
-        if (picked is not null)
+        var confirmed = await _dialogs.ConfirmAsync(
+            AppStrings.DetailsChangeFolderTitle, AppStrings.DetailsChangeFolderBody,
+            AppStrings.DetailsChangeFolderAccept, AppStrings.DialogCancel, ct, destructive: true);
+        if (!confirmed)
         {
+            return;
+        }
+
+        var picked = await _picker.PickAsync(ct);
+        if (picked is null || picked.TreeUri == pair.LocalTreeKey)
+        {
+            return; // nothing chosen, or the same folder — the state stays exactly as it was
+        }
+
+        IsBusy = true;
+        try
+        {
+            // cancel the schedule before wiping: a periodic run must not walk into the half-changed state;
+            // SaveAsync re-arms it for the new tree. Wiping before saving the pair is the safe order:
+            // an interrupted change leaves the old folder with an empty baseline — an honest rescan,
+            // never a deletion storm built on the old tree's ghost
+            await _scheduler.CancelAsync(_pairId, ct);
+            await _state.ClearJournalAsync(_pairId, ct); // resume records name paths of the old tree — dead operations after the rebind
+            await _state.ReplaceBaselineAsync(_pairId, [], ct);
             await SaveAsync(pair with { LocalTreeKey = picked.TreeUri }, ct);
+        }
+        finally
+        {
+            await Application.Current!.Dispatcher.DispatchAsync(() => IsBusy = false);
         }
     }
 
