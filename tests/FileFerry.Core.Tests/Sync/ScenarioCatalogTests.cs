@@ -236,6 +236,97 @@ public sealed class ScenarioCatalogTests
     }
 
     [Fact]
+    public void DeleteVsModify_OnFolder_KeepsTheServerContainer_Silently()
+    {
+        // the folder itself vanished locally while the server's collection evidence moved: content
+        // lives in the children (each keeps its own live version by the file rules); the container
+        // is simply recreated — downloading a collection would be a dead step quarantining the pair
+        var plan = Plan(
+            local: [],
+            remote: [Dir("photos", etag: "x")],
+            baseline: [Dir("photos", etag: "b")]);
+
+        Assert.Collection(plan.Operations,
+            op => Assert.Equal(OperationKind.CreateLocalFolder, op.Kind));
+        Assert.Empty(plan.Conflicts);
+    }
+
+    [Fact]
+    public void DeleteVsModify_OnFolder_KeepsTheDeviceContainer_Silently()
+    {
+        // the mirror: the server lost the folder while the device tree moved under it
+        var plan = Plan(
+            local: [Dir("photos", etag: "x")],
+            remote: [],
+            baseline: [Dir("photos", etag: "b")]);
+
+        Assert.Collection(plan.Operations,
+            op => Assert.Equal(OperationKind.CreateRemoteFolder, op.Kind));
+        Assert.Empty(plan.Conflicts);
+    }
+
+    [Fact]
+    public void DeleteVsModify_OnFolder_WithMuteBaselineEvidence_ChildrenDecide()
+    {
+        // a folder row created by the engine itself carries no collection evidence until a scan
+        // heals one. While the baseline row is mute, the children are the folder's evidence:
+        // an entry the baseline never saw on the surviving side says that side moved — a stale
+        // "unchanged" must never propagate the folder's deletion over content nobody saw yet
+        var plan = Plan(
+            local: [],
+            remote: [Dir("photos"), File("photos/new.txt", etag: "n1")],
+            baseline: [Dir("photos")]);
+
+        Assert.Collection(plan.Operations,
+            op => Assert.Equal(OperationKind.CreateLocalFolder, op.Kind),
+            op => Assert.Equal(OperationKind.DownloadToLocal, op.Kind)); // the unseen server file comes down
+        Assert.Empty(plan.Conflicts);
+    }
+
+    [Fact]
+    public void DeleteVsModify_OnFolder_WithMuteBaselineEvidence_AndQuietChildren_StaysADeletion()
+    {
+        // the mirror of trust: nothing new on the surviving side, every child the baseline knows
+        // — the deletion is honest and propagates (no phantom conflict, no resurrected folder);
+        // the pre-deletion stash copy rides along, as every deletion must
+        var plan = Plan(
+            local: [],
+            remote: [Dir("photos"), File("photos/a.txt", etag: "b1")],
+            baseline: [Dir("photos"), File("photos/a.txt", etag: "b1")]);
+
+        Assert.Contains(plan.Operations, static op =>
+            op.Kind == OperationKind.DeleteRemote && op.Path.ToString() == "photos");
+        Assert.Contains(plan.Operations, static op =>
+            op.Kind == OperationKind.DeleteRemote && op.Path.ToString() == "photos/a.txt");
+        Assert.All(plan.Operations, static op => Assert.True(
+            op.Kind == OperationKind.DeleteRemote || op.Kind == OperationKind.DownloadToLocal));
+        Assert.Empty(plan.Conflicts);
+    }
+
+    [Fact]
+    public void CaseCollision_InvolvingAFolder_NotesWithoutDeadOperations()
+    {
+        // a folder clash cannot be safely duplicated: conflict copies are file-level, and on a
+        // case-insensitive side a mkdir of the twin aliases onto the same folder. The engine plans
+        // nothing dead and says so — one side has to be renamed by hand.
+        var folderVsFolder = Plan(
+            local: [Dir("Docs")],
+            remote: [Dir("docs")],
+            baseline: []);
+
+        Assert.Empty(folderVsFolder.Operations);
+        Assert.Equal(ConflictKind.CaseCollision, Assert.Single(folderVsFolder.Conflicts).Kind);
+
+        var folderVsFile = Plan(
+            local: [File("Report.txt", etag: "e1")],
+            remote: [Dir("report.txt")],
+            baseline: []);
+
+        Assert.Empty(folderVsFile.Operations);
+        Assert.Equal(ConflictKind.CaseCollision, Assert.Single(folderVsFile.Conflicts).Kind);
+    }
+
+    [Fact]
     public void Partial_scan_failure_halts_before_any_operation()
     {
         var planner = Engine();
@@ -373,4 +464,10 @@ public sealed class ScenarioCatalogTests
 
     private static FileSnapshot Dir(string path) =>
         new(RelativePath.Parse(path), EntryKind.Directory, 0);
+
+    /// <summary>
+    /// A directory whose collection evidence moved (the server stamps one; a child's change moves it).
+    /// </summary>
+    private static FileSnapshot Dir(string path, string etag) =>
+        new(RelativePath.Parse(path), EntryKind.Directory, 0, ETag: etag);
 }

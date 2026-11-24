@@ -29,7 +29,7 @@ public sealed class DiffEngine
             remote.TryGetValue(path, out var r);
             baseline.TryGetValue(path, out var b);
 
-            var change = Classify(path, b, l, r);
+            var change = Classify(path, b, l, r, local, remote, baseline);
             if (change is not null)
             {
                 changes.Add(change);
@@ -43,7 +43,11 @@ public sealed class DiffEngine
     /// Three-way assessment of a single path; <see langword="null"/> — no changes (or both sides
     /// match the baseline).
     /// </summary>
-    private static Change? Classify(RelativePath path, FileSnapshot? b, FileSnapshot? l, FileSnapshot? r)
+    private static Change? Classify(
+        RelativePath path, FileSnapshot? b, FileSnapshot? l, FileSnapshot? r,
+        IReadOnlyDictionary<RelativePath, FileSnapshot> local,
+        IReadOnlyDictionary<RelativePath, FileSnapshot> remote,
+        IReadOnlyDictionary<RelativePath, FileSnapshot> baseIndex)
     {
         // Added: not in the baseline.
         if (b is null)
@@ -67,8 +71,12 @@ public sealed class DiffEngine
         }
 
         // Was in the baseline: assess each side separately (changed/deleted/unchanged).
-        var localChanged = l is null || !b.SameContentAs(l);
-        var remoteChanged = r is null || !b.SameContentAs(r);
+        // A folder's content lives in its children: a mute row (the engine writes baseline folder
+        // rows without collection evidence until a scan heals one) must never say "unchanged"
+        // while the side's subtree gained or moved entries — for a directory the children are
+        // the evidence, and propagating a deletion over unseen content is exactly what this gates.
+        var localChanged = l is null || !b.SameContentAs(l) || l.IsDirectory && !ChildrenMatch(local, baseIndex, path);
+        var remoteChanged = r is null || !b.SameContentAs(r) || r.IsDirectory && !ChildrenMatch(remote, baseIndex, path);
 
         // Both sides gone — simply dropped from the baseline later; no operations.
         if (l is null && r is null)
@@ -81,6 +89,14 @@ public sealed class DiffEngine
         if (!localChanged && !remoteChanged)
         {
             return null;
+        }
+
+        // A side changed its type under the same name (a file replaced a synced folder or the
+        // reverse): no operation carries that across without destroying the other kind —
+        // a conflict for hand resolution, not a blind write.
+        if ((l is not null && l.Kind != b.Kind) || (r is not null && r.Kind != b.Kind))
+        {
+            return new Change(ChangeKind.Both, path, b, l, r);
         }
 
         // Only local deviated from the baseline → one-sided change (converge toward remote).
@@ -110,5 +126,42 @@ public sealed class DiffEngine
         }
 
         return l.SameByStrongEvidence(r) ? null : new Change(ChangeKind.Both, path, b, l, r);
+    }
+
+    /// <summary>
+    /// Whether a directory's subtree on one side still matches the baseline: the same set of
+    /// descendant entries, each pair content-equal per <see cref="FileSnapshot.SameContentAs"/>.
+    /// Deep changes count through every ancestor; entries the baseline never saw (or vanished)
+    /// mean the folder moved even when its own row carries no evidence to say so.
+    /// </summary>
+    private static bool ChildrenMatch(
+        IReadOnlyDictionary<RelativePath, FileSnapshot> side,
+        IReadOnlyDictionary<RelativePath, FileSnapshot> baseline,
+        RelativePath folder)
+    {
+        var sideCount = 0;
+        foreach (var entry in side)
+        {
+            if (entry.Key.Equals(folder) || !entry.Key.StartsWith(folder))
+            {
+                continue;
+            }
+
+            sideCount++;
+            if (!baseline.TryGetValue(entry.Key, out var known) || !entry.Value.SameContentAs(known))
+            {
+                return false;
+            }
+        }
+
+        foreach (var key in baseline.Keys)
+        {
+            if (!key.Equals(folder) && key.StartsWith(folder) && !side.ContainsKey(key))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

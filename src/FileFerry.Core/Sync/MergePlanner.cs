@@ -58,6 +58,16 @@ public sealed class MergePlanner
             pending.Remove(localAdd);
             pending.Remove(rival);
 
+            if (localAdd.Local!.IsDirectory || rival.Remote!.IsDirectory)
+            {
+                // a folder cannot be duplicated under a conflict name (copies are file-level) and
+                // its container cannot cross blindly (on a case-insensitive side the twin mkdir
+                // aliases onto the same folder): no dead operations — the note says a side must
+                // be renamed by hand
+                conflicts.Add(new ConflictNote(ConflictKind.CaseCollision, localAdd.Path));
+                continue;
+            }
+
             var copy = _conflicts.ConflictCopyName(localAdd.Path, now);
             emissions.Add(new PlannedOp(Phase.ConflictCopy, copy.Depth, new SyncOperation(OperationKind.CopyLocal, copy, localAdd.Path, localAdd.Local! with { Path = copy })));
             emissions.Add(new PlannedOp(Phase.Write, copy.Depth, new SyncOperation(OperationKind.UploadToRemote, copy, null, localAdd.Local! with { Path = copy })));
@@ -81,7 +91,16 @@ public sealed class MergePlanner
                 case ChangeKind.Modified:
                     // DiffEngine guarantees: exactly one side changed
                     var localChanged = !change.Base!.SameContentAs(change.Local!);
-                    emissions.Add(WriteOp(localChanged ? change.Local! : change.Remote!, toRemote: localChanged));
+                    var source = localChanged ? change.Local! : change.Remote!;
+                    if (source.IsDirectory && change.Base.IsDirectory)
+                    {
+                        // a folder's content lives in its children — their own changes converge
+                        // the pair, and the scan backfill heals the row's evidence; a folder
+                        // "write" over an existing container would be churn at best
+                        break;
+                    }
+
+                    emissions.Add(WriteOp(source, toRemote: localChanged));
                     break;
 
                 case ChangeKind.Deleted:
@@ -108,9 +127,19 @@ public sealed class MergePlanner
                         emissions.Add(new PlannedOp(PhaseOf(operation.Kind), operation.Path.Depth, operation));
                     }
 
-                    conflicts.Add(new ConflictNote(
-                        change.Local is null || change.Remote is null ? ConflictKind.DeleteVersusModify : ConflictKind.BothModified,
-                        change.Path));
+                    // a container delete-vs-modify is not a content conflict: the strategy only
+                    // recreates the folder, the children decide their own fates — nothing was kept
+                    // or lost silently, so there is nothing for the conflicts screen to announce
+                    var containerConflict =
+                        (change.Local is null && change.Remote is { IsDirectory: true }) ||
+                        (change.Remote is null && change.Local is { IsDirectory: true });
+                    if (!containerConflict)
+                    {
+                        conflicts.Add(new ConflictNote(
+                            change.Local is null || change.Remote is null ? ConflictKind.DeleteVersusModify : ConflictKind.BothModified,
+                            change.Path));
+                    }
+
                     break;
             }
         }

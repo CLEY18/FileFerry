@@ -294,6 +294,32 @@ public sealed class SyncRunTests
         Assert.Contains(log.Events, static e => e.Kind == EventKind.RunFailed);
     }
 
+    [Fact]
+    public async Task FolderDeletedLocally_WhileServerTreeMoved_ResurrectsWithoutQuarantineLoop()
+    {
+        // the reviewed regression: a folder disappears locally while the server's collection moves
+        // under it. The old rule planned a download of the collection — the step died, quarantine
+        // wiped the journal, and every re-run choked on the same step forever. The container is
+        // recreated now; the children carry the content by their own rules.
+        await SeedLocalAsync("photos/a.txt", "A");
+        var first = await Engine().RunAsync(_pair.Id, CancellationToken.None);
+        Assert.Equal(SyncRunOutcome.Success, first.Value.Outcome);
+
+        await _local.DeleteAsync(RelativePath.Parse("photos"), CancellationToken.None);
+        await SeedRemoteAsync("photos/new.txt", "N"); // the collection's evidence moved with it
+
+        var second = await Engine().RunAsync(_pair.Id, CancellationToken.None);
+
+        Assert.True(second.IsSuccess);
+        Assert.Equal(SyncRunOutcome.Success, second.Value.Outcome); // no dead step, no quarantine
+        var local = await _local.SnapshotAsync(CancellationToken.None);
+        Assert.Contains("photos/new.txt", local.Value.Select(static s => s.Path.ToString()));
+        Assert.Empty(await _state.LoadJournalAsync(_pair.Id, CancellationToken.None));
+
+        var third = await Engine().RunAsync(_pair.Id, CancellationToken.None);
+        Assert.Equal(0, third.Value.Planned); // the state truly converged — nothing waits for the next run
+    }
+
     private SyncRun Engine(IEnumerable<IOperationHandler>? handlers = null, ISyncStateRepository? state = null) =>
         new(
             _scopes,

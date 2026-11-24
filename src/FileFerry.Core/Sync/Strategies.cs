@@ -28,15 +28,30 @@ public sealed class KeepBothStrategy : IConflictResolutionStrategy
         var l = change.Local;
         var r = change.Remote;
 
-        // delete-vs-modify: only one side is alive — it becomes canonical on both sides
+        // delete-vs-modify: only one side is alive — it becomes canonical on both sides.
+        // A container is not content: its children own the data and keep their own live versions
+        // by the file rules; recreating the folder on the barren side converges it — downloading
+        // or uploading a collection would be a dead step, quarantining the pair on every re-run.
         if (l is null && r is not null)
         {
-            return [new SyncOperation(OperationKind.DownloadToLocal, change.Path, null, r)];
+            return r.IsDirectory
+                ? [new SyncOperation(OperationKind.CreateLocalFolder, change.Path, null, r)]
+                : [new SyncOperation(OperationKind.DownloadToLocal, change.Path, null, r)];
         }
 
         if (r is null && l is not null)
         {
-            return [new SyncOperation(OperationKind.UploadToRemote, change.Path, null, l)];
+            return l.IsDirectory
+                ? [new SyncOperation(OperationKind.CreateRemoteFolder, change.Path, null, l)]
+                : [new SyncOperation(OperationKind.UploadToRemote, change.Path, null, l)];
+        }
+
+        if (l!.IsDirectory || r!.IsDirectory)
+        {
+            // a type clash on one path (folder versus file): conflict copies are file-level and
+            // a container cannot cross onto a foreign twin — no dead operations; the note tells
+            // the user that one side has to be renamed by hand
+            return [];
         }
 
         var copyName = ConflictCopyName(change.Path, now);
