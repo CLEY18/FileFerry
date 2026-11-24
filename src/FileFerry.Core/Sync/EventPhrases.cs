@@ -20,13 +20,14 @@ public static class EventPhrases
                        FailMaintenance = "Maintenance",
                        FailLocalScan = "LocalScan",
                        FailRemoteScan = "RemoteScan",
-                       FailPlanner = "Planner";
+                       FailPlanner = "Planner",
+                       FailPipeline = "Pipeline";
 
     /// <summary>
     /// Known failure stages (for key generation and resx-coverage checks).
     /// </summary>
     public static IReadOnlyList<string> FailLabels { get; } =
-        [FailScope, FailProbe, FailMaintenance, FailLocalScan, FailRemoteScan, FailPlanner];
+        [FailScope, FailProbe, FailMaintenance, FailLocalScan, FailRemoteScan, FailPlanner, FailPipeline];
 
     /// <summary>
     /// A stage collapsed: phrase key from the <c>label</c> (unknown → generic EventRunFailed).

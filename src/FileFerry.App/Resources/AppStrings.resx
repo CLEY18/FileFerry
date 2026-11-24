@@ -187,6 +187,7 @@
   <data name="EventFailLocalScan" xml:space="preserve"><value>Local scan failed · {0}</value></data>
   <data name="EventFailRemoteScan" xml:space="preserve"><value>Remote scan failed · {0}</value></data>
   <data name="EventFailPlanner" xml:space="preserve"><value>Planner halted the sync · {0}</value></data>
+  <data name="EventFailPipeline" xml:space="preserve"><value>Sync stopped unexpectedly · {0}</value></data>
   <data name="EventStashPurged" xml:space="preserve"><value>Expired trash copies purged · {0}</value></data>
   <data name="EventResolvedLocal" xml:space="preserve"><value>Kept the local version</value></data>
   <data name="EventResolvedServer" xml:space="preserve"><value>Kept the server version</value></data>
@@ -200,4 +201,5 @@
   <data name="ErrorPermissionLost" xml:space="preserve"><value>Access lost — re-grant folder access</value></data>
   <data name="ErrorConflict" xml:space="preserve"><value>State conflict</value></data>
   <data name="ErrorUnknown" xml:space="preserve"><value>Unknown error</value></data>
+  <data name="ErrorLocalIo" xml:space="preserve"><value>Device storage error</value></data>
 </root>

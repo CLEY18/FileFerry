@@ -28,6 +28,7 @@ public sealed class InMemoryFileSystem : ILocalFileSystem
     /// <inheritdoc cref="ILocalFileSystem.SnapshotAsync"/>
     public Task<Result<IReadOnlyList<FileSnapshot>, SyncError>> SnapshotAsync(CancellationToken ct)
     {
+        ct.ThrowIfCancellationRequested(); // same cancellation contract as the real adapters: a stop is an exception, not a failure
         lock (_gate)
         {
             var snapshots = new List<FileSnapshot>(_files.Count + _folders.Count);
@@ -61,6 +62,7 @@ public sealed class InMemoryFileSystem : ILocalFileSystem
     /// <inheritdoc cref="ILocalFileSystem.WriteAsync"/>
     public Task<Result<FileSnapshot, SyncError>> WriteAsync(RelativePath path, Stream content, CancellationToken ct)
     {
+        ct.ThrowIfCancellationRequested(); // same cancellation contract as the real adapters
         using var buffer = new MemoryStream();
         content.CopyTo(buffer);
         var bytes = buffer.ToArray();
@@ -103,6 +105,7 @@ public sealed class InMemoryFileSystem : ILocalFileSystem
     /// <inheritdoc cref="ILocalFileSystem.CopyAsync"/>
     public Task<Result<FileSnapshot, SyncError>> CopyAsync(RelativePath from, RelativePath to, CancellationToken ct)
     {
+        ct.ThrowIfCancellationRequested(); // same cancellation contract as the real adapters
         lock (_gate)
         {
             if (!_files.TryGetValue(from.ToString(), out var node))

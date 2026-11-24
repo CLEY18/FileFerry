@@ -49,6 +49,12 @@ public sealed class SyncWorker : Worker
             // scheduler/UI stop — the run journal is already consistent, no retry needed
             return ListenableWorker.Result.InvokeSuccess()!;
         }
+        catch (Exception)
+        {
+            // the last resort outside the run itself (the pipeline journals its own crashes):
+            // a plain failure stops the job — a crash would hand WorkManager a crash-retry loop
+            return ListenableWorker.Result.InvokeFailure()!;
+        }
     }
 
     /// <summary>

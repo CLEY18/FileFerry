@@ -161,6 +161,26 @@ public abstract class LocalFileSystemContract
         Assert.Equal(ErrorKind.Conflict, moved.Error.Kind);
     }
 
+    /// <summary>
+    /// Cancellation is a working situation, not an I/O failure: an observed cancellation travels on
+    /// as <see cref="OperationCanceledException"/>. An adapter that dresses it as a
+    /// <see cref="SyncError"/> teaches the retry channel to restart the run the user has just stopped.
+    /// </summary>
+    [Fact]
+    public async Task Cancellation_IsThrown_NotReturnedAsFailure()
+    {
+        var fs = Create();
+        await fs.WriteAsync(RelativePath.Parse("seed.txt"), new MemoryStream([1, 2, 3]), CancellationToken.None);
+        using var cancelled = new CancellationTokenSource();
+        cancelled.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => fs.SnapshotAsync(cancelled.Token));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => fs.WriteAsync(RelativePath.Parse("next.txt"), new MemoryStream([4]), cancelled.Token));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => fs.CopyAsync(RelativePath.Parse("seed.txt"), RelativePath.Parse("copy.txt"), cancelled.Token));
+    }
+
     private static byte[] ToArray(Stream stream)
     {
         using var buffer = new MemoryStream();

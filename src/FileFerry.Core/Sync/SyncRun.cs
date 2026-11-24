@@ -128,6 +128,16 @@ public sealed class SyncRun
             return Result<SyncRunReport, SyncError>.Success(
                 new SyncRunReport(runId, SyncRunOutcome.Cancelled, 0, 0, 0, null));
         }
+        catch (Exception ex)
+        {
+            // Last resort: the pipeline contract is Result + cancellation, so an exception here is a
+            // bug (a rotten stored row, a provider error nobody mapped). The process must survive it
+            // and the journal must say what happened — a silent death would leave the user without a
+            // trace and WorkManager without a verdict.
+            return await FailAsync(runId, pairId, startedAt,
+                SyncError.Of(ErrorKind.Unknown, $"{ex.GetType().Name}: {ex.Message}", ex),
+                EventPhrases.FailPipeline, events).ConfigureAwait(false);
+        }
     }
 
     /// <summary>
@@ -266,9 +276,11 @@ public sealed class SyncRun
         // replacement; fresh scan evidence heals rows the operations didn't touch.
         // This also happens on a step failure (journal quarantined): "applied" ≠ "run
         // completed", and without this the applied state would become a "ghost" and churn the next plan.
-        // Cancellation never gets here (the OCE branch above) — its journal is replayed idempotently by resume.
+        // The projection runs on its own token like the run-log: a cancellation arriving right here
+        // (the quarantine has already wiped the resume evidence) must not leave applied operations
+        // unprojected — the storage write is short and must complete for the next plan to be honest.
         await _baseline
-            .ApplyAsync(pairId, report.Applied, remoteScanned, localScanned, ct)
+            .ApplyAsync(pairId, report.Applied, remoteScanned, localScanned, CancellationToken.None)
             .ConfigureAwait(false);
 
         // TTL-purge of the buffer — after the applied set and the baseline, at the end of the run; best-effort:

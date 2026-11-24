@@ -50,6 +50,12 @@ public enum ErrorKind
     /// Everything else; details in <see cref="SyncError.Message"/>. Never secrets!
     /// </summary>
     Unknown,
+
+    /// <summary>
+    /// Device-side I/O failure (local disk, document provider) — worth a backoff retry,
+    /// but it is not the network and must not pretend to be.
+    /// </summary>
+    LocalIo,
 }
 
 /// <summary>
@@ -62,9 +68,11 @@ public enum ErrorKind
 public sealed record SyncError(ErrorKind Kind, string Message, Exception? Cause = null)
 {
     /// <summary>
-    /// Whether the failure deserves backoff retry (transient: network/server). Strategies do not "soften" the rest.
+    /// Whether the failure deserves backoff retry (transient: network/server/device I/O —
+    /// a provider hiccup heals on its own). Strategies do not "soften" the rest.
+    /// Cancellation is never a SyncError at all: it travels as an exception, see the FS adapters.
     /// </summary>
-    public bool IsTransient => Kind is ErrorKind.Network or ErrorKind.ServerGone;
+    public bool IsTransient => Kind is ErrorKind.Network or ErrorKind.ServerGone or ErrorKind.LocalIo;
 
     /// <summary>
     /// Factory shorthand for <c>new SyncError(…)</c>; the message follows the same no-secrets rule.

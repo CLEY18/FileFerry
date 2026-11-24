@@ -260,6 +260,40 @@ public sealed class SyncRunTests
         Assert.Contains("z.txt", await NamesOnRemoteAsync("sync/docs"));
     }
 
+    [Fact]
+    public async Task CancelDuringQuarantine_AppliedSetStillProjectsIntoBaseline()
+    {
+        // the user's "Cancel" lands between the quarantine (which wipes the resume evidence) and the
+        // baseline projection: the applied step already happened on disk — losing its projection here
+        // would make the next run replan a "ghost" out of an empty baseline
+        await SeedLocalAsync("docs/z.txt", "Z");
+        _scopes.Add(new SyncRunScope(_pair, _local, new PoisonedRemoteStore(_remote), _probe));
+        using var stop = new CancellationTokenSource();
+
+        var result = await Engine(state: new CancelDuringQuarantineState(_state, stop)).RunAsync(_pair.Id, stop.Token);
+
+        Assert.True(result.IsSuccess);
+        var baseline = await _state.LoadBaselineAsync(_pair.Id, CancellationToken.None);
+        Assert.Contains("docs", baseline.Select(static s => s.Path.ToString())); // the projection completed despite the cancellation
+        Assert.Empty(await _state.LoadJournalAsync(_pair.Id, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task UnexpectedPipelineCrash_ReportsUnknown_FailedLogSurvives()
+    {
+        // an unclassified exception must not leave as a crash: the journal has to tell what killed
+        // the run, and the scheduler has to see a plain failure instead of a dead process
+        _scopes.Add(new SyncRunScope(_pair, new ExplodingFileSystem(_local), _remote, _probe));
+
+        var result = await Engine().RunAsync(_pair.Id, CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorKind.Unknown, result.Error.Kind);
+        var log = (await _state.RecentRunsAsync(_pair.Id, 5, CancellationToken.None)).Single();
+        Assert.Equal(SyncRunOutcome.Failed, log.Outcome);
+        Assert.Contains(log.Events, static e => e.Kind == EventKind.RunFailed);
+    }
+
     private SyncRun Engine(IEnumerable<IOperationHandler>? handlers = null, ISyncStateRepository? state = null) =>
         new(
             _scopes,
@@ -421,5 +455,65 @@ public sealed class SyncRunTests
 
         public Task<IReadOnlyList<SyncRunLog>> RecentRunsAsync(Guid pairId, int limit, CancellationToken ct) =>
             inner.RecentRunsAsync(pairId, limit, ct);
+    }
+
+    /// <summary>
+    /// State that delivers the user's cancellation at the quarantine moment and, like real storage,
+    /// rejects a baseline write under a cancelled token: the applied-set projection survives only
+    /// when the run performs it on its own, not on the run's token.
+    /// </summary>
+    private sealed class CancelDuringQuarantineState(ISyncStateRepository inner, CancellationTokenSource stop) : ISyncStateRepository
+    {
+        public Task ClearJournalAsync(Guid pairId, CancellationToken ct)
+        {
+            stop.Cancel(); // "Cancel" arrives exactly between the step failure and the projection
+            return inner.ClearJournalAsync(pairId, ct);
+        }
+
+        public Task ReplaceBaselineAsync(Guid pairId, IReadOnlyList<FileSnapshot> baseline, CancellationToken ct)
+        {
+            ct.ThrowIfCancellationRequested();
+            return inner.ReplaceBaselineAsync(pairId, baseline, ct);
+        }
+
+        public Task<IReadOnlyList<FileSnapshot>> LoadBaselineAsync(Guid pairId, CancellationToken ct) =>
+            inner.LoadBaselineAsync(pairId, ct);
+
+        public Task AppendJournalAsync(Guid pairId, JournalEntry entry, CancellationToken ct) =>
+            inner.AppendJournalAsync(pairId, entry, ct);
+
+        public Task<IReadOnlyList<JournalEntry>> LoadJournalAsync(Guid pairId, CancellationToken ct) =>
+            inner.LoadJournalAsync(pairId, ct);
+
+        public Task SaveRunLogAsync(SyncRunLog runLog, CancellationToken ct) => inner.SaveRunLogAsync(runLog, ct);
+
+        public Task<IReadOnlyList<SyncRunLog>> RecentRunsAsync(Guid pairId, int limit, CancellationToken ct) =>
+            inner.RecentRunsAsync(pairId, limit, ct);
+    }
+
+    /// <summary>
+    /// Local side throwing something the pipeline never expects — the shape of a bug: an
+    /// unclassified provider error or a parser blowing up on a rotten row.
+    /// </summary>
+    private sealed class ExplodingFileSystem(ILocalFileSystem inner) : ILocalFileSystem
+    {
+        public Task<Result<IReadOnlyList<FileSnapshot>, SyncError>> SnapshotAsync(CancellationToken ct) =>
+            throw new InvalidOperationException("simulated unclassified crash");
+
+        public Task<Result<Stream, SyncError>> ReadAsync(RelativePath path, CancellationToken ct) => inner.ReadAsync(path, ct);
+
+        public Task<Result<FileSnapshot, SyncError>> WriteAsync(RelativePath path, Stream content, CancellationToken ct) =>
+            inner.WriteAsync(path, content, ct);
+
+        public Task<Result<Ok, SyncError>> CreateFolderAsync(RelativePath path, CancellationToken ct) =>
+            inner.CreateFolderAsync(path, ct);
+
+        public Task<Result<FileSnapshot, SyncError>> CopyAsync(RelativePath from, RelativePath to, CancellationToken ct) =>
+            inner.CopyAsync(from, to, ct);
+
+        public Task<Result<Ok, SyncError>> MoveAsync(RelativePath from, RelativePath to, CancellationToken ct) =>
+            inner.MoveAsync(from, to, ct);
+
+        public Task<Result<Ok, SyncError>> DeleteAsync(RelativePath path, CancellationToken ct) => inner.DeleteAsync(path, ct);
     }
 }

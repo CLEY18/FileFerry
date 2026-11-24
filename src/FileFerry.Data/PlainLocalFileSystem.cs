@@ -49,6 +49,10 @@ public sealed class PlainLocalFileSystem : ILocalFileSystem
             snapshots.Sort(static (a, b) => a.Path.CompareTo(b.Path));
             return Result<IReadOnlyList<FileSnapshot>, SyncError>.Success(snapshots);
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw; // cancellation is not an I/O outcome — it travels on as cancellation, stack included
+        }
         catch (Exception ex)
         {
             return FromException<IReadOnlyList<FileSnapshot>>(ex, _root);
@@ -103,6 +107,11 @@ public sealed class PlainLocalFileSystem : ILocalFileSystem
             var info = new FileInfo(full);
             return Result<FileSnapshot, SyncError>.Success(new FileSnapshot(
                 path, EntryKind.File, info.Length, new DateTimeOffset(info.LastWriteTimeUtc, TimeSpan.Zero)));
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            TryDelete(tmp);
+            throw; // the stop button pressed: the caller must see cancellation, not a failure to retry
         }
         catch (Exception ex)
         {
@@ -161,6 +170,10 @@ public sealed class PlainLocalFileSystem : ILocalFileSystem
             var info = new FileInfo(fullTo);
             return Result<FileSnapshot, SyncError>.Success(new FileSnapshot(
                 to, EntryKind.File, info.Length, info.LastWriteTimeUtc));
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw; // same rule as the write: a stopped run is reported by the exception, never as a failure
         }
         catch (Exception ex)
         {
@@ -269,14 +282,15 @@ public sealed class PlainLocalFileSystem : ILocalFileSystem
 
     /// <summary>
     /// Maps FS exceptions onto <see cref="ErrorKind"/> categories (expected outcomes go
-    /// through Result, never exceptions).
+    /// through Result, never exceptions). Cancellation never enters here as a category: the
+    /// callers above rethrow it while the token is the run's — it must not come back dressed
+    /// as a retryable failure.
     /// </summary>
     private static Result<TValue, SyncError> FromException<TValue>(Exception ex, string path) => ex switch
     {
-        OperationCanceledException => Result<TValue, SyncError>.Failure(SyncError.Of(ErrorKind.Network, "Cancelled.", ex)),
         UnauthorizedAccessException => Result<TValue, SyncError>.Failure(SyncError.Of(ErrorKind.PermissionLost, $"No access to '{path}'.", ex)),
         IOException io when io.HResult == unchecked((int)0x80070070) => Result<TValue, SyncError>.Failure(SyncError.Of(ErrorKind.StorageFull, $"Storage is full: '{path}'.", io)),
-        IOException io => Result<TValue, SyncError>.Failure(SyncError.Of(ErrorKind.Network, $"I/O error for '{path}'.", io)),
+        IOException io => Result<TValue, SyncError>.Failure(SyncError.Of(ErrorKind.LocalIo, $"I/O error for '{path}'.", io)),
         _ => Result<TValue, SyncError>.Failure(SyncError.Of(ErrorKind.Unknown, $"Unexpected FS error for '{path}'.", ex)),
     };
 

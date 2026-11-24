@@ -1,3 +1,5 @@
+using FileFerry.Core.Domain;
+using FileFerry.Core.Domain.Paths;
 using FileFerry.Core.Ports;
 using FileFerry.Data;
 
@@ -19,6 +21,22 @@ public sealed class PlainLocalFileSystemContractTests : LocalFileSystemContract,
         var root = Path.Combine(Path.GetTempPath(), "fileferry-contract", Guid.NewGuid().ToString("n"));
         _createdRoots.Add(root);
         return new PlainLocalFileSystem(root);
+    }
+
+    /// <summary>
+    /// A local I/O failure is named for what it is — a device storage error. "Network" would lie in
+    /// the journal and borrow the network retry story; the kind, not the message, drives the reaction.
+    /// </summary>
+    [Fact]
+    public async Task IoError_IsLocalStorage_NotNetwork()
+    {
+        var fs = Create();
+        await fs.WriteAsync(RelativePath.Parse("a.txt"), new MemoryStream([1]), CancellationToken.None);
+
+        var result = await fs.CreateFolderAsync(RelativePath.Parse("a.txt/inside"), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorKind.LocalIo, result.Error.Kind);
     }
 
     /// <summary>

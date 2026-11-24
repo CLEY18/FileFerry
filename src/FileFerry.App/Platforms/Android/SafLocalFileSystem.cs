@@ -530,6 +530,8 @@ public sealed class SafLocalFileSystem : ILocalFileSystem
     /// <summary>
     /// Guard: work inside a pool thread; expected failures (SafFailureException) → Result,
     /// unexpected exceptions → the mapping of <see cref="FromException{TValue}"/>.
+    /// A requested cancellation is neither: it travels on as the exception it is, or the retry
+    /// channel would restart the very run the stop button ended.
     /// </summary>
     private static async Task<Result<T, SyncError>> GuardAsync<T>(string what, Func<Task<Result<T, SyncError>>> action, CancellationToken ct)
     {
@@ -541,6 +543,10 @@ public sealed class SafLocalFileSystem : ILocalFileSystem
         {
             return Result<T, SyncError>.Failure(fail.Error);
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             return FromException<T>(ex, what);
@@ -548,19 +554,19 @@ public sealed class SafLocalFileSystem : ILocalFileSystem
     }
 
     /// <summary>
-    /// Mapping of SAF/platform exceptions to <see cref="ErrorKind"/> (matches Plain: cancellation →
-    /// Network, Security → PermissionLost).
+    /// Mapping of SAF/platform exceptions to <see cref="ErrorKind"/> (matches Plain: I/O →
+    /// LocalIo, Security → PermissionLost). Cancellation never gets a category here — the guard
+    /// above rethrows it while the token belongs to the run.
     /// </summary>
     private static Result<TValue, SyncError> FromException<TValue>(Exception ex, string what) => ex switch
     {
-        OperationCanceledException => Result<TValue, SyncError>.Failure(SyncError.Of(ErrorKind.Network, "Cancelled.", ex)),
         Java.Lang.SecurityException => Result<TValue, SyncError>.Failure(SyncError.Of(ErrorKind.PermissionLost, $"SAF access to '{what}' was lost.", ex)),
         System.Security.SecurityException => Result<TValue, SyncError>.Failure(SyncError.Of(ErrorKind.PermissionLost, $"SAF access to '{what}' was lost.", ex)),
         Java.IO.IOException io when LowSpace(io) => Result<TValue, SyncError>.Failure(SyncError.Of(ErrorKind.StorageFull, $"Storage is full: '{what}'.", io)),
-        Java.IO.IOException => Result<TValue, SyncError>.Failure(SyncError.Of(ErrorKind.Network, $"I/O error for '{what}'.", ex)),
+        Java.IO.IOException => Result<TValue, SyncError>.Failure(SyncError.Of(ErrorKind.LocalIo, $"I/O error for '{what}'.", ex)),
         Java.Lang.IllegalArgumentException => Result<TValue, SyncError>.Failure(SyncError.Of(ErrorKind.Conflict, $"Provider rejected the operation on '{what}' (invalid document).", ex)),
         UnauthorizedAccessException => Result<TValue, SyncError>.Failure(SyncError.Of(ErrorKind.PermissionLost, $"No access to '{what}'.", ex)),
-        IOException => Result<TValue, SyncError>.Failure(SyncError.Of(ErrorKind.Network, $"I/O error for '{what}'.", ex)),
+        IOException => Result<TValue, SyncError>.Failure(SyncError.Of(ErrorKind.LocalIo, $"I/O error for '{what}'.", ex)),
         _ => Result<TValue, SyncError>.Failure(SyncError.Of(ErrorKind.Unknown, $"Unexpected SAF error for '{what}'.", ex)),
     };
 
