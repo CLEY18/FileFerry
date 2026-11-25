@@ -364,6 +364,41 @@ public sealed class ConflictResolutionRunTests
         Assert.Equal("B", await ReadLocalAsync($"{renamed}/b.txt"));
     }
 
+    [Fact]
+    public async Task AddedFolderVersusExistingTwin_NotesThenTheActionConverges()
+    {
+        // the server grows a second spelling next to the synced folder.
+        // The run ends with the note alone (the provider refusal loop is gone), the rename
+        // action dissolves it, the next run brings both spellings — nothing lost
+        await _local.CreateFolderAsync(RelativePath.Parse("Docs"), CancellationToken.None);
+        await SeedLocalAsync("Docs/a.txt", "A");
+        await Engine().RunAsync(_pair.Id, CancellationToken.None); // the folder pair syncs up once
+
+        await SeedRemoteAsync("docs/b.txt", "B"); // the server grows the second spelling
+
+        var first = await Engine().RunAsync(_pair.Id, CancellationToken.None);
+        Assert.True(first.IsSuccess);
+        Assert.Equal(0, first.Value.Planned); // no create+download onto the twin
+        Assert.Equal(1, first.Value.Conflicts);
+
+        _clock.Advance(TimeSpan.FromMinutes(1));
+        var action = await Engine().ResolveConflictAsync(
+            _pair.Id, RelativePath.Parse("docs"), FolderAction.RenameServer, CancellationToken.None);
+        Assert.True(action.IsSuccess, action.IsFailure ? action.Error.Message : string.Empty);
+
+        var followUp = await Engine().RunAsync(_pair.Id, CancellationToken.None);
+        Assert.True(followUp.IsSuccess, followUp.IsFailure ? followUp.Error.Message : string.Empty);
+        Assert.Equal(0, followUp.Value.Conflicts);
+        Assert.Equal("A", await ReadLocalAsync("Docs/a.txt"));
+        Assert.Equal("B", await ReadLocalAsync($"docs (conflict {StampOf(_clock.UtcNow)})/b.txt"));
+
+        var settled = await Engine().RunAsync(_pair.Id, CancellationToken.None);
+        Assert.Equal(0, settled.Value.Planned);
+        Assert.Equal(0, ConflictEvents.CountUnresolved(
+            await _state.RecentRunsAsync(_pair.Id, 20, CancellationToken.None)));
+    }
+
+
     /// <summary>
     /// The stamp embedded into conflict-copy and stash names at this moment (UTC, the engine's format).
     /// </summary>

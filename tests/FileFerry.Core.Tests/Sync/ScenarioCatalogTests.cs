@@ -424,6 +424,80 @@ public sealed class ScenarioCatalogTests
     }
 
     [Fact]
+    public void CaseCollision_AddedFolderVersusExistingTwin_NotesAndQuarantinesTheIncomingSubtree()
+    {
+        // the server holds a second spelling next to the synced one (a case-sensitive backend
+        // allows both): downloading `docs` onto the device would alias onto `Docs` — the SAF
+        // provider refuses, and every run fails the same way. The incoming side is the one that
+        // quarantines; the existing subtree keeps planning normally
+        var plan = Plan(
+            local: [Dir("Docs"), File("Docs/a.txt", etag: "e1"), File("Docs/c.txt", etag: "e3")],
+            remote: [Dir("Docs"), File("Docs/a.txt", etag: "e1"), Dir("docs"), File("docs/b.txt", etag: "e2")],
+            baseline: [Dir("Docs"), File("Docs/a.txt", etag: "e1")]);
+
+        Assert.All(plan.Operations, static op => Assert.True(
+            !op.Path.StartsWith(RelativePath.Parse("docs")),
+            $"no operation may target the colliding incoming path: {op.Kind} {op.Path}"));
+        Assert.Contains(plan.Operations, static op =>
+            op.Kind == OperationKind.UploadToRemote && op.Path.ToString() == "Docs/c.txt"); // the existing side lives on
+        var note = Assert.Single(plan.Conflicts);
+        Assert.Equal(ConflictKind.CaseCollision, note.Kind);
+        Assert.Equal("docs", note.Path.ToString()); // the incoming spelling is what collides
+        Assert.True(note.Folder);
+    }
+
+    [Fact]
+    public void CaseCollision_AddedFileVersusSyncedTwin_NotesInsteadOfAliasingOverIt()
+    {
+        // a download of `note.txt` onto the case-insensitive device would silently overwrite the
+        // synced `Note.txt` — a rename/delete row (no copies exist) guards it instead
+        var plan = Plan(
+            local: [File("Note.txt", etag: "e1")],
+            remote: [File("Note.txt", etag: "e1"), File("note.txt", etag: "e2")],
+            baseline: [File("Note.txt", etag: "e1")]);
+
+        Assert.Empty(plan.Operations);
+        var note = Assert.Single(plan.Conflicts);
+        Assert.Equal(ConflictKind.CaseCollision, note.Kind);
+        Assert.Equal("note.txt", note.Path.ToString());
+        Assert.True(note.Folder); // no copies exist — the row resolves by rename/delete like a folder one
+    }
+
+    [Fact]
+    public void CaseCollision_AddedVersusExisting_SuppressesNestedRowsInsideTheIncomingSubtree()
+    {
+        // both spellings of the child are unsynced twins: the parent collision `docs` covers the
+        // whole subtree — the child rows (either case) would only repeat it
+        var plan = Plan(
+            local: [Dir("Docs"), File("Docs/a.txt", etag: "e1"), File("Docs/b.txt", etag: "e2")],
+            remote: [Dir("Docs"), File("Docs/a.txt", etag: "e1"), Dir("docs"), File("docs/b.txt", etag: "e9")],
+            baseline: [Dir("Docs"), File("Docs/a.txt", etag: "e1")]);
+
+        Assert.Empty(plan.Operations);
+        var note = Assert.Single(plan.Conflicts);
+        Assert.Equal("docs", note.Path.ToString());
+    }
+
+    [Fact]
+    public void CaseCollision_LocalAddVersusRemoteExistingTwin_AlsoQuarantinesTheUpload()
+    {
+        // the mirror: uploading `Foo` next to the remote `foo` plants the second spelling on the
+        // server — tomorrow's alias download starts here, so the upload side notes too
+        var plan = Plan(
+            local: [Dir("foo"), File("foo/y.txt", etag: "e2"), Dir("Foo"), File("Foo/x.txt", etag: "e1")],
+            remote: [Dir("foo"), File("foo/y.txt", etag: "e2")],
+            baseline: [Dir("foo"), File("foo/y.txt", etag: "e2")]);
+
+        Assert.All(plan.Operations, static op => Assert.True(
+            !op.Path.StartsWith(RelativePath.Parse("Foo")),
+            $"no operation may target the colliding incoming path: {op.Kind} {op.Path}"));
+        var note = Assert.Single(plan.Conflicts);
+        Assert.Equal(ConflictKind.CaseCollision, note.Kind);
+        Assert.Equal("Foo", note.Path.ToString());
+        Assert.True(note.Folder);
+    }
+
+    [Fact]
     public void CaseCollision_AfterTheHandRename_ChildrenPlanAgain()
     {
         // the user renamed the server folder by hand: no collision shape — the quarantine existed

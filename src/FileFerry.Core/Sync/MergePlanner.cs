@@ -33,11 +33,41 @@ public sealed class MergePlanner
         var conflicts = new List<ConflictNote>();
         var emissions = new List<PlannedOp>();
         var quarantined = new List<RelativePath>();
+        var quarantinedIncoming = new List<RelativePath>();
         var now = context.Now;
 
         // ── 1. Rename: two-part baseline↔side matching by evidence ──
         EmitMoves(emissions, context, pending, propagateToRemote: true);
         EmitMoves(emissions, context, pending, propagateToRemote: false);
+
+        // ── 1.5. One-sided adds whose receiving side already holds another case of the path ──
+        // The write would land on the twin: the case-insensitive device aliases (the provider
+        // refuses or silently overwrites), the case-sensitive server grows a second collection —
+        // either way every later run repeats the failure. A twin that is itself a fresh add on
+        // the other side is not this shape — step 2 pairs those and files keep both versions.
+        // No copy exists for such a note, so the row resolves by rename/delete like a folder one.
+        var oneSidedAdds = pending
+            .Where(static c => c.Kind == ChangeKind.Added && (c.Local is null) != (c.Remote is null))
+            .ToList();
+        var addedPaths = oneSidedAdds.Select(static c => c.Path).ToHashSet();
+        foreach (var add in oneSidedAdds)
+        {
+            if (!pending.Contains(add))
+            {
+                continue; // consumed as a pair by a collision of its parent
+            }
+
+            var toRemote = add.Local is not null;
+            var incoming = toRemote ? add.Local! : add.Remote!;
+            var receivingSide = toRemote ? context.Remote : context.Local;
+            if (receivingSide.Keys.Any(key =>
+                    !Equals(key, incoming.Path) && key.EqualsIgnoreCase(incoming.Path) && !addedPaths.Contains(key)))
+            {
+                pending.Remove(add);
+                conflicts.Add(new ConflictNote(ConflictKind.CaseCollision, add.Path, Folder: true));
+                quarantinedIncoming.Add(add.Path);
+            }
+        }
 
         // ── 2. Case-collision between local-added and remote-added ──
         var adds = pending.Where(static c => c.Kind == ChangeKind.Added).ToArray();
@@ -54,6 +84,11 @@ public sealed class MergePlanner
             if (rival is null)
             {
                 continue; // no rival — an ordinary one-sided add
+            }
+
+            if (IsCoveredBy(localAdd.Path, quarantinedIncoming) || IsCoveredBy(rival.Path, quarantinedIncoming))
+            {
+                continue; // inside an incoming-versus-existing collision — its row covers this pair
             }
 
             pending.Remove(localAdd);
@@ -86,12 +121,22 @@ public sealed class MergePlanner
         {
             switch (change.Kind)
             {
-                case ChangeKind.Added when change.Local is not null:
-                    emissions.Add(WriteOp(change.Local, toRemote: true));
-                    break;
+                case ChangeKind.Added when change.Local is not null || change.Remote is not null:
+                    // an ordinary add whose receiving side already holds the same spelling in a
+                    // different case would land on the twin: the case-insensitive device aliases
+                    // (the provider refuses or overwrites), the case-sensitive server grows a
+                    // second collection — either way every later run repeats the failure. No copy
+                    // exists for such a note, so the row resolves by rename/delete like a folder one
+                    var toRemote = change.Local is not null;
+                    var incoming = toRemote ? change.Local! : change.Remote!;
+                    if (HasCaseTwin(incoming.Path, toRemote ? context.Remote : context.Local))
+                    {
+                        conflicts.Add(new ConflictNote(ConflictKind.CaseCollision, change.Path, Folder: true));
+                        quarantinedIncoming.Add(change.Path);
+                        break;
+                    }
 
-                case ChangeKind.Added when change.Remote is not null:
-                    emissions.Add(WriteOp(change.Remote, toRemote: false));
+                    emissions.Add(WriteOp(incoming, toRemote));
                     break;
 
                 case ChangeKind.Modified:
@@ -158,12 +203,40 @@ public sealed class MergePlanner
 
         // The quarantine is absolute: whatever pointed inside a folder-conflict subtree (child
         // writes, nested collision copies, nested rows) leaves the plan — the note covers the
-        // subtree, and the next run replans from state once the manual rename dissolves the shape.
-        var outside = emissions.Where(e => !IsQuarantined(e.Op.Path, quarantined)).ToList();
-        var visible = conflicts.Where(c => !IsQuarantined(c.Path, quarantined)).ToList();
+        // subtree, and the next run replans from state once the rename action dissolves the shape.
+        // An incoming-versus-existing collision covers its own path too: the add itself is the
+        // operation that would alias; the existing twin's subtree stays fully plannable.
+        var outside = emissions.Where(e =>
+                !IsQuarantined(e.Op.Path, quarantined) && !IsCoveredBy(e.Op.Path, quarantinedIncoming))
+            .ToList();
+        var visible = conflicts.Where(c =>
+                !IsQuarantined(c.Path, quarantined)
+                && !IsQuarantined(c.Path, quarantinedIncoming)
+                && !IsQuarantinedIgnoringCase(c.Path, quarantinedIncoming))
+            .ToList();
 
         return new PlanningResult(Order(outside), visible);
     }
+
+    /// <summary>
+    /// Whether this path sits strictly below a quarantined incoming prefix in any case — the
+    /// nested twins of one collision (both spellings unsynced) read as the parent row alone.
+    /// </summary>
+    private static bool IsQuarantinedIgnoringCase(RelativePath path, List<RelativePath> prefixes) =>
+        prefixes.Any(prefix =>
+            path.ToString().StartsWith(prefix + "/", StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// Whether the receiving side already holds this path in another case — the alias shape.
+    /// </summary>
+    private static bool HasCaseTwin(RelativePath path, IReadOnlyDictionary<RelativePath, FileSnapshot> side) =>
+        side.Keys.Any(key => !Equals(key, path) && key.EqualsIgnoreCase(path));
+
+    /// <summary>
+    /// The prefix itself or anything strictly below it.
+    /// </summary>
+    private static bool IsCoveredBy(RelativePath path, List<RelativePath> prefixes) =>
+        prefixes.Any(prefix => Equals(path, prefix) || path.StartsWith(prefix));
 
     /// <summary>
     /// Strictly below one of the quarantined prefixes (a prefix itself is the conflict path,
