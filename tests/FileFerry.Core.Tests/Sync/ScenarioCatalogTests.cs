@@ -370,6 +370,77 @@ public sealed class ScenarioCatalogTests
     }
 
     [Fact]
+    public void CaseCollision_InvolvingAFolder_QuarantinesTheSubtree()
+    {
+        // while the twin folders live on opposite sides, nothing below them can cross: the child
+        // upload lands on the server's case alias (or into a collection the twin side never got),
+        // and every run repeats the failure — the note alone covers the whole subtree; a sibling
+        // outside the prefix keeps planning normally
+        var plan = Plan(
+            local: [Dir("Docs"), File("Docs/a.txt", etag: "e1"), Dir("Docs2"), File("Docs2/x.txt", etag: "e3")],
+            remote: [Dir("docs"), File("docs/b.txt", etag: "e2")],
+            baseline: []);
+
+        Assert.All(plan.Operations, static op => Assert.True(
+            op.Path.ToString().StartsWith("Docs2", StringComparison.Ordinal),
+            $"no operation may touch the quarantined subtree: {op.Kind} {op.Path}"));
+        Assert.Contains(plan.Operations, static op =>
+            op.Kind == OperationKind.CreateRemoteFolder && op.Path.ToString() == "Docs2");
+        Assert.Contains(plan.Operations, static op =>
+            op.Kind == OperationKind.UploadToRemote && op.Path.ToString() == "Docs2/x.txt");
+        var note = Assert.Single(plan.Conflicts);
+        Assert.Equal(ConflictKind.CaseCollision, note.Kind);
+        Assert.True(note.Folder);
+    }
+
+    [Fact]
+    public void CaseCollision_InvolvingAFolder_SuppressesNestedCollisionRows()
+    {
+        // a file-level collision inside the quarantined subtree gets no row of its own: its copies
+        // would be planned into the quarantine and stripped — a keep-action row without copies
+        var plan = Plan(
+            local: [Dir("Docs"), File("Docs/a.txt", etag: "e1")],
+            remote: [Dir("docs"), File("docs/A.TXT", etag: "e2")],
+            baseline: []);
+
+        Assert.Empty(plan.Operations);
+        var note = Assert.Single(plan.Conflicts); // one row over the subtree, not one per file
+        Assert.True(note.Folder);
+    }
+
+    [Fact]
+    public void TypeClash_FolderSideChildren_QuarantinedUnderTheClashingPath()
+    {
+        // the folder side's children cannot download onto a path the device holds as a file
+        var plan = Plan(
+            local: [File("clash", etag: "L")],
+            remote: [Dir("clash", etag: "R"), File("clash/inner.txt", etag: "e2")],
+            baseline: [File("clash", etag: "base")]);
+
+        Assert.Empty(plan.Operations);
+        var note = Assert.Single(plan.Conflicts);
+        Assert.Equal(ConflictKind.BothModified, note.Kind);
+        Assert.True(note.Folder);
+    }
+
+    [Fact]
+    public void CaseCollision_AfterTheHandRename_ChildrenPlanAgain()
+    {
+        // the user renamed the server folder by hand: no collision shape — the quarantine existed
+        // for that shape alone, both subtrees plan as ordinary adds
+        var plan = Plan(
+            local: [Dir("Docs"), File("Docs/a.txt", etag: "e1")],
+            remote: [Dir("docs-renamed"), File("docs-renamed/b.txt", etag: "e2")],
+            baseline: []);
+
+        Assert.Contains(plan.Operations, static op =>
+            op.Kind == OperationKind.UploadToRemote && op.Path.ToString() == "Docs/a.txt");
+        Assert.Contains(plan.Operations, static op =>
+            op.Kind == OperationKind.DownloadToLocal && op.Path.ToString() == "docs-renamed/b.txt");
+        Assert.Empty(plan.Conflicts);
+    }
+
+    [Fact]
     public void TempWriteFragments_AreNotSyncState()
     {
         // a fragment of an interrupted local write is nobody's content: never uploaded, never

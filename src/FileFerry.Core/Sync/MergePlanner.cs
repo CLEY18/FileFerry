@@ -32,6 +32,7 @@ public sealed class MergePlanner
         var pending = changes.ToList();
         var conflicts = new List<ConflictNote>();
         var emissions = new List<PlannedOp>();
+        var quarantined = new List<RelativePath>();
         var now = context.Now;
 
         // ── 1. Rename: two-part baseline↔side matching by evidence ──
@@ -63,8 +64,13 @@ public sealed class MergePlanner
                 // a folder cannot be duplicated under a conflict name (copies are file-level) and
                 // its container cannot cross blindly (on a case-insensitive side the twin mkdir
                 // aliases onto the same folder): no dead operations — the note says a side must
-                // be renamed by hand
+                // be renamed by hand. The quarantine covers the whole subtree: a child under the
+                // colliding path has no destination until the rename lands (the twin collection
+                // does not exist — or worse, the server aliases it onto the rival), and children
+                // of their own would plan copy rows without surviving copies
                 conflicts.Add(new ConflictNote(ConflictKind.CaseCollision, localAdd.Path, Folder: true));
+                quarantined.Add(localAdd.Path);
+                quarantined.Add(rival.Path);
                 continue;
             }
 
@@ -135,18 +141,36 @@ public sealed class MergePlanner
                         (change.Remote is null && change.Local is { IsDirectory: true });
                     if (!containerConflict)
                     {
+                        var folderNote = change.Local?.IsDirectory == true || change.Remote?.IsDirectory == true;
                         conflicts.Add(new ConflictNote(
                             change.Local is null || change.Remote is null ? ConflictKind.DeleteVersusModify : ConflictKind.BothModified,
                             change.Path,
-                            Folder: change.Local?.IsDirectory == true || change.Remote?.IsDirectory == true));
+                            Folder: folderNote));
+                        if (folderNote)
+                        {
+                            quarantined.Add(change.Path); // the folder side's children cannot cross onto a file (or under a clashing twin)
+                        }
                     }
 
                     break;
             }
         }
 
-        return new PlanningResult(Order(emissions), conflicts);
+        // The quarantine is absolute: whatever pointed inside a folder-conflict subtree (child
+        // writes, nested collision copies, nested rows) leaves the plan — the note covers the
+        // subtree, and the next run replans from state once the manual rename dissolves the shape.
+        var outside = emissions.Where(e => !IsQuarantined(e.Op.Path, quarantined)).ToList();
+        var visible = conflicts.Where(c => !IsQuarantined(c.Path, quarantined)).ToList();
+
+        return new PlanningResult(Order(outside), visible);
     }
+
+    /// <summary>
+    /// Strictly below one of the quarantined prefixes (a prefix itself is the conflict path,
+    /// not a child of it).
+    /// </summary>
+    private static bool IsQuarantined(RelativePath path, List<RelativePath> prefixes) =>
+        prefixes.Any(prefix => !Equals(path, prefix) && path.StartsWith(prefix));
 
     /// <summary>
     /// Finds a side's moves (baseline↔local matching for propagation to the server, and the
