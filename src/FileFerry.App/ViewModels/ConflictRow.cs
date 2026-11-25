@@ -13,27 +13,31 @@ namespace FileFerry.App.ViewModels;
 /// <param name="PathText">Path of the conflicting file (relative to the pair root).</param>
 /// <param name="WhenText">Relative event time ("5 min ago").</param>
 /// <param name="Message">Message from the run journal.</param>
-/// <param name="KeptBothText">State label: "both versions kept", or the kept side after a resolution.</param>
+/// <param name="StatusText">State line: "both versions kept", the kept side after a resolution,
+/// or the hand-resolve hint when the conflict involves a folder.</param>
 /// <param name="KeepServerCommand">Fallback action: keep the server version.</param>
 /// <param name="KeepLocalCommand">Fallback action: keep the local version.</param>
 /// <param name="IsResolved">A later resolution acknowledged this conflict.</param>
+/// <param name="NeedsHandResolve">A folder is involved: no copies exist, one side must be
+/// renamed by hand — the actions could only fail, so the row shows the hint instead.</param>
 public sealed record ConflictRow(
     RelativePath Path,
     string PathText,
     string WhenText,
     string Message,
-    string KeptBothText,
+    string StatusText,
     ICommand? KeepServerCommand,
     ICommand? KeepLocalCommand,
-    bool IsResolved = false)
+    bool IsResolved = false,
+    bool NeedsHandResolve = false)
 {
     /// <summary>
-    /// Actions are offered only while the conflict is unacknowledged.
+    /// Actions are offered only while the conflict is unacknowledged and actually resolvable.
     /// </summary>
-    public bool ShowActions => !IsResolved;
+    public bool ShowActions => !IsResolved && !NeedsHandResolve;
 
     /// <summary>
     /// TalkBack description: the row is a single focus element.
     /// </summary>
-    public string SemanticDescription => $"{PathText}. {Message}. {KeptBothText}";
+    public string SemanticDescription => $"{PathText}. {Message}. {StatusText}";
 }

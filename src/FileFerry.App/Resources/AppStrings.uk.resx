@@ -104,6 +104,7 @@
   <data name="ConflictsEmptyTitle" xml:space="preserve"><value>Конфліктів немає</value></data>
   <data name="ConflictsEmptyBody" xml:space="preserve"><value>Усі зміни застосовано. Якщо виникне конфлікт, ми збережемо обидві версії й покажемо їх тут.</value></data>
   <data name="ConflictKeptBoth" xml:space="preserve"><value>Збережено обидві версії</value></data>
+  <data name="ConflictHandResolveHint" xml:space="preserve"><value>Перейменуйте одну з папок вручну</value></data>
   <data name="ConflictKeepServer" xml:space="preserve"><value>Залишити серверну</value></data>
   <data name="ConflictKeepLocal" xml:space="preserve"><value>Залишити локальну</value></data>
   <data name="ConflictResolveConfirmTitle" xml:space="preserve"><value>Вирішити конфлікт</value></data>

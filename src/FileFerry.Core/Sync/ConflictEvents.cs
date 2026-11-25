@@ -29,6 +29,17 @@ public static class ConflictEvents
             .ToDictionary(static g => g.Key, static g => g.MaxBy(static e => e.At)!);
 
     /// <summary>
+    /// Whether this conflict row can only be resolved by hand: the planner marks notes that
+    /// involve a folder — they carry no conflict copies, so a keep-side action could only fail.
+    /// The row shows the hand-resolve hint instead of the two actions.
+    /// </summary>
+    public static bool NeedsHandResolve(SyncEvent e) =>
+        IsConflictRow(e)
+        && e.Args is { } args
+        && args.TryGetValue("folder", out var marker)
+        && marker == "1";
+
+    /// <summary>
     /// Conflicts of the run window that no resolution has acknowledged yet (the badge count).
     /// </summary>
     public static int CountUnresolved(IReadOnlyList<SyncRunLog> runs)

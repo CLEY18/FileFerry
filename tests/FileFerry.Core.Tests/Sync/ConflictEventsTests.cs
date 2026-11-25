@@ -64,6 +64,29 @@ public sealed class ConflictEventsTests
         Assert.Equal(1, ConflictEvents.CountUnresolved([first, second]));
     }
 
+    [Fact]
+    public void FolderMarkedRow_IsHandResolvable_PlainRowIsNot()
+    {
+        // a note involving a folder has no conflict copies — keep actions could only fail.
+        // The planner marks such rows; the rule that reads the marker lives here, next to counting
+        var folder = new SyncEvent(T0, EventKind.ConflictDetected, SyncEventOutcome.Warning,
+            RelativePath.Parse("Docs"),
+            new Dictionary<string, string> { ["conflict"] = "CaseCollision", ["folder"] = "1" });
+        var plain = new SyncEvent(T0, EventKind.ConflictDetected, SyncEventOutcome.Warning,
+            RelativePath.Parse("a.txt"),
+            new Dictionary<string, string> { ["conflict"] = "BothModified" });
+
+        Assert.True(ConflictEvents.NeedsHandResolve(folder));
+        Assert.False(ConflictEvents.NeedsHandResolve(plain));
+        Assert.False(ConflictEvents.NeedsHandResolve(
+            new SyncEvent(T0, EventKind.PlanSummary, SyncEventOutcome.Info, RelativePath.Parse("x"),
+                new Dictionary<string, string> { ["folder"] = "1" }))); // not a conflict row — no marker reading
+
+        // a hand-resolvable row remains an open conflict until the user's manual rename converges it
+        Assert.True(ConflictEvents.IsConflictRow(folder));
+        Assert.Equal(1, ConflictEvents.CountUnresolved(Runs(folder)));
+    }
+
     private static IReadOnlyList<SyncRunLog> Runs(params SyncEvent[] events) =>
         [new SyncRunLog(Guid.NewGuid(), Guid.NewGuid(), T0, T0.AddMinutes(9), SyncRunOutcome.Partial, events)];
 

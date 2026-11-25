@@ -266,7 +266,8 @@ public sealed class SyncRun
             {
                 events.Add(MakeEvent(
                     EventKind.ConflictDetected, SyncEventOutcome.Warning, conflict.Path,
-                    conflict: conflict.Kind.ToString()));
+                    conflict: conflict.Kind.ToString(),
+                    folder: conflict.Folder ? "1" : null));
             }
 
             events.Add(MakeEvent(EventKind.PlanSummary, count: planned));
@@ -498,7 +499,8 @@ public sealed class SyncRun
         string? detail = null,
         string? label = null,
         string? conflict = null,
-        string? side = null)
+        string? side = null,
+        string? folder = null)
     {
         Dictionary<string, string>? args = null;
         if (count is { } n) (args ??= [])["count"] = n.ToString(System.Globalization.CultureInfo.InvariantCulture);
@@ -506,6 +508,7 @@ public sealed class SyncRun
         if (label is { } l) (args ??= [])["label"] = l;
         if (conflict is { } c) (args ??= [])["conflict"] = c;
         if (side is { } s) (args ??= [])["side"] = s;
+        if (folder is { } f) (args ??= [])["folder"] = f;
         return new SyncEvent(_clock.UtcNow, kind, outcome, path, args);
     }
 }

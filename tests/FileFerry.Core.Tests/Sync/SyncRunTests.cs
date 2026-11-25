@@ -101,6 +101,45 @@ public sealed class SyncRunTests
         Assert.Contains(log.Events, static e => e.Kind == EventKind.PlanSummary);
     }
 
+    /// <summary>
+    /// The folder shape reaches the journal: the screen rebuilds rows from events alone, so
+    /// the hand-resolve marker must ride on the Warning event, not only on the in-memory note.
+    /// </summary>
+    [Fact]
+    public async Task FolderConflict_EventCarriesTheHandResolveMarker()
+    {
+        await _local.CreateFolderAsync(RelativePath.Parse("Docs"), CancellationToken.None);
+        _remote.SeedCollection(RemotePath.Parse("sync/docs"));
+
+        var result = await Engine().RunAsync(_pair.Id, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, result.Value.Conflicts);
+        var log = (await _state.RecentRunsAsync(_pair.Id, 5, CancellationToken.None)).Single();
+        var note = Assert.Single(log.Events, static e => e.Kind == EventKind.ConflictDetected);
+        Assert.Equal("CaseCollision", note.Args!["conflict"]);
+        Assert.Equal("1", note.Args["folder"]);
+    }
+
+    [Fact]
+    public async Task FileConflict_EventCarriesNoFolderMarker()
+    {
+        // both sides move away from the row by evidence the device can carry: the server changes
+        // its tag, the device changes its size — a BothModified on two files
+        await SeedLocalAsync("a.txt", "LOCAL-CONTENT");
+        await SeedRemoteAsync("a.txt", "R");
+        await _state.ReplaceBaselineAsync(_pair.Id,
+            [new FileSnapshot(RelativePath.Parse("a.txt"), EntryKind.File, 1, ETag: "\"base\"")],
+            CancellationToken.None);
+
+        var result = await Engine().RunAsync(_pair.Id, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        var log = (await _state.RecentRunsAsync(_pair.Id, 5, CancellationToken.None)).Single();
+        var note = Assert.Single(log.Events, static e => e.Kind == EventKind.ConflictDetected);
+        Assert.False(note.Args!.ContainsKey("folder")); // keep actions can run on this row
+    }
+
     [Fact]
     public async Task ServerUnavailable_FailsFast_FailedLog_NoJournal()
     {

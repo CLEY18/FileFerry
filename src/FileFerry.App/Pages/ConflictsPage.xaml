@@ -49,7 +49,7 @@
                                 Style="{StaticResource Caption13}" />
                             <!-- state line: what the run kept, or the kept side after a resolution-->
                             <Label
-                                Text="{Binding KeptBothText}"
+                                Text="{Binding StatusText}"
                                 Style="{StaticResource Caption13}"
                                 TextColor="{DynamicResource PrimaryText}" />
                             <!-- actions only while the conflict is unacknowledged-->

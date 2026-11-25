@@ -517,6 +517,11 @@ public static class AppStrings
     public static string ConflictKeptBoth => Get();
 
     /// <summary>
+    /// Folder conflict row: no conflict copies exist, one of the folders must be renamed by hand.
+    /// </summary>
+    public static string ConflictHandResolveHint => Get();
+
+    /// <summary>
     /// Conflict action: keep the server version.
     /// </summary>
     public static string ConflictKeepServer => Get();

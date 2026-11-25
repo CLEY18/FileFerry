@@ -170,6 +170,7 @@ public sealed class ScenarioCatalogTests
         var note = Assert.Single(plan.Conflicts);
         Assert.Equal(ConflictKind.BothModified, note.Kind);
         Assert.Equal("a.txt", note.Path.ToString());
+        Assert.False(note.Folder); // files keep the keep-actions path
     }
 
     [Fact]
@@ -252,7 +253,9 @@ public sealed class ScenarioCatalogTests
             baseline: []);
 
         Assert.Equal(3, plan.Operations.Count);
-        Assert.Equal(ConflictKind.CaseCollision, Assert.Single(plan.Conflicts).Kind);
+        var caseNote = Assert.Single(plan.Conflicts);
+        Assert.Equal(ConflictKind.CaseCollision, caseNote.Kind);
+        Assert.False(caseNote.Folder); // the copy was made — the keep actions can run
     }
 
     [Fact]
@@ -335,7 +338,9 @@ public sealed class ScenarioCatalogTests
             baseline: []);
 
         Assert.Empty(folderVsFolder.Operations);
-        Assert.Equal(ConflictKind.CaseCollision, Assert.Single(folderVsFolder.Conflicts).Kind);
+        var folderNote = Assert.Single(folderVsFolder.Conflicts);
+        Assert.Equal(ConflictKind.CaseCollision, folderNote.Kind);
+        Assert.True(folderNote.Folder); // the row must read as hand-resolvable, not keep-actionable
 
         var folderVsFile = Plan(
             local: [File("Report.txt", etag: "e1")],
@@ -343,7 +348,25 @@ public sealed class ScenarioCatalogTests
             baseline: []);
 
         Assert.Empty(folderVsFile.Operations);
-        Assert.Equal(ConflictKind.CaseCollision, Assert.Single(folderVsFile.Conflicts).Kind);
+        var clashNote = Assert.Single(folderVsFile.Conflicts);
+        Assert.Equal(ConflictKind.CaseCollision, clashNote.Kind);
+        Assert.True(clashNote.Folder);
+    }
+
+    [Fact]
+    public void TypeClash_OnBothSide_NotesHandResolveWithoutOperations()
+    {
+        // a file locally and a folder on the server under one live path: copies are file-level
+        // and a container cannot cross onto a foreign twin — zero operations, folder-marked note
+        var plan = Plan(
+            local: [File("clash", etag: "L")],
+            remote: [Dir("clash", etag: "R")],
+            baseline: [File("clash", etag: "base")]);
+
+        Assert.Empty(plan.Operations);
+        var note = Assert.Single(plan.Conflicts);
+        Assert.Equal(ConflictKind.BothModified, note.Kind);
+        Assert.True(note.Folder);
     }
 
     [Fact]

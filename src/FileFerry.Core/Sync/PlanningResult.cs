@@ -29,7 +29,9 @@ public enum ConflictKind
 /// </summary>
 /// <param name="Kind">The conflict class (drives the conflicts screen wording).</param>
 /// <param name="Path">Primary path of the conflicting record.</param>
-public sealed record ConflictNote(ConflictKind Kind, RelativePath Path);
+/// <param name="Folder">A folder is involved: no conflict copies exist for this note, keep-side
+/// actions could only fail — the row reads as hand-resolvable (one side renamed by hand).</param>
+public sealed record ConflictNote(ConflictKind Kind, RelativePath Path, bool Folder = false);
 
 /// <summary>
 /// Planner output: ordered operations + conflict annotations. Timestamped journal events are

@@ -64,7 +64,7 @@ public sealed class MergePlanner
                 // its container cannot cross blindly (on a case-insensitive side the twin mkdir
                 // aliases onto the same folder): no dead operations — the note says a side must
                 // be renamed by hand
-                conflicts.Add(new ConflictNote(ConflictKind.CaseCollision, localAdd.Path));
+                conflicts.Add(new ConflictNote(ConflictKind.CaseCollision, localAdd.Path, Folder: true));
                 continue;
             }
 
@@ -137,7 +137,8 @@ public sealed class MergePlanner
                     {
                         conflicts.Add(new ConflictNote(
                             change.Local is null || change.Remote is null ? ConflictKind.DeleteVersusModify : ConflictKind.BothModified,
-                            change.Path));
+                            change.Path,
+                            Folder: change.Local?.IsDirectory == true || change.Remote?.IsDirectory == true));
                     }
 
                     break;

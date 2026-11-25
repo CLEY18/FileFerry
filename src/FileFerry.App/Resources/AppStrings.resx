@@ -104,6 +104,7 @@
   <data name="ConflictsEmptyTitle" xml:space="preserve"><value>No conflicts</value></data>
   <data name="ConflictsEmptyBody" xml:space="preserve"><value>All changes were applied. If a conflict appears, we keep both versions and show them here.</value></data>
   <data name="ConflictKeptBoth" xml:space="preserve"><value>Both versions kept</value></data>
+  <data name="ConflictHandResolveHint" xml:space="preserve"><value>Rename one of the folders by hand</value></data>
   <data name="ConflictKeepServer" xml:space="preserve"><value>Keep server version</value></data>
   <data name="ConflictKeepLocal" xml:space="preserve"><value>Keep local version</value></data>
   <data name="ConflictResolveConfirmTitle" xml:space="preserve"><value>Resolve the conflict</value></data>

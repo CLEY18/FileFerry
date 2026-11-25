@@ -13,7 +13,8 @@ namespace FileFerry.App.ViewModels;
 /// Warning events and both versions are safe. Each row carries the two keep-side actions; a tap
 /// confirms, then runs the engine's keep-side resolution (lock-guarded, stash-first). A
 /// successful resolution acknowledges the row: it turns into its "kept …" status and stops
-/// counting on the pair card.
+/// counting on the pair card. A row that involves a folder has no copies to keep — it shows the
+/// hand-resolve hint instead of actions (the counting rule reads the planner's marker).
 /// </summary>
 public sealed class ConflictsViewModel : Mvvm.ObservableObject
 {
@@ -84,17 +85,21 @@ public sealed class ConflictsViewModel : Mvvm.ObservableObject
                         resolutions.TryGetValue(e.Path!, out var resolution) && resolution.At > e.At
                             ? resolution
                             : null;
+                    var hand = ConflictEvents.NeedsHandResolve(e);
                     return new ConflictRow(
                         e.Path!,
                         e.Path!.ToString(),
                         Humanize.Ago(e.At, now),
                         Services.JournalPhrases.Render(e),
-                        acknowledged is null
-                            ? AppStrings.ConflictKeptBoth
-                            : Services.JournalPhrases.Render(acknowledged),
+                        acknowledged is not null
+                            ? Services.JournalPhrases.Render(acknowledged)
+                            : hand
+                                ? AppStrings.ConflictHandResolveHint
+                                : AppStrings.ConflictKeptBoth,
                         KeepServerCommand,
                         KeepLocalCommand,
-                        IsResolved: acknowledged is not null);
+                        IsResolved: acknowledged is not null,
+                        NeedsHandResolve: hand);
                 })
                 .ToList();
 
@@ -121,7 +126,7 @@ public sealed class ConflictsViewModel : Mvvm.ObservableObject
     /// </summary>
     private async Task ResolveAsync(ConflictRow? row, KeepSide side, CancellationToken ct)
     {
-        if (row is null || row.IsResolved)
+        if (row is null || row.IsResolved || row.NeedsHandResolve)
         {
             return;
         }
