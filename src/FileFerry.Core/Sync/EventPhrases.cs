@@ -49,20 +49,26 @@ public static class EventPhrases
         EventKind.RunStopped => ("EventRunStopped", [Arg(e, "detail")]),
         EventKind.RunFailed => (FailPhrase(Arg(e, "label")), [Arg(e, "detail")]),
         EventKind.StashPurged => ("EventStashPurged", [Count(e)]),
-        EventKind.ConflictResolved => (ResolvePhrase(Arg(e, "side")), []),
+        EventKind.ConflictResolved => (ResolvePhrase(Arg(e, "side"), Arg(e, "action")), []),
         // free text — its detail is the phrase; an unknown (future) kind — the visible key name
         EventKind.FreeText => ("EventRaw", [Arg(e, "detail")]),
         _ => ("Event" + e.Kind, [Arg(e, "detail")]),
     };
 
     /// <summary>
-    /// Resolution phrases keyed by the kept side (an unknown side → the neutral "resolved" phrase).
+    /// Resolution phrases: the folder-action phrases first, then the kept side of a file
+    /// resolution (an unknown side → the neutral "resolved" phrase).
     /// </summary>
-    public static string ResolvePhrase(string side) => side switch
+    public static string ResolvePhrase(string side, string action = "") => action switch
     {
-        "local" => "EventResolvedLocal",
-        "server" => "EventResolvedServer",
-        _ => "EventConflictResolved",
+        "rename" => side == "local" ? "EventResolvedFolderRenamedLocal" : "EventResolvedFolderRenamedServer",
+        "delete" => side == "local" ? "EventResolvedFolderDeletedLocal" : "EventResolvedFolderDeletedServer",
+        _ => side switch
+        {
+            "local" => "EventResolvedLocal",
+            "server" => "EventResolvedServer",
+            _ => "EventConflictResolved",
+        },
     };
 
     private static string Arg(SyncEvent e, string name) =>

@@ -176,6 +176,13 @@ public static class RemoteStoreContractSuite
         Assert.True((await store.ReadAsync(RemotePath.Parse("dst/deep/b.txt"), CancellationToken.None)).IsSuccess);
         Assert.True((await store.ReadAsync(RemotePath.Parse("src/a.txt"), CancellationToken.None)).IsFailure);
 
+        // the moved collection itself is gone — a rename leaves no empty shell behind (a folder
+        // conflict resolution ends with the old name absent on both lists)
+        var names = (await store.ListAsync(RemotePath.Root, CancellationToken.None)).Value
+            .Select(static e => e.Path.Name).ToArray();
+        Assert.DoesNotContain("src", names);
+        Assert.Contains("dst", names);
+
         await store.WriteAsync(RemotePath.Parse("x"), new MemoryStream([3]), CancellationToken.None);
         await store.WriteAsync(RemotePath.Parse("y"), new MemoryStream([4]), CancellationToken.None);
         var conflict = await store.MoveAsync(RemotePath.Parse("x"), RemotePath.Parse("y"), CancellationToken.None);

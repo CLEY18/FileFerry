@@ -16,6 +16,38 @@ public enum KeepSide
 }
 
 /// <summary>
+/// The four actions a folder-conflict row offers: rename (one MOVE, zero copies) or delete
+/// (every file of the losing subtree passes the stash buffer first) on either side. The kept
+/// side then syncs normally — the collision shape is gone after the action.
+/// </summary>
+public enum FolderAction
+{
+    /// <summary>MOVE the server entry under a conflict name; the local entry keeps its name.</summary>
+    RenameServer,
+
+    /// <summary>MOVE the device entry under a conflict name; the server entry keeps its name.</summary>
+    RenameLocal,
+
+    /// <summary>Buffer every server file, then DELETE the server entry.</summary>
+    DeleteServer,
+
+    /// <summary>Buffer every device file, then DELETE the device entry.</summary>
+    DeleteLocal,
+}
+
+/// <summary>
+/// The operation plan of one folder-conflict action.
+/// </summary>
+/// <param name="Main">The conflicting path as the note carries it.</param>
+/// <param name="Action">The action the user chose.</param>
+/// <param name="Operations">Ordered steps: for a rename one MOVE; for a delete every buffer
+/// copy first, then the deletions deepest-first — the executed sequence dissolves the shape.</param>
+public sealed record FolderResolvePlan(
+    RelativePath Main,
+    FolderAction Action,
+    IReadOnlyList<SyncOperation> Operations);
+
+/// <summary>
 /// The operation plan of one keep-side resolution.
 /// </summary>
 /// <param name="Main">The conflicted path the user acted on.</param>
@@ -127,6 +159,122 @@ public static class ConflictResolver
         }
 
         return Result<ResolvePlan, SyncError>.Success(new ResolvePlan(main, side, copies.Count, ops));
+    }
+
+    /// <summary>
+    /// Builds one folder-conflict action from the current three-way state alone. The chosen
+    /// side is located by exact path first, then by case twin (the note carries one side's
+    /// spelling; a collection has no extension to copy around, so a rename appends the conflict
+    /// suffix to the folder's whole name). A delete stashes every file of the subtree before
+    /// any disappearance and empties the folders deepest-first.
+    /// </summary>
+    /// <param name="main">The conflicting path, as the note carries it.</param>
+    /// <param name="action">Rename or delete, on the server or on the device.</param>
+    /// <param name="local">Fresh local scan, pair coordinates.</param>
+    /// <param name="remote">Fresh remote scan, pair coordinates.</param>
+    /// <param name="stash">Buffer policy (the copy-before-deletion rule).</param>
+    /// <param name="now">Run moment from the clock (conflict name + stash stamp).</param>
+    public static Result<FolderResolvePlan, SyncError> BuildFolder(
+        RelativePath main,
+        FolderAction action,
+        IReadOnlyDictionary<RelativePath, FileSnapshot> local,
+        IReadOnlyDictionary<RelativePath, FileSnapshot> remote,
+        IStashPolicy stash,
+        DateTimeOffset now)
+    {
+        var onServer = action is FolderAction.RenameServer or FolderAction.DeleteServer;
+        var side = onServer ? remote : local;
+        var entryPath = Locate(side, main);
+        if (entryPath is null)
+        {
+            return Result<FolderResolvePlan, SyncError>.Failure(SyncError.Of(
+                ErrorKind.NotFound,
+                $"The {(onServer ? "server" : "local")} side of '{main}' no longer exists — there is nothing to {(action is FolderAction.RenameServer or FolderAction.RenameLocal ? "rename" : "delete")}."));
+        }
+
+        var entry = side[entryPath];
+        var ops = new List<SyncOperation>();
+
+        if (action is FolderAction.RenameServer or FolderAction.RenameLocal)
+        {
+            var target = ConflictFolderName(entryPath, entry, now);
+            if (side.ContainsKey(target))
+            {
+                return Result<FolderResolvePlan, SyncError>.Failure(SyncError.Of(
+                    ErrorKind.Conflict, $"The conflict name '{target}' is already taken."));
+            }
+
+            ops.Add(new SyncOperation(
+                onServer ? OperationKind.MoveRemote : OperationKind.MoveLocal,
+                target, entryPath, entry with { Path = target }));
+            return Result<FolderResolvePlan, SyncError>.Success(new FolderResolvePlan(main, action, ops));
+        }
+
+        // Delete: every file of the losing subtree gets its buffer copy first (stop rule),
+        // then the deletions run deepest-first — the folders leave emptied, never with children.
+        if (!entry.IsDirectory)
+        {
+            var own = stash.StashDestination(entryPath, now);
+            ops.Add(onServer
+                ? new SyncOperation(OperationKind.DownloadToLocal, own, entryPath, entry with { Path = own })
+                : new SyncOperation(OperationKind.CopyLocal, own, entryPath, entry with { Path = own }));
+        }
+
+        var subtree = side
+            .Where(kv => !Equals(kv.Key, entryPath) && kv.Key.StartsWith(entryPath))
+            .OrderBy(static kv => kv.Key.ToString(), StringComparer.Ordinal)
+            .ToList();
+
+        foreach (var (path, snapshot) in subtree.Where(static kv => !kv.Value.IsDirectory))
+        {
+            var buffer = stash.StashDestination(path, now);
+            ops.Add(onServer
+                ? new SyncOperation(OperationKind.DownloadToLocal, buffer, path, snapshot with { Path = buffer })
+                : new SyncOperation(OperationKind.CopyLocal, buffer, path, snapshot with { Path = buffer }));
+        }
+
+        foreach (var (path, snapshot) in subtree
+                     .OrderByDescending(static kv => kv.Key.Depth)
+                     .ThenBy(static kv => kv.Key.ToString(), StringComparer.Ordinal))
+        {
+            ops.Add(new SyncOperation(
+                onServer ? OperationKind.DeleteRemote : OperationKind.DeleteLocal, path, null, snapshot));
+        }
+
+        ops.Add(new SyncOperation(
+            onServer ? OperationKind.DeleteRemote : OperationKind.DeleteLocal, entryPath, null, entry));
+        return Result<FolderResolvePlan, SyncError>.Success(new FolderResolvePlan(main, action, ops));
+    }
+
+    /// <summary>
+    /// The side's entry for the conflicting path: the note's spelling exactly, else its unique
+    /// case twin in the same parent (a case collision stores the two spellings on different sides).
+    /// </summary>
+    private static RelativePath? Locate(IReadOnlyDictionary<RelativePath, FileSnapshot> side, RelativePath main)
+    {
+        if (side.ContainsKey(main))
+        {
+            return main;
+        }
+
+        return side.Keys
+            .Where(key => Equals(key.Parent, main.Parent) && key.EqualsIgnoreCase(main))
+            .OrderBy(static key => key.ToString(), StringComparer.Ordinal)
+            .FirstOrDefault();
+    }
+
+    /// <summary>
+    /// The conflict rename target: a collection takes the suffix on its whole name (a folder
+    /// has no content-bearing extension to keep outside), a file around its extension.
+    /// </summary>
+    private static RelativePath ConflictFolderName(RelativePath path, FileSnapshot entry, DateTimeOffset now)
+    {
+        var stamp = now.ToUniversalTime().ToString("yyyyMMdd'T'HHmmss", System.Globalization.CultureInfo.InvariantCulture);
+        var suffix = $" (conflict {stamp})";
+        var name = entry.IsDirectory
+            ? path.Name + suffix
+            : System.IO.Path.GetFileNameWithoutExtension(path.Name) + suffix + System.IO.Path.GetExtension(path.Name);
+        return path.Parent.Combine(name);
     }
 
     /// <summary>

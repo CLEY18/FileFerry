@@ -10,11 +10,10 @@ namespace FileFerry.App.ViewModels;
 
 /// <summary>
 /// VM for the conflicts screen: KeepBoth conflicts never "hang" — the run applied them as
-/// Warning events and both versions are safe. Each row carries the two keep-side actions; a tap
-/// confirms, then runs the engine's keep-side resolution (lock-guarded, stash-first). A
-/// successful resolution acknowledges the row: it turns into its "kept …" status and stops
-/// counting on the pair card. A row that involves a folder has no copies to keep — it shows the
-/// hand-resolve hint instead of actions (the counting rule reads the planner's marker).
+/// Warning events and both versions are safe. A file row carries the two keep-side actions; a
+/// folder row (no copies exist) carries its four folder actions. A tap confirms, then runs the
+/// engine's resolution (lock-guarded, stash-first). A successful resolution acknowledges the
+/// row: it turns into its result status and stops counting on the pair card.
 /// </summary>
 public sealed class ConflictsViewModel : Mvvm.ObservableObject
 {
@@ -36,6 +35,14 @@ public sealed class ConflictsViewModel : Mvvm.ObservableObject
             (row, ct) => ResolveAsync(row as ConflictRow, KeepSide.Server, ct));
         KeepLocalCommand = new Mvvm.AsyncRelayCommand(
             (row, ct) => ResolveAsync(row as ConflictRow, KeepSide.Local, ct));
+        FolderRenameServerCommand = new Mvvm.AsyncRelayCommand(
+            (row, ct) => ResolveFolderAsync(row as ConflictRow, FolderAction.RenameServer, ct));
+        FolderRenameLocalCommand = new Mvvm.AsyncRelayCommand(
+            (row, ct) => ResolveFolderAsync(row as ConflictRow, FolderAction.RenameLocal, ct));
+        FolderDeleteServerCommand = new Mvvm.AsyncRelayCommand(
+            (row, ct) => ResolveFolderAsync(row as ConflictRow, FolderAction.DeleteServer, ct));
+        FolderDeleteLocalCommand = new Mvvm.AsyncRelayCommand(
+            (row, ct) => ResolveFolderAsync(row as ConflictRow, FolderAction.DeleteLocal, ct));
     }
 
     /// <summary>
@@ -63,6 +70,27 @@ public sealed class ConflictsViewModel : Mvvm.ObservableObject
     public Mvvm.AsyncRelayCommand KeepLocalCommand { get; }
 
     /// <summary>
+    /// Folder action: rename the server folder under a conflict name (one MOVE, then the
+    /// normal sync spreads both subtrees).
+    /// </summary>
+    public Mvvm.AsyncRelayCommand FolderRenameServerCommand { get; }
+
+    /// <summary>
+    /// Folder action: rename the device folder under a conflict name.
+    /// </summary>
+    public Mvvm.AsyncRelayCommand FolderRenameLocalCommand { get; }
+
+    /// <summary>
+    /// Folder action: buffer every server file of the folder, then delete it on the server.
+    /// </summary>
+    public Mvvm.AsyncRelayCommand FolderDeleteServerCommand { get; }
+
+    /// <summary>
+    /// Folder action: buffer every device file of the folder, then delete it on the device.
+    /// </summary>
+    public Mvvm.AsyncRelayCommand FolderDeleteLocalCommand { get; }
+
+    /// <summary>
     /// Load: the last 20 runs → Warning events with a path, freshest on top; rows a later
     /// keep-side resolution already acknowledged render their kept side instead of actions.
     /// </summary>
@@ -85,7 +113,7 @@ public sealed class ConflictsViewModel : Mvvm.ObservableObject
                         resolutions.TryGetValue(e.Path!, out var resolution) && resolution.At > e.At
                             ? resolution
                             : null;
-                    var hand = ConflictEvents.NeedsHandResolve(e);
+                    var folder = ConflictEvents.IsFolderConflict(e);
                     return new ConflictRow(
                         e.Path!,
                         e.Path!.ToString(),
@@ -93,13 +121,17 @@ public sealed class ConflictsViewModel : Mvvm.ObservableObject
                         Services.JournalPhrases.Render(e),
                         acknowledged is not null
                             ? Services.JournalPhrases.Render(acknowledged)
-                            : hand
-                                ? AppStrings.ConflictHandResolveHint
+                            : folder
+                                ? string.Empty
                                 : AppStrings.ConflictKeptBoth,
                         KeepServerCommand,
                         KeepLocalCommand,
                         IsResolved: acknowledged is not null,
-                        NeedsHandResolve: hand);
+                        IsFolder: folder,
+                        FolderRenameServerCommand: FolderRenameServerCommand,
+                        FolderRenameLocalCommand: FolderRenameLocalCommand,
+                        FolderDeleteServerCommand: FolderDeleteServerCommand,
+                        FolderDeleteLocalCommand: FolderDeleteLocalCommand);
                 })
                 .ToList();
 
@@ -126,7 +158,7 @@ public sealed class ConflictsViewModel : Mvvm.ObservableObject
     /// </summary>
     private async Task ResolveAsync(ConflictRow? row, KeepSide side, CancellationToken ct)
     {
-        if (row is null || row.IsResolved || row.NeedsHandResolve)
+        if (row is null || row.IsResolved || row.IsFolder)
         {
             return;
         }
@@ -166,4 +198,59 @@ public sealed class ConflictsViewModel : Mvvm.ObservableObject
         await _dialogs.NotifyAsync(AppStrings.ConflictResolvedBody, ct);
         await LoadAsync(_pairId, CancellationToken.None);
     }
+
+    /// <summary>
+    /// Folder action: confirm → engine folder resolution (same pair lock; delete buffers every
+    /// file first) → honest result dialog → reload. The resolution event acknowledges the row,
+    /// and the next plain run spreads or accepts what survives.
+    /// </summary>
+    private async Task ResolveFolderAsync(ConflictRow? row, FolderAction action, CancellationToken ct)
+    {
+        if (row is null || row.IsResolved || !row.IsFolder)
+        {
+            return;
+        }
+
+        var (label, confirmFormat, successBody) = FolderActionText(action);
+        var confirmed = await _dialogs.ConfirmAsync(
+            AppStrings.ConflictResolveConfirmTitle,
+            string.Format(confirmFormat, row.PathText),
+            label,
+            AppStrings.DialogCancel,
+            ct);
+        if (!confirmed)
+        {
+            return;
+        }
+
+        var result = await _syncRun.ResolveConflictAsync(_pairId, row.Path, action, ct);
+        if (result.IsFailure)
+        {
+            await _dialogs.ShowAlertAsync(
+                AppStrings.ConflictResolveFailedTitle, Services.ErrorUi.Describe(result.Error), AppStrings.HelpOk, ct);
+            return;
+        }
+
+        if (result.Value.Outcome != SyncRunOutcome.Success)
+        {
+            await _dialogs.ShowAlertAsync(
+                AppStrings.ConflictResolveFailedTitle, AppStrings.ConflictResolvePartialBody, AppStrings.HelpOk, ct);
+            return;
+        }
+
+        await _dialogs.NotifyAsync(successBody, ct);
+        await LoadAsync(_pairId, CancellationToken.None);
+    }
+
+    /// <summary>
+    /// The wording trio of one folder action: accept label, confirmation body, success notice.
+    /// </summary>
+    private static (string Label, string ConfirmFormat, string SuccessBody) FolderActionText(FolderAction action) =>
+        action switch
+        {
+            FolderAction.RenameServer => (AppStrings.ConflictFolderRenameServer, AppStrings.ConflictFolderRenameServerConfirmFormat, AppStrings.ConflictFolderRenamedBody),
+            FolderAction.RenameLocal => (AppStrings.ConflictFolderRenameLocal, AppStrings.ConflictFolderRenameLocalConfirmFormat, AppStrings.ConflictFolderRenamedBody),
+            FolderAction.DeleteServer => (AppStrings.ConflictFolderDeleteServer, AppStrings.ConflictFolderDeleteServerConfirmFormat, AppStrings.ConflictFolderDeletedBody),
+            _ => (AppStrings.ConflictFolderDeleteLocal, AppStrings.ConflictFolderDeleteLocalConfirmFormat, AppStrings.ConflictFolderDeletedBody),
+        };
 }

@@ -41,8 +41,14 @@ public sealed class BaselineUpdater(ISyncStateRepository state, IStashPolicy sta
                     break;
 
                 case OperationKind.MoveLocal or OperationKind.MoveRemote when op.SourcePath is { } source:
-                    next.Remove(source);
-                    next[op.Path] = op.After ?? next.GetValueOrDefault(source) ?? baseline[source];
+                    // the baseline holds only already-shared state: a move of a path it never
+                    // held (a conflict resolution renames the losing side) records nothing —
+                    // the subtree stays unsynced and the next run plans it from the scans
+                    if (next.Remove(source, out var moved))
+                    {
+                        next[op.Path] = op.After ?? moved;
+                    }
+
                     break;
 
                 default:

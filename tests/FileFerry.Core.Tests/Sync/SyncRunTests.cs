@@ -443,6 +443,8 @@ public sealed class SyncRunTests
 
         public Task<Result<Stream, SyncError>> ReadAsync(RelativePath path, CancellationToken ct) => inner.ReadAsync(path, ct);
 
+        public Task<Result<bool, SyncError>> ExistsAsync(RelativePath path, CancellationToken ct) => inner.ExistsAsync(path, ct);
+
         public Task<Result<FileSnapshot, SyncError>> WriteAsync(RelativePath path, Stream content, CancellationToken ct) =>
             inner.WriteAsync(path, content, ct);
 
@@ -591,6 +593,8 @@ public sealed class SyncRunTests
             throw new InvalidOperationException("simulated unclassified crash");
 
         public Task<Result<Stream, SyncError>> ReadAsync(RelativePath path, CancellationToken ct) => inner.ReadAsync(path, ct);
+
+        public Task<Result<bool, SyncError>> ExistsAsync(RelativePath path, CancellationToken ct) => inner.ExistsAsync(path, ct);
 
         public Task<Result<FileSnapshot, SyncError>> WriteAsync(RelativePath path, Stream content, CancellationToken ct) =>
             inner.WriteAsync(path, content, ct);

@@ -51,6 +51,27 @@ public sealed class BaselineUpdaterTests
         Assert.Equal("\"E1\"", kept.Value.ETag);
     }
 
+    /// <summary>
+    /// A folder-conflict rename moves a path the baseline never held (the losing side was never
+    /// shared). Recording the target anyway would fabricate a synced state: the next run would
+    /// see "synced folder missing on the other side" and DELETE the subtree — a loss without a
+    /// copy. The move of an unshared path leaves the baseline as it was.
+    /// </summary>
+    [Fact]
+    public void Project_MoveOfUnsharedPath_LeavesTheBaselineUntouched()
+    {
+        var rename = new SyncOperation(
+            OperationKind.MoveRemote,
+            RelativePath.Parse("docs (conflict 20260101T000000)"),
+            RelativePath.Parse("docs"),
+            new FileSnapshot(RelativePath.Parse("docs (conflict 20260101T000000)"), EntryKind.Directory, 0));
+
+        var next = BaselineUpdater.Project(Index(Snap("shared.txt", "v1", etag: "\"E1\"")), [rename], Stash);
+
+        var kept = Assert.Single(next);
+        Assert.Equal("shared.txt", kept.Key.ToString());
+    }
+
     [Fact]
     public async Task FailedRun_BaselineMovesOnlyForAppliedOps()
     {

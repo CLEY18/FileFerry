@@ -166,6 +166,7 @@ public sealed class InMemoryRemoteStore : IWritableRemoteStore
                     _folders.Add(toKey + f[fromKey.Length..]);
                 }
 
+                _folders.Remove(fromKey); // a MOVE relocates the collection — the source side goes empty
                 _folders.Add(toKey);
             }
 

@@ -32,6 +32,31 @@ public class EventPhrasesTests
         Assert.Equal(expectedKey, e.Phrase().Key);
     }
 
+    /// <summary>
+    /// Folder resolutions render by the action first, then the side; a keep-side resolution
+    /// without the action argument keeps its established phrases.
+    /// </summary>
+    [Theory]
+    [InlineData("local", "", "EventResolvedLocal")]
+    [InlineData("server", "", "EventResolvedServer")]
+    [InlineData("local", "rename", "EventResolvedFolderRenamedLocal")]
+    [InlineData("server", "rename", "EventResolvedFolderRenamedServer")]
+    [InlineData("local", "delete", "EventResolvedFolderDeletedLocal")]
+    [InlineData("server", "delete", "EventResolvedFolderDeletedServer")]
+    public void Resolution_phrases_read_the_action_then_the_side(string side, string action, string expected)
+    {
+        var args = new Dictionary<string, string> { ["side"] = side };
+        if (action.Length > 0)
+        {
+            args["action"] = action;
+        }
+
+        var e = new SyncEvent(At, EventKind.ConflictResolved, SyncEventOutcome.Success,
+            RelativePath.Parse("Docs"), args);
+
+        Assert.Equal(expected, e.Phrase().Key);
+    }
+
     [Fact]
     public void Count_arg_flows_to_summary_phrases()
     {

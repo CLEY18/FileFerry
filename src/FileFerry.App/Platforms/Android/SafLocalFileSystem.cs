@@ -153,6 +153,14 @@ public sealed class SafLocalFileSystem : ILocalFileSystem
                 new FileSnapshot(path, EntryKind.File, written, modifiedAt));
         }, ct), ct);
 
+    /// <inheritdoc cref="ILocalFileSystem.ExistsAsync" />
+    /// <remarks>
+    /// One document-tree resolve (indexed id first where the tree gives it) — never an enumeration.
+    /// </remarks>
+    public Task<Result<bool, SyncError>> ExistsAsync(RelativePath path, CancellationToken ct) =>
+        GuardAsync(path, () => Task.Run<Result<bool, SyncError>>(
+            () => Result<bool, SyncError>.Success(Resolve(path, ct) is not null), ct), ct);
+
     /// <inheritdoc cref="ILocalFileSystem.CreateFolderAsync" />
     public Task<Result<Ok, SyncError>> CreateFolderAsync(RelativePath path, CancellationToken ct) =>
         GuardAsync(path, () => Task.Run<Result<Ok, SyncError>>(() =>

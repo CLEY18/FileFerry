@@ -48,6 +48,17 @@ public sealed class InMemoryFileSystem : ILocalFileSystem
         }
     }
 
+    /// <inheritdoc cref="ILocalFileSystem.ExistsAsync"/>
+    public Task<Result<bool, SyncError>> ExistsAsync(RelativePath path, CancellationToken ct)
+    {
+        lock (_gate)
+        {
+            var key = path.ToString();
+            return Task.FromResult(Result<bool, SyncError>.Success(
+                _files.ContainsKey(key) || _folders.Contains(key)));
+        }
+    }
+
     /// <inheritdoc cref="ILocalFileSystem.ReadAsync"/>
     public Task<Result<Stream, SyncError>> ReadAsync(RelativePath path, CancellationToken ct)
     {

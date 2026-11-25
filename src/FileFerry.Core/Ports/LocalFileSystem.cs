@@ -22,6 +22,12 @@ public interface ILocalFileSystem
     Task<Result<Stream, SyncError>> ReadAsync(RelativePath path, CancellationToken ct);
 
     /// <summary>
+    /// Does this exact path exist right now — one resolve, never a tree walk. Answers for files
+    /// and folders alike (the replayed move asks "did the target arrive?" about either).
+    /// </summary>
+    Task<Result<bool, SyncError>> ExistsAsync(RelativePath path, CancellationToken ct);
+
+    /// <summary>
     /// Atomic write: tmp file + rename; returns a snapshot of what was written
     /// (with hash/size).
     /// </summary>

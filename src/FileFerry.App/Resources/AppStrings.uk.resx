@@ -104,12 +104,21 @@
   <data name="ConflictsEmptyTitle" xml:space="preserve"><value>Конфліктів немає</value></data>
   <data name="ConflictsEmptyBody" xml:space="preserve"><value>Усі зміни застосовано. Якщо виникне конфлікт, ми збережемо обидві версії й покажемо їх тут.</value></data>
   <data name="ConflictKeptBoth" xml:space="preserve"><value>Збережено обидві версії</value></data>
-  <data name="ConflictHandResolveHint" xml:space="preserve"><value>Перейменуйте одну з папок вручну</value></data>
   <data name="ConflictKeepServer" xml:space="preserve"><value>Залишити серверну</value></data>
   <data name="ConflictKeepLocal" xml:space="preserve"><value>Залишити локальну</value></data>
   <data name="ConflictResolveConfirmTitle" xml:space="preserve"><value>Вирішити конфлікт</value></data>
   <data name="ConflictResolveServerConfirmFormat" xml:space="preserve"><value>Залишити серверну версію «{0}»? Локальна версія перейде у буфер кошика.</value></data>
   <data name="ConflictResolveLocalConfirmFormat" xml:space="preserve"><value>Залишити локальну версію «{0}»? Серверна версія перейде у буфер кошика.</value></data>
+  <data name="ConflictFolderRenameServer" xml:space="preserve"><value>Перейменувати папку на сервері</value></data>
+  <data name="ConflictFolderRenameLocal" xml:space="preserve"><value>Перейменувати папку на пристрої</value></data>
+  <data name="ConflictFolderDeleteServer" xml:space="preserve"><value>Видалити папку на сервері</value></data>
+  <data name="ConflictFolderDeleteLocal" xml:space="preserve"><value>Видалити папку на пристрої</value></data>
+  <data name="ConflictFolderRenameServerConfirmFormat" xml:space="preserve"><value>Перейменувати папку на сервері «{0}»? Обидві папки далі синхронізуватимуться окремо.</value></data>
+  <data name="ConflictFolderRenameLocalConfirmFormat" xml:space="preserve"><value>Перейменувати папку на пристрої «{0}»? Обидві папки далі синхронізуватимуться окремо.</value></data>
+  <data name="ConflictFolderDeleteServerConfirmFormat" xml:space="preserve"><value>Видалити папку на сервері «{0}»? Кожен її файл спершу перейде у буфер кошика.</value></data>
+  <data name="ConflictFolderDeleteLocalConfirmFormat" xml:space="preserve"><value>Видалити папку на пристрої «{0}»? Кожен її файл спершу перейде у буфер кошика.</value></data>
+  <data name="ConflictFolderRenamedBody" xml:space="preserve"><value>Папку перейменовано — наступна синхронізація розкладе обидві папки окремо.</value></data>
+  <data name="ConflictFolderDeletedBody" xml:space="preserve"><value>Папку видалено — її файли зберігаються у буфері кошика.</value></data>
   <data name="ConflictResolvedTitle" xml:space="preserve"><value>Вирішено</value></data>
   <data name="ConflictResolvedBody" xml:space="preserve"><value>Залишена версія тепер з обох боків — відкинута — у буфері кошика.</value></data>
   <data name="ConflictResolvePartialBody" xml:space="preserve"><value>Розвʼязання не завершилося — наступна синхронізація продовжить його з місця зупинки.</value></data>
@@ -195,6 +204,10 @@
   <data name="EventStashPurged" xml:space="preserve"><value>Прострочені копії сховища видалено · {0}</value></data>
   <data name="EventResolvedLocal" xml:space="preserve"><value>Залишено локальну версію</value></data>
   <data name="EventResolvedServer" xml:space="preserve"><value>Залишено серверну версію</value></data>
+  <data name="EventResolvedFolderRenamedLocal" xml:space="preserve"><value>Перейменовано папку на пристрої</value></data>
+  <data name="EventResolvedFolderRenamedServer" xml:space="preserve"><value>Перейменовано папку на сервері</value></data>
+  <data name="EventResolvedFolderDeletedLocal" xml:space="preserve"><value>Видалено папку на пристрої</value></data>
+  <data name="EventResolvedFolderDeletedServer" xml:space="preserve"><value>Видалено папку на сервері</value></data>
   <data name="EventConflictResolved" xml:space="preserve"><value>Конфлікт вирішено</value></data>
   <data name="EventRaw" xml:space="preserve"><value>{0}</value></data>
   <data name="ErrorAuthExpired" xml:space="preserve"><value>Сесію втрачено — потрібен новий вхід</value></data>

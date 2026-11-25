@@ -59,6 +59,22 @@ public sealed class PlainLocalFileSystem : ILocalFileSystem
         }
     }
 
+    /// <inheritdoc cref="ILocalFileSystem.ExistsAsync"/>
+    public Task<Result<bool, SyncError>> ExistsAsync(RelativePath path, CancellationToken ct)
+    {
+        var full = ToFull(path);
+        try
+        {
+            return Task.FromResult(Result<bool, SyncError>.Success(
+                System.IO.File.Exists(full) || Directory.Exists(full)));
+        }
+        catch (Exception e)
+        {
+            return Task.FromResult(Result<bool, SyncError>.Failure(
+                SyncError.Of(ErrorKind.PermissionLost, $"Cannot probe '{path}': {e.Message}")));
+        }
+    }
+
     /// <inheritdoc cref="ILocalFileSystem.ReadAsync"/>
     public Task<Result<Stream, SyncError>> ReadAsync(RelativePath path, CancellationToken ct)
     {

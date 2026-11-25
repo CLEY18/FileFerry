@@ -202,6 +202,174 @@ public sealed class ConflictResolutionRunTests
         Assert.Equal("EventResolvedServer", resolved.Phrase().Key);
     }
 
+    // --- folder-conflict actions (rename/delete on either side) ---
+
+    [Fact]
+    public async Task FolderRenameServer_DissolvesTheCollision_AndTheFollowUpRunConvergesBothSubtrees()
+    {
+        // the quarantined collision (local Docs vs server docs) is dissolved by one MOVE of the
+        // server folder; the next run spreads both subtrees, the row is acknowledged
+        await _local.CreateFolderAsync(RelativePath.Parse("Docs"), CancellationToken.None);
+        await SeedLocalAsync("Docs/a.txt", "A");
+        await SeedRemoteAsync("docs/b.txt", "B");
+
+        var conflictRun = await Engine().RunAsync(_pair.Id, CancellationToken.None);
+        Assert.Equal(0, conflictRun.Value.Planned); // the quarantine holds: the note alone
+        Assert.Equal(1, conflictRun.Value.Conflicts);
+
+        _clock.Advance(TimeSpan.FromMinutes(1)); // the conflict name takes the resolution moment
+
+        var result = await Engine().ResolveConflictAsync(
+            _pair.Id, RelativePath.Parse("Docs"), FolderAction.RenameServer, CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.IsFailure ? result.Error.Message : string.Empty);
+        var renamed = $"docs (conflict {StampOf(_clock.UtcNow)})";
+        var serverRoot = (await _remote.ListAsync(RemotePath.Parse("sync"), CancellationToken.None)).Value
+            .Select(static e => e.Path.Name).ToArray();
+        Assert.Contains(renamed, serverRoot);
+        Assert.DoesNotContain("docs", serverRoot);
+        Assert.Equal("B", await ReadRemoteAsync($"{renamed}/b.txt"));
+        Assert.Equal("A", await ReadLocalAsync("Docs/a.txt")); // the kept side touched nothing
+
+        var followUp = await Engine().RunAsync(_pair.Id, CancellationToken.None);
+        Assert.True(followUp.IsSuccess);
+        Assert.Equal(0, followUp.Value.Conflicts); // no collision shape any more
+        Assert.Equal("A", await ReadRemoteAsync("Docs/a.txt"));
+        Assert.Equal("B", await ReadLocalAsync($"{renamed}/b.txt"));
+        var settled = await Engine().RunAsync(_pair.Id, CancellationToken.None);
+        Assert.Equal(0, settled.Value.Planned);
+
+        // the row is acknowledged: a resolution event on the note's path clears the shared count
+        var runs = await _state.RecentRunsAsync(_pair.Id, 20, CancellationToken.None);
+        Assert.Equal(0, ConflictEvents.CountUnresolved(runs));
+        var resolved = runs.SelectMany(static r => r.Events).Single(static e => e.Kind == EventKind.ConflictResolved);
+        Assert.Equal("Docs", resolved.Path!.ToString());
+        Assert.Equal("server", resolved.Args!["side"]);
+        Assert.Equal("rename", resolved.Args["action"]);
+    }
+
+    [Fact]
+    public async Task FolderDeleteServer_BuffersEveryFileBeforeTheServerSubtreeGoes()
+    {
+        await _local.CreateFolderAsync(RelativePath.Parse("Docs"), CancellationToken.None);
+        await SeedLocalAsync("Docs/a.txt", "A");
+        await SeedRemoteAsync("docs/b.txt", "B");
+        await SeedRemoteAsync("docs/deep/c.txt", "C");
+
+        var conflictRun = await Engine().RunAsync(_pair.Id, CancellationToken.None);
+        Assert.Equal(1, conflictRun.Value.Conflicts);
+
+        var result = await Engine().ResolveConflictAsync(
+            _pair.Id, RelativePath.Parse("Docs"), FolderAction.DeleteServer, CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.IsFailure ? result.Error.Message : string.Empty);
+        // stop rule: every vanished server file rests in the buffer first
+        var stamp = StampOf(_clock.UtcNow);
+        var stash = (await _local.SnapshotAsync(CancellationToken.None)).Value
+            .Where(static s => !s.IsDirectory && s.Path.StartsWith(Trash))
+            .Select(static s => s.Path.ToString()).ToArray();
+        Assert.Contains($"FileFerry Trash/{stamp}/docs/b.txt", stash);
+        Assert.Contains($"FileFerry Trash/{stamp}/docs/deep/c.txt", stash);
+        Assert.True((await _remote.ListAsync(RemotePath.Parse("sync/docs"), CancellationToken.None)).IsFailure);
+        Assert.Equal("A", await ReadLocalAsync("Docs/a.txt")); // the kept side lives
+
+        var followUp = await Engine().RunAsync(_pair.Id, CancellationToken.None);
+        Assert.Equal(0, followUp.Value.Conflicts);
+        Assert.Equal("A", await ReadRemoteAsync("Docs/a.txt")); // the kept folder spread to the server
+        var settled = await Engine().RunAsync(_pair.Id, CancellationToken.None);
+        Assert.Equal(0, settled.Value.Planned);
+    }
+
+    [Fact]
+    public async Task FolderDeleteLocal_StashesLocalFiles_TheServerSideSpreadsDown()
+    {
+        await _local.CreateFolderAsync(RelativePath.Parse("Docs"), CancellationToken.None);
+        await SeedLocalAsync("Docs/a.txt", "A");
+        await SeedRemoteAsync("docs/b.txt", "B");
+
+        var conflictRun = await Engine().RunAsync(_pair.Id, CancellationToken.None);
+        Assert.Equal(1, conflictRun.Value.Conflicts);
+
+        var result = await Engine().ResolveConflictAsync(
+            _pair.Id, RelativePath.Parse("Docs"), FolderAction.DeleteLocal, CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.IsFailure ? result.Error.Message : string.Empty);
+        var stamp = StampOf(_clock.UtcNow);
+        var stash = (await _local.SnapshotAsync(CancellationToken.None)).Value
+            .Where(static s => !s.IsDirectory && s.Path.StartsWith(Trash))
+            .Select(static s => s.Path.ToString()).ToArray();
+        Assert.Contains($"FileFerry Trash/{stamp}/Docs/a.txt", stash);
+        Assert.False((await _local.ExistsAsync(RelativePath.Parse("Docs"), CancellationToken.None)).Value);
+
+        var followUp = await Engine().RunAsync(_pair.Id, CancellationToken.None);
+        Assert.Equal("B", await ReadLocalAsync("docs/b.txt")); // the surviving folder becomes the pair's truth
+        var settled = await Engine().RunAsync(_pair.Id, CancellationToken.None);
+        Assert.Equal(0, settled.Value.Planned);
+    }
+
+    [Fact]
+    public async Task FolderAction_OnAVanishedSide_Refuses_TheConflictRowStaysOpen()
+    {
+        await _local.CreateFolderAsync(RelativePath.Parse("Docs"), CancellationToken.None);
+        await SeedLocalAsync("Docs/a.txt", "A");
+        await SeedRemoteAsync("docs/b.txt", "B");
+        await Engine().RunAsync(_pair.Id, CancellationToken.None);
+
+        var result = await Engine().ResolveConflictAsync(
+            _pair.Id, RelativePath.Parse("Gone"), FolderAction.RenameServer, CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ErrorKind.NotFound, result.Error.Kind);
+        var runs = await _state.RecentRunsAsync(_pair.Id, 20, CancellationToken.None);
+        Assert.Equal(1, ConflictEvents.CountUnresolved(runs)); // the row stays where it was
+    }
+
+    [Fact]
+    public async Task TwoFolderConflicts_RenameThenDelete_TheFollowUpRunLosesNothing()
+    {
+        // the exact device sequence: one run notices a folder case collision AND a type clash,
+        // the user renames the server twin, then deletes the clashing server folder; the next
+        // plain run must converge — every file of every subtree still lives on some side
+        await _local.CreateFolderAsync(RelativePath.Parse("Docs"), CancellationToken.None);
+        await SeedLocalAsync("Docs/a.txt", "A");
+        await _local.WriteAsync(RelativePath.Parse("clash"), new MemoryStream([7]), CancellationToken.None);
+        await SeedRemoteAsync("docs/b.txt", "B");
+        await SeedRemoteAsync("clash/inner.txt", "I");
+
+        var conflictRun = await Engine().RunAsync(_pair.Id, CancellationToken.None);
+        Assert.Equal(0, conflictRun.Value.Planned);
+        Assert.Equal(2, conflictRun.Value.Conflicts);
+
+        _clock.Advance(TimeSpan.FromMinutes(1));
+        var rename = await Engine().ResolveConflictAsync(
+            _pair.Id, RelativePath.Parse("Docs"), FolderAction.RenameServer, CancellationToken.None);
+        Assert.True(rename.IsSuccess, rename.IsFailure ? rename.Error.Message : string.Empty);
+
+        _clock.Advance(TimeSpan.FromMinutes(1));
+        var del = await Engine().ResolveConflictAsync(
+            _pair.Id, RelativePath.Parse("clash"), FolderAction.DeleteServer, CancellationToken.None);
+        Assert.True(del.IsSuccess, del.IsFailure ? del.Error.Message : string.Empty);
+
+        var followUp = await Engine().RunAsync(_pair.Id, CancellationToken.None);
+        Assert.True(followUp.IsSuccess, followUp.IsFailure ? followUp.Error.Message : string.Empty);
+
+        // nothing may vanish: the renamed folder's child lives, the kept local file lives
+        var renamed = $"docs (conflict {StampOf(_clock.UtcNow - TimeSpan.FromMinutes(1))})";
+        Assert.Equal("B", await ReadRemoteAsync($"{renamed}/b.txt"));
+        Assert.Equal("A", await ReadLocalAsync("Docs/a.txt"));
+
+        var settled = await Engine().RunAsync(_pair.Id, CancellationToken.None);
+        Assert.Equal(0, settled.Value.Planned);
+        Assert.Equal("B", await ReadRemoteAsync($"{renamed}/b.txt"));
+        Assert.Equal("B", await ReadLocalAsync($"{renamed}/b.txt"));
+    }
+
+    /// <summary>
+    /// The stamp embedded into conflict-copy and stash names at this moment (UTC, the engine's format).
+    /// </summary>
+    private static string StampOf(DateTimeOffset now) =>
+        now.ToUniversalTime().ToString("yyyyMMdd'T'HHmmss", System.Globalization.CultureInfo.InvariantCulture);
+
     // --- environment ---
 
     /// <summary>
@@ -296,6 +464,8 @@ public sealed class ConflictResolutionRunTests
 
         public Task<Result<Stream, SyncError>> ReadAsync(RelativePath path, CancellationToken ct) => inner.ReadAsync(path, ct);
 
+        public Task<Result<bool, SyncError>> ExistsAsync(RelativePath path, CancellationToken ct) => inner.ExistsAsync(path, ct);
+
         public Task<Result<FileSnapshot, SyncError>> WriteAsync(RelativePath path, Stream content, CancellationToken ct) =>
             inner.WriteAsync(path, content, ct);
 
@@ -325,6 +495,8 @@ public sealed class ConflictResolutionRunTests
 
         public Task<Result<Stream, SyncError>> ReadAsync(RelativePath path, CancellationToken ct) =>
             inner.ReadAsync(path, ct);
+
+        public Task<Result<bool, SyncError>> ExistsAsync(RelativePath path, CancellationToken ct) => inner.ExistsAsync(path, ct);
 
         public Task<Result<FileSnapshot, SyncError>> WriteAsync(RelativePath path, Stream content, CancellationToken ct) =>
             inner.WriteAsync(path, content, ct);

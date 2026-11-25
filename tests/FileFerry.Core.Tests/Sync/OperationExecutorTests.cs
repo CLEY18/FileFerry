@@ -153,10 +153,35 @@ public sealed class OperationExecutorTests
     }
 
     /// <summary>
-    /// A move already executed: the move answers NotFound, one open probe says "the target is here."
+    /// A move already executed: the move answers NotFound, one existence probe says "the target is here."
     /// The idempotence check must never re-walk the tree — on a device that rescan costs more than
     /// the move it is checking.
     /// </summary>
+    /// <summary>
+    /// A directory move replayed (a folder resolution interrupted mid-plan): the probe must answer
+    /// for collections too — one existence resolve, never a tree walk.
+    /// </summary>
+    [Fact]
+    public async Task MoveLocalFolder_AlreadyExecuted_ProbesExistence_NotATreeScan()
+    {
+        await _local.CreateFolderAsync(RelativePath.Parse("new"), CancellationToken.None); // the move happened before the break
+
+        var local = new MoveFailingFileSystem(_local);
+        var plan = new List<SyncOperation>
+        {
+            new(
+                OperationKind.MoveLocal,
+                RelativePath.Parse("new"),
+                RelativePath.Parse("old"),
+                new FileSnapshot(RelativePath.Parse("new"), EntryKind.Directory, 0)),
+        };
+
+        var report = await Executor(local).ExecuteAsync(Ctx(), plan, CancellationToken.None);
+
+        Assert.True(report.Completed);
+        Assert.Equal(0, local.SnapshotCalls);
+    }
+
     [Fact]
     public async Task MoveLocal_AlreadyExecuted_ProbesWithOneOpen_NotATreeScan()
     {
@@ -292,6 +317,8 @@ public sealed class OperationExecutorTests
 
         public Task<Result<Stream, SyncError>> ReadAsync(RelativePath path, CancellationToken ct) =>
             inner.ReadAsync(path, ct);
+
+        public Task<Result<bool, SyncError>> ExistsAsync(RelativePath path, CancellationToken ct) => inner.ExistsAsync(path, ct);
 
         public Task<Result<FileSnapshot, SyncError>> WriteAsync(RelativePath path, Stream content, CancellationToken ct) =>
             inner.WriteAsync(path, content, ct);

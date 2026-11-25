@@ -76,9 +76,9 @@ public sealed class ConflictEventsTests
             RelativePath.Parse("a.txt"),
             new Dictionary<string, string> { ["conflict"] = "BothModified" });
 
-        Assert.True(ConflictEvents.NeedsHandResolve(folder));
-        Assert.False(ConflictEvents.NeedsHandResolve(plain));
-        Assert.False(ConflictEvents.NeedsHandResolve(
+        Assert.True(ConflictEvents.IsFolderConflict(folder));
+        Assert.False(ConflictEvents.IsFolderConflict(plain));
+        Assert.False(ConflictEvents.IsFolderConflict(
             new SyncEvent(T0, EventKind.PlanSummary, SyncEventOutcome.Info, RelativePath.Parse("x"),
                 new Dictionary<string, string> { ["folder"] = "1" }))); // not a conflict row — no marker reading
 

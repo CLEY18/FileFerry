@@ -47,11 +47,13 @@
                             <Label
                                 Text="{Binding WhenText}"
                                 Style="{StaticResource Caption13}" />
-                            <!-- state line: what the run kept, or the kept side after a resolution-->
+                            <!-- state line: what the run kept, or the kept side after a resolution;
+                                 a folder row awaiting its action has none—the actions are the guidance-->
                             <Label
                                 Text="{Binding StatusText}"
                                 Style="{StaticResource Caption13}"
-                                TextColor="{DynamicResource PrimaryText}" />
+                                TextColor="{DynamicResource PrimaryText}"
+                                IsVisible="{Binding HasStatus}" />
                             <!-- actions only while the conflict is unacknowledged-->
                             <HorizontalStackLayout
                                 Spacing="{x:Static tok:DesignTokens.Space8}"
@@ -67,6 +69,38 @@
                                     Command="{Binding KeepLocalCommand}"
                                     CommandParameter="{Binding .}" />
                             </HorizontalStackLayout>
+                            <!-- folder actions: rename (one MOVE) or delete (buffer first), either side-->
+                            <Grid
+                                ColumnDefinitions="Auto,Auto"
+                                RowDefinitions="Auto,Auto"
+                                RowSpacing="{x:Static tok:DesignTokens.Space4}"
+                                ColumnSpacing="{x:Static tok:DesignTokens.Space8}"
+                                IsVisible="{Binding ShowFolderActions}">
+                                <Button
+                                    Text="{x:Static res:AppStrings.ConflictFolderRenameServer}"
+                                    Style="{StaticResource TextButton}"
+                                    Command="{Binding FolderRenameServerCommand}"
+                                    CommandParameter="{Binding .}" />
+                                <Button
+                                    Grid.Column="1"
+                                    Text="{x:Static res:AppStrings.ConflictFolderRenameLocal}"
+                                    Style="{StaticResource TextButton}"
+                                    Command="{Binding FolderRenameLocalCommand}"
+                                    CommandParameter="{Binding .}" />
+                                <Button
+                                    Grid.Row="1"
+                                    Text="{x:Static res:AppStrings.ConflictFolderDeleteServer}"
+                                    Style="{StaticResource TextButton}"
+                                    Command="{Binding FolderDeleteServerCommand}"
+                                    CommandParameter="{Binding .}" />
+                                <Button
+                                    Grid.Row="1"
+                                    Grid.Column="1"
+                                    Text="{x:Static res:AppStrings.ConflictFolderDeleteLocal}"
+                                    Style="{StaticResource TextButton}"
+                                    Command="{Binding FolderDeleteLocalCommand}"
+                                    CommandParameter="{Binding .}" />
+                            </Grid>
                         </VerticalStackLayout>
                     </Border>
                 </DataTemplate>

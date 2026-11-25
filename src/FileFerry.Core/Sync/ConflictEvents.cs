@@ -29,11 +29,11 @@ public static class ConflictEvents
             .ToDictionary(static g => g.Key, static g => g.MaxBy(static e => e.At)!);
 
     /// <summary>
-    /// Whether this conflict row can only be resolved by hand: the planner marks notes that
-    /// involve a folder — they carry no conflict copies, so a keep-side action could only fail.
-    /// The row shows the hand-resolve hint instead of the two actions.
+    /// Whether this conflict row involves a folder: the planner marks such notes — they carry no
+    /// conflict copies, so the keep-side actions do not fit and the row offers its four
+    /// folder actions instead (rename or delete either side).
     /// </summary>
-    public static bool NeedsHandResolve(SyncEvent e) =>
+    public static bool IsFolderConflict(SyncEvent e) =>
         IsConflictRow(e)
         && e.Args is { } args
         && args.TryGetValue("folder", out var marker)

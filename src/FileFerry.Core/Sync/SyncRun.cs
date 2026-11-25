@@ -349,7 +349,7 @@ public sealed class SyncRun
             var events = new List<SyncEvent>();
             try
             {
-                return await ResolvePipelineAsync(runId, pairId, path, side, startedAt, events, ct)
+                return await ResolvePipelineAsync(runId, pairId, path, side, null, startedAt, events, ct)
                     .ConfigureAwait(false);
             }
             catch (OperationCanceledException)
@@ -364,11 +364,52 @@ public sealed class SyncRun
     }
 
     /// <summary>
+    /// One folder-conflict action from the conflicts screen (rename or delete, either side) —
+    /// the same gates as the keep-side resolution: the pair lock, the probe, fresh scans.
+    /// </summary>
+    /// <param name="pairId">The pair carrying the conflict.</param>
+    /// <param name="path">The conflicting path as the note carries it.</param>
+    /// <param name="action">Rename or delete, on the server or on the device.</param>
+    /// <param name="ct">Cancels between steps; applied steps stay journaled.</param>
+    public async Task<Result<SyncRunReport, SyncError>> ResolveConflictAsync(
+        Guid pairId, RelativePath path, FolderAction action, CancellationToken ct)
+    {
+        var gate = _locks.TryAcquire(pairId, ct);
+        if (gate is null)
+        {
+            return Result<SyncRunReport, SyncError>.Failure(SyncError.Of(
+                ErrorKind.Conflict,
+                "The pair already has an active run — one pair, one run — so the resolution was refused."));
+        }
+
+        using (gate)
+        {
+            var runId = Guid.NewGuid();
+            var startedAt = _clock.UtcNow;
+            var events = new List<SyncEvent>();
+            try
+            {
+                return await ResolvePipelineAsync(runId, pairId, path, null, action, startedAt, events, ct)
+                    .ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                events.Add(MakeEvent(EventKind.RunCancelled, SyncEventOutcome.Warning));
+                await SaveRunAsync(runId, pairId, startedAt, SyncRunOutcome.Cancelled, events).ConfigureAwait(false);
+                return Result<SyncRunReport, SyncError>.Success(
+                    new SyncRunReport(runId, SyncRunOutcome.Cancelled, 0, 0, 0, null));
+            }
+        }
+    }
+
+    /// <summary>
     /// Resolution pipeline: the same gates as a plain run (scope, probe, scans), then the
     /// resolver's plan instead of diff-planning; baseline UoW and run-log follow the identical rule.
+    /// Exactly one of <paramref name="side"/> (a keep-side file resolution) and
+    /// <paramref name="folder"/> (a folder-conflict action) is set.
     /// </summary>
     private async Task<Result<SyncRunReport, SyncError>> ResolvePipelineAsync(
-        Guid runId, Guid pairId, RelativePath path, KeepSide side,
+        Guid runId, Guid pairId, RelativePath path, KeepSide? side, FolderAction? folder,
         DateTimeOffset startedAt, List<SyncEvent> events, CancellationToken ct)
     {
         var scopeResult = await _scopes.OpenAsync(pairId, ct).ConfigureAwait(false);
@@ -407,12 +448,30 @@ public sealed class SyncRun
 
         var localByKey = localScan.Value.ToDictionary(static s => s.Path, static s => s);
         var remoteByKey = remoteScan.Value.ToDictionary(static s => s.Path, static s => s);
-        var plan = ConflictResolver.Build(
-            path, side, localByKey, remoteByKey, _stash, _clock.UtcNow);
-        if (plan.IsFailure)
+        IReadOnlyList<SyncOperation> operations;
+        if (folder is { } folderAction)
         {
-            return await FailAsync(runId, pairId, startedAt, plan.Error,
-                EventPhrases.FailPlanner, events).ConfigureAwait(false);
+            var folderPlan = ConflictResolver.BuildFolder(
+                path, folderAction, localByKey, remoteByKey, _stash, _clock.UtcNow);
+            if (folderPlan.IsFailure)
+            {
+                return await FailAsync(runId, pairId, startedAt, folderPlan.Error,
+                    EventPhrases.FailPlanner, events).ConfigureAwait(false);
+            }
+
+            operations = folderPlan.Value.Operations;
+        }
+        else
+        {
+            var plan = ConflictResolver.Build(
+                path, side!.Value, localByKey, remoteByKey, _stash, _clock.UtcNow);
+            if (plan.IsFailure)
+            {
+                return await FailAsync(runId, pairId, startedAt, plan.Error,
+                    EventPhrases.FailPlanner, events).ConfigureAwait(false);
+            }
+
+            operations = plan.Value.Operations;
         }
 
         var context = new SyncRunContext(
@@ -424,17 +483,29 @@ public sealed class SyncRun
             scope.Local, scope.Remote, _state, _stash, _handlers,
             _observer is null ? null : pid => _observer.OnStepApplied(pid));
 
-        events.Add(MakeEvent(EventKind.PlanSummary, count: plan.Value.Operations.Count));
-        _observer?.OnPlanned(pairId, plan.Value.Operations.Count);
+        events.Add(MakeEvent(EventKind.PlanSummary, count: operations.Count));
+        _observer?.OnPlanned(pairId, operations.Count);
 
-        var report = await executor.ExecuteAsync(context, plan.Value.Operations, ct).ConfigureAwait(false);
+        var report = await executor.ExecuteAsync(context, operations, ct).ConfigureAwait(false);
 
         // The resolved marker only for a completed resolution: an interrupted one leaves the
         // conflict open — screens keep counting it until resume or re-plan closes it out.
         if (report.Completed)
         {
-            events.Add(MakeEvent(EventKind.ConflictResolved, SyncEventOutcome.Success, path,
-                side: side == KeepSide.Local ? "local" : "server"));
+            events.Add(MakeEvent(
+                EventKind.ConflictResolved, SyncEventOutcome.Success, path,
+                side: folder switch
+                {
+                    FolderAction.RenameLocal or FolderAction.DeleteLocal => "local",
+                    FolderAction.RenameServer or FolderAction.DeleteServer => "server",
+                    _ => side == KeepSide.Local ? "local" : "server",
+                },
+                action: folder switch
+                {
+                    FolderAction.RenameServer or FolderAction.RenameLocal => "rename",
+                    FolderAction.DeleteServer or FolderAction.DeleteLocal => "delete",
+                    _ => null,
+                }));
         }
 
         await _baseline
@@ -450,7 +521,7 @@ public sealed class SyncRun
 
         await SaveRunAsync(runId, pairId, startedAt, outcome, events).ConfigureAwait(false);
         return Result<SyncRunReport, SyncError>.Success(
-            new SyncRunReport(runId, outcome, plan.Value.Operations.Count, report.Applied.Count, 0, report.Error));
+            new SyncRunReport(runId, outcome, operations.Count, report.Applied.Count, 0, report.Error));
     }
 
     /// <summary>
@@ -500,7 +571,8 @@ public sealed class SyncRun
         string? label = null,
         string? conflict = null,
         string? side = null,
-        string? folder = null)
+        string? folder = null,
+        string? action = null)
     {
         Dictionary<string, string>? args = null;
         if (count is { } n) (args ??= [])["count"] = n.ToString(System.Globalization.CultureInfo.InvariantCulture);
@@ -509,6 +581,7 @@ public sealed class SyncRun
         if (conflict is { } c) (args ??= [])["conflict"] = c;
         if (side is { } s) (args ??= [])["side"] = s;
         if (folder is { } f) (args ??= [])["folder"] = f;
+        if (action is { } a) (args ??= [])["action"] = a;
         return new SyncEvent(_clock.UtcNow, kind, outcome, path, args);
     }
 }

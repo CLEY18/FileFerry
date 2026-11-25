@@ -50,6 +50,10 @@ public sealed class StashIndexingLocalFileSystem : ILocalFileSystem
     public Task<Result<Stream, SyncError>> ReadAsync(RelativePath path, CancellationToken ct) =>
         _inner.ReadAsync(path, ct);
 
+    /// <inheritdoc cref="ILocalFileSystem.ExistsAsync"/>
+    public Task<Result<bool, SyncError>> ExistsAsync(RelativePath path, CancellationToken ct) =>
+        _inner.ExistsAsync(path, ct);
+
     /// <inheritdoc />
     public Task<Result<FileSnapshot, SyncError>> WriteAsync(RelativePath path, Stream content, CancellationToken ct) =>
         IndexOnWriteAsync(path, content, ct);

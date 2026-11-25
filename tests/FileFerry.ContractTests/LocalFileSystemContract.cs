@@ -100,6 +100,21 @@ public abstract class LocalFileSystemContract
     }
 
     /// <summary>
+    /// The existence probe answers for a file, for a folder, and for a missing path — one resolve,
+    /// never a tree walk (the replayed-move idempotence check costs this call).
+    /// </summary>
+    [Fact]
+    public async Task Exists_ProbesFileFolderAndNothing()
+    {
+        var fs = Create();
+        await fs.WriteAsync(RelativePath.Parse("sub/a.txt"), new MemoryStream([1]), CancellationToken.None);
+
+        Assert.True((await fs.ExistsAsync(RelativePath.Parse("sub/a.txt"), CancellationToken.None)).Value);
+        Assert.True((await fs.ExistsAsync(RelativePath.Parse("sub"), CancellationToken.None)).Value);
+        Assert.False((await fs.ExistsAsync(RelativePath.Parse("nowhere.bin"), CancellationToken.None)).Value);
+    }
+
+    /// <summary>
     /// Moving a folder relocates the whole subtree.
     /// </summary>
     [Fact]

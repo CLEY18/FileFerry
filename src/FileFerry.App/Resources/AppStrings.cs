@@ -519,7 +519,16 @@ public static class AppStrings
     /// <summary>
     /// Folder conflict row: no conflict copies exist, one of the folders must be renamed by hand.
     /// </summary>
-    public static string ConflictHandResolveHint => Get();
+    public static string ConflictFolderRenameServer => Get();
+    public static string ConflictFolderRenameLocal => Get();
+    public static string ConflictFolderDeleteServer => Get();
+    public static string ConflictFolderDeleteLocal => Get();
+    public static string ConflictFolderRenameServerConfirmFormat => Get();
+    public static string ConflictFolderRenameLocalConfirmFormat => Get();
+    public static string ConflictFolderDeleteServerConfirmFormat => Get();
+    public static string ConflictFolderDeleteLocalConfirmFormat => Get();
+    public static string ConflictFolderRenamedBody => Get();
+    public static string ConflictFolderDeletedBody => Get();
 
     /// <summary>
     /// Conflict action: keep the server version.

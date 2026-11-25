@@ -104,12 +104,21 @@
   <data name="ConflictsEmptyTitle" xml:space="preserve"><value>No conflicts</value></data>
   <data name="ConflictsEmptyBody" xml:space="preserve"><value>All changes were applied. If a conflict appears, we keep both versions and show them here.</value></data>
   <data name="ConflictKeptBoth" xml:space="preserve"><value>Both versions kept</value></data>
-  <data name="ConflictHandResolveHint" xml:space="preserve"><value>Rename one of the folders by hand</value></data>
   <data name="ConflictKeepServer" xml:space="preserve"><value>Keep server version</value></data>
   <data name="ConflictKeepLocal" xml:space="preserve"><value>Keep local version</value></data>
   <data name="ConflictResolveConfirmTitle" xml:space="preserve"><value>Resolve the conflict</value></data>
   <data name="ConflictResolveServerConfirmFormat" xml:space="preserve"><value>Keep the server version of “{0}”? The local version moves to the trash buffer.</value></data>
   <data name="ConflictResolveLocalConfirmFormat" xml:space="preserve"><value>Keep the local version of “{0}”? The server version moves to the trash buffer.</value></data>
+  <data name="ConflictFolderRenameServer" xml:space="preserve"><value>Rename server folder</value></data>
+  <data name="ConflictFolderRenameLocal" xml:space="preserve"><value>Rename device folder</value></data>
+  <data name="ConflictFolderDeleteServer" xml:space="preserve"><value>Delete server folder</value></data>
+  <data name="ConflictFolderDeleteLocal" xml:space="preserve"><value>Delete device folder</value></data>
+  <data name="ConflictFolderRenameServerConfirmFormat" xml:space="preserve"><value>Rename the server folder “{0}”? Both folders then sync side by side.</value></data>
+  <data name="ConflictFolderRenameLocalConfirmFormat" xml:space="preserve"><value>Rename the device folder “{0}”? Both folders then sync side by side.</value></data>
+  <data name="ConflictFolderDeleteServerConfirmFormat" xml:space="preserve"><value>Delete the server folder “{0}”? Every file it holds moves to the trash buffer first.</value></data>
+  <data name="ConflictFolderDeleteLocalConfirmFormat" xml:space="preserve"><value>Delete the device folder “{0}”? Every file it holds moves to the trash buffer first.</value></data>
+  <data name="ConflictFolderRenamedBody" xml:space="preserve"><value>The folder was renamed — the next sync spreads both folders side by side.</value></data>
+  <data name="ConflictFolderDeletedBody" xml:space="preserve"><value>The folder was deleted — its files rest in the trash buffer.</value></data>
   <data name="ConflictResolvedTitle" xml:space="preserve"><value>Resolved</value></data>
   <data name="ConflictResolvedBody" xml:space="preserve"><value>The kept version now lives on both sides — the discarded one is in the trash buffer.</value></data>
   <data name="ConflictResolvePartialBody" xml:space="preserve"><value>The resolution did not finish — the next sync continues it where it stopped.</value></data>
@@ -195,6 +204,10 @@
   <data name="EventStashPurged" xml:space="preserve"><value>Expired trash copies purged · {0}</value></data>
   <data name="EventResolvedLocal" xml:space="preserve"><value>Kept the local version</value></data>
   <data name="EventResolvedServer" xml:space="preserve"><value>Kept the server version</value></data>
+  <data name="EventResolvedFolderRenamedLocal" xml:space="preserve"><value>Renamed the device folder</value></data>
+  <data name="EventResolvedFolderRenamedServer" xml:space="preserve"><value>Renamed the server folder</value></data>
+  <data name="EventResolvedFolderDeletedLocal" xml:space="preserve"><value>Deleted the device folder</value></data>
+  <data name="EventResolvedFolderDeletedServer" xml:space="preserve"><value>Deleted the server folder</value></data>
   <data name="EventConflictResolved" xml:space="preserve"><value>Conflict resolved</value></data>
   <data name="EventRaw" xml:space="preserve"><value>{0}</value></data>
   <data name="ErrorAuthExpired" xml:space="preserve"><value>Session expired — sign in again</value></data>
