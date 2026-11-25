@@ -64,8 +64,13 @@ public sealed class WebDavRemoteStore : IWritableRemoteStore
                 DavTransport.ToSyncError("PROPFIND", folder.ToString(), response));
         }
 
-        var body = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-        var parsed = MultistatusParser.Parse(body, _transport.BaseAddress.AbsolutePath);
+        var body = await DavTransport.ReadBodyCappedAsync(response, $"PROPFIND '{folder}'", ct).ConfigureAwait(false);
+        if (body.IsFailure)
+        {
+            return Result<IReadOnlyList<RemoteEntry>, SyncError>.Failure(body.Error);
+        }
+
+        var parsed = MultistatusParser.Parse(body.Value, _transport.BaseAddress.AbsolutePath);
         if (parsed.IsFailure)
         {
             return Result<IReadOnlyList<RemoteEntry>, SyncError>.Failure(parsed.Error);
@@ -90,23 +95,25 @@ public sealed class WebDavRemoteStore : IWritableRemoteStore
             return Result<Stream, SyncError>.Failure(sent.Error);
         }
 
-        using var response = sent.Value;
+        var response = sent.Value;
         if (response.StatusCode == HttpStatusCode.NotFound)
         {
+            response.Dispose();
             return Result<Stream, SyncError>.Failure(
                 SyncError.Of(ErrorKind.NotFound, $"The file '{file}' does not exist on the server (404)."));
         }
 
         if (!response.IsSuccessStatusCode)
         {
+            response.Dispose();
             return Result<Stream, SyncError>.Failure(DavTransport.ToSyncError("GET", file.ToString(), response));
         }
 
-        // Copy into memory: the port contract is "full content in a stream", no live connection.
-        var buffer = new MemoryStream();
-        await response.Content.CopyToAsync(buffer, ct).ConfigureAwait(false);
-        buffer.Position = 0;
-        return Result<Stream, SyncError>.Success(buffer);
+        // The body streams over the live connection: multi-gigabyte files never sit in memory.
+        // The response lives exactly as long as its stream — closing the stream returns the
+        // connection; abandoning the read abandons the body (the step fails, the next run replans).
+        var content = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        return Result<Stream, SyncError>.Success(new ResponseStream(content, response));
     }
 
     /// <inheritdoc />
@@ -311,8 +318,10 @@ public sealed class WebDavRemoteStore : IWritableRemoteStore
         }
 
         using var response = fresh.Value;
-        var body = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-        var parsed = MultistatusParser.Parse(body, _transport.BaseAddress.AbsolutePath);
+        var body = await DavTransport.ReadBodyCappedAsync(response, $"PROPFIND '{file}'", ct).ConfigureAwait(false);
+        var parsed = body.IsFailure
+            ? Result<IReadOnlyList<RemoteEntry>, SyncError>.Failure(body.Error)
+            : MultistatusParser.Parse(body.Value, _transport.BaseAddress.AbsolutePath);
         var entry = parsed.IsSuccess
             ? parsed.Value.FirstOrDefault(static e => e.Kind == EntryKind.File)
             : null;

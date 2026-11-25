@@ -16,7 +16,9 @@ public interface IRemoteBrowser
     Task<Result<IReadOnlyList<RemoteEntry>, SyncError>> ListAsync(RemotePath folder, CancellationToken ct);
 
     /// <summary>
-    /// Open a file for reading (GET). The caller closes the returned stream.
+    /// Open a file for reading (GET). The caller closes the returned stream. Content streams —
+    /// a large file is never held whole in memory; the stream may sit on the live connection,
+    /// so it is read to the end (or dropped) within the caller's operation, never seeked back.
     /// </summary>
     /// <param name="file">File from the user's DAV root.</param>
     /// <param name="ct">Cancels the request (all the way down to HTTP).</param>

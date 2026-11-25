@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text;
 using FileFerry.Core.Domain;
 using FileFerry.Core.Domain.Paths;
 
@@ -13,6 +14,13 @@ namespace FileFerry.Client.WebDav;
 /// </summary>
 internal sealed class DavTransport
 {
+    /// <summary>
+    /// Cap of a metadata answer (PROPFIND bodies): every honest directory listing fits — the
+    /// refusal protects against an inflated or hostile body, compressed included (the cap counts
+    /// decoded bytes, not wire bytes). File content is not capped here: it streams past the parser.
+    /// </summary>
+    internal const int MetadataBodyCapBytes = 8 * 1024 * 1024;
+
     /// <summary>
     /// PROPFIND body: the set of properties the engine needs from each entry.
     /// </summary>
@@ -111,6 +119,36 @@ internal sealed class DavTransport
             _ => ErrorKind.Unknown,
         };
         return SyncError.Of(kind, $"{operation} '{target}' → HTTP {(int)code} ({response.ReasonPhrase ?? code.ToString()})");
+    }
+
+    /// <summary>
+    /// Reads a metadata answer as text up to <see cref="MetadataBodyCapBytes"/> — counting the
+    /// bytes the caller actually receives (an inflated gzip body is caught decoded, not on the
+    /// wire). Over the cap the answer is refused with <see cref="ErrorKind.Unknown"/>; nothing
+    /// beyond the cap is ever materialised.
+    /// </summary>
+    public static async Task<Result<string, SyncError>> ReadBodyCappedAsync(
+        HttpResponseMessage response, string what, CancellationToken ct)
+    {
+        await using var body = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        using var collected = new MemoryStream();
+        var block = new byte[81_920];
+        long total = 0;
+        int read;
+        while ((read = await body.ReadAsync(block, ct).ConfigureAwait(false)) > 0)
+        {
+            total += read;
+            if (total > MetadataBodyCapBytes)
+            {
+                return Result<string, SyncError>.Failure(SyncError.Of(
+                    ErrorKind.Unknown,
+                    $"{what} answered with a body over the {MetadataBodyCapBytes / (1024 * 1024)} MiB cap — the answer was refused."));
+            }
+
+            collected.Write(block, 0, read);
+        }
+
+        return Result<string, SyncError>.Success(Encoding.UTF8.GetString(collected.ToArray()));
     }
 
     /// <summary>
