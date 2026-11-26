@@ -183,6 +183,7 @@
   <data name="StashRestoreConfirmFormat" xml:space="preserve"><value>Повернути «{0}» назад у теку? Копія лишиться у сховищі до кінця терміну.</value></data>
   <data name="StashRestoreDoneTitle" xml:space="preserve"><value>Повернуто</value></data>
     <data name="StashRestoreFailedTitle" xml:space="preserve"><value>Не вдалося повернути</value></data>
+    <data name="StashRestoreBusyBody" xml:space="preserve"><value>Триває синхронізація — зачекайте її завершення, потім повертайте.</value></data>
   <data name="CancelRun" xml:space="preserve"><value>Скасувати синхронізацію</value></data>
   <data name="StashRestoreDoneBody" xml:space="preserve"><value>Файл знову в теці — наступна синхронізація надішле його на сервер.</value></data>
   <data name="DetailsGoneTitle" xml:space="preserve"><value>Пару не знайдено</value></data>

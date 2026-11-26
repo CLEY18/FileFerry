@@ -20,7 +20,7 @@ public sealed record StashEntry(
 /// <summary>
 /// Persistence of the stash-buffer index (SQLite in Data). Writes happen in the executor inside
 /// the delete's UoW (invariant: copy first, then delete); reads — pair details / trash buffer screen;
-/// index removal — TTL-purge and the "Restore" flow.
+/// index removal — the TTL purge (a restore keeps its copy until retention ends).
 /// </summary>
 public interface IStashRepository
 {
@@ -35,7 +35,7 @@ public interface IStashRepository
     Task<IReadOnlyList<StashEntry>> ListAsync(Guid pairId, CancellationToken ct);
 
     /// <summary>
-    /// Remove a copy index (after purge or a successful restore).
+    /// Remove a copy index (after a TTL purge).
     /// </summary>
     /// <param name="pairId">Pair owning the copy (index PK part).</param>
     /// <param name="stashPath">Copy path within the local root.</param>

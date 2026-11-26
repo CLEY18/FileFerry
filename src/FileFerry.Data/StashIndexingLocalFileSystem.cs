@@ -144,7 +144,8 @@ public sealed class StashIndexingLocalFileSystem : ILocalFileSystem
     }
 
     /// <summary>
-    /// A copy removal (purge/restore): after physical success comes unindexing.
+    /// A copy removal (the TTL purge, or any deliberate cleanup of the buffer): after physical
+    /// success comes unindexing.
     /// </summary>
     private async Task<Result<Ok, SyncError>> UnindexOnDeleteAsync(RelativePath path, CancellationToken ct)
     {

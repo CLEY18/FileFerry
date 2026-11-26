@@ -183,6 +183,7 @@
   <data name="StashRestoreConfirmFormat" xml:space="preserve"><value>Put “{0}” back into the folder? The copy will stay in the trash until its retention ends.</value></data>
   <data name="StashRestoreDoneTitle" xml:space="preserve"><value>Restored</value></data>
     <data name="StashRestoreFailedTitle" xml:space="preserve"><value>Could not restore</value></data>
+    <data name="StashRestoreBusyBody" xml:space="preserve"><value>A sync is running — wait for it to finish, then restore.</value></data>
   <data name="CancelRun" xml:space="preserve"><value>Cancel sync</value></data>
   <data name="StashRestoreDoneBody" xml:space="preserve"><value>The file is back in the folder — the next sync will upload it.</value></data>
   <data name="DetailsGoneTitle" xml:space="preserve"><value>Pair not found</value></data>

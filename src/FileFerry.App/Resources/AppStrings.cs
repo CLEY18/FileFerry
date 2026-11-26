@@ -887,6 +887,11 @@ public static class AppStrings
     public static string StashRestoreFailedTitle => Get();
 
     /// <summary>
+    /// Body of the restore refusal while a sync run is active — the restore waits for it.
+    /// </summary>
+    public static string StashRestoreBusyBody => Get();
+
+    /// <summary>
     /// Line for the current culture; a missing key returns the key name itself, so a locale gap
     /// is visible immediately.
     /// </summary>

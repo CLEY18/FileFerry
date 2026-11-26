@@ -9,9 +9,11 @@ namespace FileFerry.App.ViewModels;
 
 /// <summary>
 /// VM for the trash buffer screen: deletion copies from <see cref="IStashRepository"/> + TTL progress
-/// from <see cref="IClock"/> and <see cref="StashPolicyOptions"/>. "Restore" = a copy from the stash
-/// root back to the origin via <see cref="ISyncScopeFactory"/> (the pair's SAF side);
-/// the copy in the stash stays until TTL ends — the safety net never disappears early.
+/// from <see cref="IClock"/> and <see cref="StashPolicyOptions"/>. "Restore" = <see cref="StashRestore"/>
+/// through <see cref="ISyncScopeFactory"/> (the pair's SAF side): a busy origin is buffered before
+/// it is replaced — the deletion rule guards in-app writes too — and a run in flight refuses the
+/// restore outright. The restored copy stays in the stash until TTL ends — the safety net never
+/// disappears early.
 /// </summary>
 public sealed class StashViewModel : Mvvm.ObservableObject
 {
@@ -20,6 +22,8 @@ public sealed class StashViewModel : Mvvm.ObservableObject
     private readonly IAppDialogs _dialogs;
     private readonly StashPolicyOptions _options;
     private readonly ISyncScopeFactory _scopes;
+    private readonly IStashPolicy _stashPolicy;
+    private readonly SyncStatusService _status;
     private Guid _pairId;
     private bool _isEmpty = true;
     private bool _isBusy;
@@ -29,13 +33,17 @@ public sealed class StashViewModel : Mvvm.ObservableObject
         IClock clock,
         IAppDialogs dialogs,
         StashPolicyOptions options,
-        ISyncScopeFactory scopes)
+        ISyncScopeFactory scopes,
+        IStashPolicy stashPolicy,
+        SyncStatusService status)
     {
         _stash = stash;
         _clock = clock;
         _dialogs = dialogs;
         _options = options;
         _scopes = scopes;
+        _stashPolicy = stashPolicy;
+        _status = status;
 
         RestoreCommand = new Mvvm.AsyncRelayCommand(
             async (param, ct) =>
@@ -125,12 +133,21 @@ public sealed class StashViewModel : Mvvm.ObservableObject
     }
 
     /// <summary>
-    /// "Restore": confirmation → copy stashPath→originPath through the pair's SAF side.
-    /// Success does not remove the index: the copy in the stash lives until TTL ends
-    /// ("TTL progress").
+    /// "Restore": run-active refusal → confirmation → <see cref="StashRestore"/> through the pair's
+    /// SAF side (a busy origin is buffered before it is replaced). Success does not remove the
+    /// index: the copy in the stash lives until TTL ends ("TTL progress").
     /// </summary>
     private async Task RestoreAsync(StashRow row, CancellationToken ct)
     {
+        if (_status.StatusFor(_pairId) is not null)
+        {
+            // a run in flight may re-deliver or replace the origin at any moment — restoring
+            // beside it would race the transfer for the same file
+            await _dialogs.ShowAlertAsync(
+                AppStrings.StashRestoreFailedTitle, AppStrings.StashRestoreBusyBody, AppStrings.HelpOk, ct);
+            return;
+        }
+
         var confirmed = await _dialogs.ConfirmAsync(
             AppStrings.StashRestore,
             string.Format(AppStrings.StashRestoreConfirmFormat, row.OriginText),
@@ -153,8 +170,9 @@ public sealed class StashViewModel : Mvvm.ObservableObject
                 return;
             }
 
-            var copied = await opened.Value.Local
-                .CopyAsync(RelativePath.Parse(row.StashPath), RelativePath.Parse(row.OriginPath), ct)
+            var copied = await StashRestore.RestoreAsync(
+                    opened.Value.Local, _stashPolicy, _clock,
+                    RelativePath.Parse(row.StashPath), RelativePath.Parse(row.OriginPath), ct)
                 .ConfigureAwait(false);
             if (copied.IsFailure)
             {
@@ -165,6 +183,10 @@ public sealed class StashViewModel : Mvvm.ObservableObject
 
             await _dialogs.ShowAlertAsync(
                 AppStrings.StashRestoreDoneTitle, AppStrings.StashRestoreDoneBody, AppStrings.HelpOk, ct);
+
+            // the restore may have buffered the origin it replaced — the fresh copy belongs
+            // on the list at once, not after the next visit
+            await LoadAsync(_pairId, ct).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
