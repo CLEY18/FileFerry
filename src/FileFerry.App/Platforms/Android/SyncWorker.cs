@@ -25,6 +25,12 @@ public sealed class SyncWorker : Worker
     /// </summary>
     public const string PairNameKey = "pair_name";
 
+    /// <summary>
+    /// "Now" marker: the one-time job is a direct user order, so it runs even a paused pair —
+    /// the pause stops the schedule, not the owner (only the "Now" job sets it; the periodic one never does).
+    /// </summary>
+    public const string RunNowKey = "run_now";
+
     private readonly CancellationTokenSource _stop = new();
 
     /// <summary>
@@ -100,7 +106,11 @@ public sealed class SyncWorker : Worker
         var status = provider.GetRequiredService<Services.SyncStatusService>();
         using var registration = status.Begin(pairId); // Worker→UI hub (#3)
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token, registration.Token);
-        var result = await run.RunAsync(pairId, linked.Token).ConfigureAwait(false);
+        // a "Now" job is the owner's direct order: it runs a paused pair too (the pause guards the
+        // schedule, not the person); the periodic job carries no marker and keeps the guard
+        var result = await run
+            .RunAsync(pairId, linked.Token, ignorePaused: InputData?.GetBoolean(RunNowKey, false) ?? false)
+            .ConfigureAwait(false);
 
         if (context is not null)
         {

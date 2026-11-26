@@ -7,7 +7,8 @@ namespace FileFerry.App;
 /// <summary>
 /// Android adapter for <see cref="ISyncScheduler"/> on WorkManager: a unique-periodic job
 /// per pair ("one pair — one active job" is realized by the unique name + UPDATE itself), an
-/// <c>UNMETERED</c> Constraint for wifi-only pairs, a one-time "Now" with REPLACE.
+/// <c>UNMETERED</c> Constraint for wifi-only pairs, a one-time "Now" with REPLACE — marked as the
+/// owner's direct order, so it runs even a paused pair.
 /// The <see cref="SyncSchedule.Manual"/> interval and pause remove the job.
 /// </summary>
 public sealed class AndroidWorkScheduler : ISyncScheduler
@@ -49,7 +50,7 @@ public sealed class AndroidWorkScheduler : ISyncScheduler
         }
 
         var request = new OneTimeWorkRequest.Builder(typeof(SyncWorker))
-            .SetInputData(Input(pairId, pair.DisplayName))
+            .SetInputData(Input(pairId, pair.DisplayName, runNow: true))
             .SetConstraints(Constraints(pair))
             .Build();
         Manager.EnqueueUniqueWork(OneTimeName(pairId), ExistingWorkPolicy.Replace!, request);
@@ -66,10 +67,11 @@ public sealed class AndroidWorkScheduler : ISyncScheduler
     /// <summary>
     /// Worker data: pair id + display-name for the notification (no secrets whatsoever).
     /// </summary>
-    private static AndroidX.Work.Data Input(Guid pairId, string displayName) =>
+    private static AndroidX.Work.Data Input(Guid pairId, string displayName, bool runNow = false) =>
         new AndroidX.Work.Data.Builder()
             .PutString(SyncWorker.PairIdKey, pairId.ToString("D"))
             .PutString(SyncWorker.PairNameKey, displayName)
+            .PutBoolean(SyncWorker.RunNowKey, runNow)
             .Build();
 
     /// <summary>

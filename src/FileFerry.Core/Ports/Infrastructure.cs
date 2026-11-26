@@ -90,7 +90,8 @@ public interface ISyncScheduler
     Task ScheduleAsync(Guid pairId, SyncSchedule schedule, CancellationToken ct);
 
     /// <summary>
-    /// One-off "Now" run (manual sync).
+    /// One-off "Now" run (manual sync) — runs even a paused pair: the pause guards the schedule,
+    /// not the owner's direct order.
     /// </summary>
     Task RunNowAsync(Guid pairId, CancellationToken ct);
 
