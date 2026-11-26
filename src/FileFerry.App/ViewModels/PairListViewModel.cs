@@ -26,9 +26,8 @@ public sealed class PairListViewModel : Mvvm.ObservableObject
     private string _accountLabel = AppStrings.AccountChipEmpty;
     private bool _isInsecure;
 
-    private bool _gatePending;
+    private readonly WelcomeGate _gate;
     private bool _isRefreshing;
-
     public PairListViewModel(
         IFolderPairRepository pairs,
         IAccountRepository accounts,
@@ -36,7 +35,8 @@ public sealed class PairListViewModel : Mvvm.ObservableObject
         INavigationService navigation,
         IAppDialogs dialogs,
         ISyncScheduler scheduler,
-        SyncStatusService status)
+        SyncStatusService status,
+        WelcomeGate gate)
     {
         _pairs = pairs;
         _accounts = accounts;
@@ -45,6 +45,7 @@ public sealed class PairListViewModel : Mvvm.ObservableObject
         _dialogs = dialogs;
         _scheduler = scheduler;
         _status = status;
+        _gate = gate;
 
         RefreshCommand = new Mvvm.AsyncRelayCommand(RefreshAsync);
         AddCommand = new Mvvm.AsyncRelayCommand(ct => _navigation.GoAsync(AppShell.PairWizardRoute, ct));
@@ -278,11 +279,19 @@ public sealed class PairListViewModel : Mvvm.ObservableObject
 
             // Without a server connection this screen has nothing to show and every action
             // on it dead-ends — send the user to the welcome screen instead of an empty shell.
-            // Once per screen visit: the appearing hook can fire more than once in a row.
-            if (account is null && !_gatePending)
+            // A shared one-shot pass decides: the startup gate races this reload on a fresh
+            // launch and the screen must be pushed once; a found account re-arms the pass, so
+            // the next account-less episode — the sign-out — opens the welcome without a restart.
+            if (account is null)
             {
-                _gatePending = true;
-                await _navigation.GoAsync(AppShell.WelcomeRoute, CancellationToken.None);
+                if (_gate.TryOpen())
+                {
+                    await _navigation.GoAsync(AppShell.WelcomeRoute, CancellationToken.None);
+                }
+            }
+            else
+            {
+                _gate.Rearm();
             }
         });
     }

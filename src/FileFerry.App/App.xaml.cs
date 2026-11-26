@@ -33,14 +33,14 @@ public sealed partial class App : Application
     /// <summary>
     /// First-launch gate: DB schema → account list → if empty, open the welcome screen. An unexpected
     /// DB failure is not swallowed: a silently "broken" start is worse than a visible
-    /// one.
+    /// one. The pass is shared with the pair-list gate — both race on launch, the screen opens once.
     /// </summary>
     private static async Task StartupGateAsync()
     {
         var services = MauiProgram.Application.Services;
         await services.GetRequiredService<DatabaseInitializer>().EnsureReadyAsync();
         var accounts = await services.GetRequiredService<IAccountRepository>().ListAsync(CancellationToken.None);
-        if (accounts.Count == 0)
+        if (accounts.Count == 0 && services.GetRequiredService<Services.WelcomeGate>().TryOpen())
         {
             await services.GetRequiredService<INavigationService>().GoAsync(AppShell.WelcomeRoute, CancellationToken.None);
         }

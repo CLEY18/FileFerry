@@ -44,6 +44,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IThemeService, ThemeService>();
         builder.Services.AddSingleton<IAppDialogs, MauiAppDialogs>();
         builder.Services.AddSingleton<LoginSession>();
+        builder.Services.AddSingleton<Services.WelcomeGate>();
         builder.Services.AddSingleton<RemoteStoreFactory>();
         builder.Services.AddSingleton<ILocalFolderPicker, AndroidSafFolderPicker>();
         builder.Services.AddSingleton<INotificationPermission, AndroidNotificationPermission>();
