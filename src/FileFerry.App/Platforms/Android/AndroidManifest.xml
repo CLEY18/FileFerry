@@ -17,9 +17,9 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!--
-      Cleartext HTTP — a narrow domain-suffix exception in network_security_config:
-      local name suffixes only (home.arpa/local/lan/...), not global.
-      Platform limitation: NSC cannot white-list IP literals.
+      Cleartext HTTP — permitted platform-wide in network_security_config: login and the
+      WebView must reach a server named by bare IP, which NSC cannot except by name suffix.
+      The guard is in-app: an explicit consent per http address and the stored account scheme.
 -->
     <application
         android:allowBackup="false"

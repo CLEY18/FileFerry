@@ -1,19 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Cleartext HTTP is allowed only as a domain exception, for hosts the user typed in.
-  A static NSC cannot do runtime lists: use the narrowest static approximation,
-  private mDNS/local suffixes. Public traffic stays HTTPS-only (base-config = false).
-  Scope note: the NSC governs the Java network stack (the login client, the WebView) only -
-  the managed WebDAV stack reads none of this; its cleartext gate is the app-level
-  confirmation on the welcome screen, and both stacks then use only the stored account scheme.
+  Cleartext HTTP is permitted platform-wide: an honest product decision, not an oversight.
+  Every destination is the owner's own server; the app never slips into cleartext on its own -
+  the welcome screen asks for an explicit yes for any http address, and the stored scheme is
+  what every later request uses. The login flow (its client and the WebView) must reach a
+  server named by bare IP - the common home-server shape - and this platform configuration
+  cannot write an exception for an IP literal, so a suffix allow-list was a half-promise for
+  exactly the addresses most users type. The guard against unintended cleartext is the in-app
+  consent and the stored scheme, not this file. The managed WebDAV stack reads none of this.
 -->
 <network-security-config>
-    <base-config cleartextTrafficPermitted="false" />
-    <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">home.arpa</domain>
-        <domain includeSubdomains="true">local</domain>
-        <domain includeSubdomains="true">lan</domain>
-        <domain includeSubdomains="true">intranet</domain>
-        <domain includeSubdomains="true">localdomain</domain>
-    </domain-config>
+    <base-config cleartextTrafficPermitted="true" />
 </network-security-config>
