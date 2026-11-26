@@ -509,7 +509,7 @@ public sealed class SyncRun
         }
 
         await _baseline
-            .ApplyAsync(pairId, report.Applied, remoteScan.Value, localScan.Value, ct)
+            .ApplyAsync(pairId, report.Applied, remoteScan.Value, localScan.Value, CancellationToken.None)
             .ConfigureAwait(false);
 
         var outcome = report.Completed

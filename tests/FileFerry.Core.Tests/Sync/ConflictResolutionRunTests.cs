@@ -422,13 +422,98 @@ public sealed class ConflictResolutionRunTests
         Assert.Equal(1, conflictRun.Value.Conflicts);
     }
 
-    private SyncRun Engine() =>
+    [Fact]
+    public async Task StopButtonOnTheLastStep_StillProjectsTheAppliedSet_NoGhostNextRun()
+    {
+        // the stop button may reach the projection only as a whisper, never as a veto: by the
+        // time the executor reports, the resume journal is gone — if the applied steps then
+        // fail to reach the baseline, the next run reads the moved sides as unproven changes
+        // and churns conflicted copies out of a resolution that actually worked
+        await CreateConflictAsync("LOCAL-A", "REMOTE-B");
+
+        using var stop = new CancellationTokenSource();
+        var result = await Engine(new StopOnLastStep(stop))
+            .ResolveConflictAsync(_pair.Id, RelativePath.Parse("a.txt"), KeepSide.Local, stop.Token);
+
+        Assert.True(result.IsSuccess, result.IsFailure ? result.Error.Message : string.Empty);
+        Assert.Equal(SyncRunOutcome.Success, result.Value.Outcome); // every step was applied before the stop landed
+
+        var baseline = await _state.LoadBaselineAsync(_pair.Id, CancellationToken.None);
+        Assert.Contains(baseline, static s => s.Path.Name == "a.txt" && !s.IsDirectory);
+        Assert.DoesNotContain(baseline, static s => s.Path.Name.Contains("conflicted copy", StringComparison.Ordinal));
+
+        var followUp = await Engine().RunAsync(_pair.Id, CancellationToken.None);
+        Assert.True(followUp.IsSuccess);
+        Assert.Equal(0, followUp.Value.Planned);
+        Assert.Equal(0, followUp.Value.Conflicts); // the ghost shape: unprojected applied state would copy here
+    }
+
+    /// <summary>
+    /// Cancels the run's token the moment the last planned step is applied — the exact window
+    /// between "the sides already moved" and "the baseline projection runs".
+    /// </summary>
+    private sealed class StopOnLastStep(CancellationTokenSource stop) : ISyncRunObserver
+    {
+        private int _planned;
+        private int _applied;
+
+        public void OnPlanned(Guid pairId, int totalSteps) => _planned = totalSteps;
+
+        public void OnStepApplied(Guid pairId)
+        {
+            _applied++;
+            if (_planned > 0 && _applied == _planned)
+            {
+                stop.Cancel();
+            }
+        }
+    }
+
+    /// <summary>
+    /// The projection path of the state storage, honest about cancellation the way SQLite is:
+    /// a token already cancelled refuses the baseline reads and writes it is handed.
+    /// </summary>
+    private sealed class ProjectionInterruptedState(ISyncStateRepository inner) : ISyncStateRepository
+    {
+        public Task<IReadOnlyList<FileSnapshot>> LoadBaselineAsync(Guid pairId, CancellationToken ct)
+        {
+            ct.ThrowIfCancellationRequested();
+            return inner.LoadBaselineAsync(pairId, ct);
+        }
+
+        public Task ReplaceBaselineAsync(Guid pairId, IReadOnlyList<FileSnapshot> baseline, CancellationToken ct)
+        {
+            ct.ThrowIfCancellationRequested();
+            return inner.ReplaceBaselineAsync(pairId, baseline, ct);
+        }
+
+        public Task AppendJournalAsync(Guid pairId, JournalEntry entry, CancellationToken ct) =>
+            inner.AppendJournalAsync(pairId, entry, ct);
+
+        public Task<IReadOnlyList<JournalEntry>> LoadJournalAsync(Guid pairId, CancellationToken ct) =>
+            inner.LoadJournalAsync(pairId, ct);
+
+        public Task ClearJournalAsync(Guid pairId, CancellationToken ct) => inner.ClearJournalAsync(pairId, ct);
+
+        public Task SaveRunLogAsync(SyncRunLog runLog, CancellationToken ct) => inner.SaveRunLogAsync(runLog, ct);
+
+        public Task<IReadOnlyList<SyncRunLog>> RecentRunsAsync(Guid pairId, int limit, CancellationToken ct) =>
+            inner.RecentRunsAsync(pairId, limit, ct);
+    }
+
+    private SyncRun Engine() => EngineCore(null, null);
+
+    private SyncRun Engine(ISyncRunObserver observer) =>
+        EngineCore(observer, new ProjectionInterruptedState(_state));
+
+    private SyncRun EngineCore(ISyncRunObserver? observer, ISyncStateRepository? state) =>
         new(
             _scopes,
             new SyncPlanner(new MergePlanner(new KeepBothStrategy(), _stash), _stash),
-            _state,
+            state ?? _state,
             _stash,
-            _clock);
+            _clock,
+            observer: observer);
 
     private async Task SeedLocalAsync(string path, string content) =>
         Assert.True((await _local.WriteAsync(
