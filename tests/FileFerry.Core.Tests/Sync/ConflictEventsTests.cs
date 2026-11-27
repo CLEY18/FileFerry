@@ -87,6 +87,24 @@ public sealed class ConflictEventsTests
         Assert.Equal(1, ConflictEvents.CountUnresolved(Runs(folder)));
     }
 
+    [Fact]
+    public void PathlessWarnings_AreNotConflictRows()
+    {
+        // the log's conflicts chip must show exactly what the counters count: a cancelled run
+        // or a stopped resume is a warning, but it names no path — it is not a conflict
+        var cancelled = new SyncEvent(T0, EventKind.RunCancelled, SyncEventOutcome.Warning);
+        var resumed = new SyncEvent(T0, EventKind.ResumeStopped, SyncEventOutcome.Warning,
+            null, new Dictionary<string, string> { ["count"] = "3" });
+        var conflict = new SyncEvent(T0, EventKind.ConflictDetected, SyncEventOutcome.Warning,
+            RelativePath.Parse("a.txt"),
+            new Dictionary<string, string> { ["conflict"] = "BothModified" });
+
+        Assert.False(ConflictEvents.IsConflictRow(cancelled));
+        Assert.False(ConflictEvents.IsConflictRow(resumed));
+        Assert.True(ConflictEvents.IsConflictRow(conflict));
+        Assert.Equal(1, ConflictEvents.CountUnresolved(Runs(cancelled, resumed, conflict)));
+    }
+
     private static IReadOnlyList<SyncRunLog> Runs(params SyncEvent[] events) =>
         [new SyncRunLog(Guid.NewGuid(), Guid.NewGuid(), T0, T0.AddMinutes(9), SyncRunOutcome.Partial, events)];
 

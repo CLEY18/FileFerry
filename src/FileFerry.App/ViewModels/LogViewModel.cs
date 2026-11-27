@@ -3,6 +3,7 @@ using FileFerry.App.Resources;
 using FileFerry.App.Services;
 using FileFerry.Core.Domain;
 using FileFerry.Core.Ports;
+using FileFerry.Core.Sync;
 
 namespace FileFerry.App.ViewModels;
 
@@ -113,7 +114,8 @@ public sealed class LogViewModel : Mvvm.ObservableObject
                 SyncEventOutcome.Error => "StatusError",
                 SyncEventOutcome.Success => "PrimaryText",
                 _ => "TextSecondary",
-            });
+            })
+        { Conflict = ConflictEvents.IsConflictRow(e) };
 
     /// <summary>
     /// Rebuilds the list for a filter (freshest on top — _allRows is already time-ordered).
@@ -122,7 +124,7 @@ public sealed class LogViewModel : Mvvm.ObservableObject
     {
         var filtered = key switch
         {
-            WarningKey => _allRows.Where(r => r.ColorToken == "StatusWarning").ToList(),
+            WarningKey => _allRows.Where(r => r.Conflict).ToList(), // the shared rule, not the color
             ErrorKey => _allRows.Where(r => r.ColorToken == "StatusError").ToList(),
             _ => _allRows.ToList(),
         };

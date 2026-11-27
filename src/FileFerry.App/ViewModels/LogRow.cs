@@ -12,6 +12,12 @@ namespace FileFerry.App.ViewModels;
 public sealed record LogRow(string Time, string PairName, string Text, string ColorToken)
 {
     /// <summary>
+    /// Whether the shared conflict rule recognizes this event as an open conflict row —
+    /// the conflicts chip filters on the same rule the counters count, never on the color.
+    /// </summary>
+    public bool Conflict { get; init; }
+
+    /// <summary>
     /// TalkBack description: the row is a single focus element.
     /// </summary>
     public string SemanticDescription => $"{Time}, {PairName}, {Text}";
