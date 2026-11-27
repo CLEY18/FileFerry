@@ -44,6 +44,7 @@ public static class EventPhrases
         EventKind.RunCancelled => ("EventRunCancelled", []),
         EventKind.ResumeStopped => ("EventResumeStopped", [Count(e)]),
         EventKind.ConflictDetected => ("EventConflictDetected", [Arg(e, "conflict")]),
+        EventKind.NameFormCollision => ("EventNameFormCollision", []),
         EventKind.PlanSummary => ("EventPlanSummary", [Count(e)]),
         EventKind.AppliedBaseline => ("EventAppliedBaseline", [Count(e)]),
         EventKind.RunStopped => ("EventRunStopped", [Arg(e, "detail")]),

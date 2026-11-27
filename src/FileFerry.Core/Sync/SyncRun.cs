@@ -270,6 +270,13 @@ public sealed class SyncRun
                     folder: conflict.Folder ? "1" : null));
             }
 
+            // a name the scan carried in several Unicode spellings: one keeps the slot (deterministic
+            // fold), the journal names it — the user cleans the duplicate on the server, the app cannot
+            foreach (var collision in plan.Value.NameCollisions)
+            {
+                events.Add(MakeEvent(EventKind.NameFormCollision, SyncEventOutcome.Warning, collision));
+            }
+
             events.Add(MakeEvent(EventKind.PlanSummary, count: planned));
             report = await executor.ExecuteAsync(context, plan.Value.Operations, ct).ConfigureAwait(false);
         }
@@ -446,8 +453,10 @@ public sealed class SyncRun
                 EventPhrases.FailRemoteScan, events).ConfigureAwait(false);
         }
 
-        var localByKey = localScan.Value.ToDictionary(static s => s.Path, static s => s);
-        var remoteByKey = remoteScan.Value.ToDictionary(static s => s.Path, static s => s);
+        // the same tolerant fold as the planner: a colliding name in the scan must not kill
+        // a resolution of a different path (the dictionary would throw before the resolver starts)
+        var localByKey = SnapshotIndex.From(localScan.Value);
+        var remoteByKey = SnapshotIndex.From(remoteScan.Value);
         IReadOnlyList<SyncOperation> operations;
         if (folder is { } folderAction)
         {

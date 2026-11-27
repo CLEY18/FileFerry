@@ -41,4 +41,12 @@ public sealed record ConflictNote(ConflictKind Kind, RelativePath Path, bool Fol
 /// <param name="Conflicts">Conflict annotations for the UI/journal.</param>
 public sealed record PlanningResult(
     IReadOnlyList<SyncOperation> Operations,
-    IReadOnlyList<ConflictNote> Conflicts);
+    IReadOnlyList<ConflictNote> Conflicts)
+{
+    /// <summary>
+    /// Names a scan carried in several Unicode spellings folded to one canonical path: the run
+    /// keeps one spelling (see <see cref="SnapshotIndex"/>) and the journal notes each name —
+    /// an in-app resolution cannot rename a form the model no longer distinguishes.
+    /// </summary>
+    public IReadOnlyList<RelativePath> NameCollisions { get; init; } = [];
+}

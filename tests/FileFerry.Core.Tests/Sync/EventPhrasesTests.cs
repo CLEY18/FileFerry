@@ -20,6 +20,7 @@ public class EventPhrasesTests
     [InlineData(EventKind.RunCancelled, "EventRunCancelled")]
     [InlineData(EventKind.ResumeStopped, "EventResumeStopped")]
     [InlineData(EventKind.ConflictDetected, "EventConflictDetected")]
+    [InlineData(EventKind.NameFormCollision, "EventNameFormCollision")]
     [InlineData(EventKind.PlanSummary, "EventPlanSummary")]
     [InlineData(EventKind.AppliedBaseline, "EventAppliedBaseline")]
     [InlineData(EventKind.RunStopped, "EventRunStopped")]

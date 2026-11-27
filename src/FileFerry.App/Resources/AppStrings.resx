@@ -191,6 +191,7 @@
   <data name="EventRunCancelled" xml:space="preserve"><value>Sync cancelled — the next sync catches up.</value></data>
   <data name="EventResumeStopped" xml:space="preserve"><value>Resuming the interrupted sync · journal steps: {0}</value></data>
   <data name="EventConflictDetected" xml:space="preserve"><value>Conflict {0} — both versions kept</value></data>
+  <data name="EventNameFormCollision" xml:space="preserve"><value>This name has several Unicode spellings — only one of them syncs</value></data>
   <data name="EventPlanSummary" xml:space="preserve"><value>Plan · operations: {0}</value></data>
   <data name="EventAppliedBaseline" xml:space="preserve"><value>Applied {0} operations — baseline updated</value></data>
   <data name="EventRunStopped" xml:space="preserve"><value>Sync stopped · {0} — applied changes are kept; the next sync replans</value></data>

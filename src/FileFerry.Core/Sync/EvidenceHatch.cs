@@ -37,8 +37,10 @@ internal static class EvidenceHatch
         RemotePath root,
         CancellationToken ct)
     {
-        var remoteIdx = remoteScan.ToDictionary(static s => s.Path, static s => s);
-        var baselineIdx = baseline.ToDictionary(static s => s.Path, static s => s);
+        // folded scans, never a strict dictionary: a listing may carry the same name in two Unicode
+        // spellings and the hatch runs on the same scans the planner folds
+        var remoteIdx = SnapshotIndex.From(remoteScan);
+        var baselineIdx = SnapshotIndex.From(baseline);
         var localPatch = new Dictionary<RelativePath, FileSnapshot>();
         var remotePatch = new Dictionary<RelativePath, FileSnapshot>();
 
@@ -96,15 +98,15 @@ internal static class EvidenceHatch
         IWritableRemoteStore remote,
         IHashProvider hasher,
         IReadOnlyList<FileSnapshot> localScan,
-        Dictionary<RelativePath, FileSnapshot> remoteIdx,
+        IReadOnlyDictionary<RelativePath, FileSnapshot> remoteIdx,
         IReadOnlyList<FileSnapshot> baseline,
-        Dictionary<RelativePath, FileSnapshot> baselineIdx,
+        IReadOnlyDictionary<RelativePath, FileSnapshot> baselineIdx,
         Dictionary<RelativePath, FileSnapshot> localPatch,
         Dictionary<RelativePath, FileSnapshot> remotePatch,
         RemotePath root,
         CancellationToken ct)
     {
-        var localIdx = localScan.ToDictionary(static s => s.Path, static s => s);
+        var localIdx = SnapshotIndex.From(localScan);
         var baselinePatch = new Dictionary<RelativePath, FileSnapshot>();
 
         // stale sources: gone from the device, untouched on the server, tagged but never hashed

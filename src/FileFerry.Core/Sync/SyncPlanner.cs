@@ -51,19 +51,16 @@ public sealed class SyncPlanner
             return Result<PlanningResult, SyncError>.Failure(remoteScan.Error);
         }
 
-        var local = ToIndex(WithoutLocalNoise(localScan.Value));
-        var remote = ToIndex(remoteScan.Value);
-        var baseIndex = ToIndex(WithoutLocalNoise(baseline));
+        var collisions = new HashSet<RelativePath>();
+        var local = SnapshotIndex.From(WithoutLocalNoise(localScan.Value), collisions);
+        var remote = SnapshotIndex.From(remoteScan.Value, collisions);
+        var baseIndex = SnapshotIndex.From(WithoutLocalNoise(baseline), collisions);
         var changes = _diff.Diff(local, remote, baseIndex);
         var context = new SyncRunContext(pair, now, local, remote, baseIndex);
-        return Result<PlanningResult, SyncError>.Success(_planner.Plan(context, changes));
+        var plan = _planner.Plan(context, changes);
+        return Result<PlanningResult, SyncError>.Success(
+            plan with { NameCollisions = [.. collisions.OrderBy(static p => p.ToString(), StringComparer.Ordinal)] });
     }
-
-    /// <summary>
-    /// Snapshot index keyed by path (duplicate key — last wins; scanners guarantee uniqueness).
-    /// </summary>
-    private static IReadOnlyDictionary<RelativePath, FileSnapshot> ToIndex(IReadOnlyList<FileSnapshot> snapshots) =>
-        snapshots.ToDictionary(static s => s.Path, static s => s);
 
     /// <summary>
     /// Drops the local-only noise from the diff inputs: the stash-buffer subtree (pre-deletion

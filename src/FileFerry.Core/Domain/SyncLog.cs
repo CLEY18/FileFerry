@@ -90,6 +90,12 @@ public enum EventKind
     /// argument <c>side</c> — "local" or "server".
     /// </summary>
     ConflictResolved,
+
+    /// <summary>
+    /// The scan carried <see cref="SyncEvent.Path"/> in several Unicode spellings of one name;
+    /// the run keeps one of them while the provider holds duplicates.
+    /// </summary>
+    NameFormCollision,
 }
 
 /// <summary>

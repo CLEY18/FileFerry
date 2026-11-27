@@ -191,6 +191,7 @@
   <data name="EventRunCancelled" xml:space="preserve"><value>Синхронізацію скасовано — наступна дожене.</value></data>
   <data name="EventResumeStopped" xml:space="preserve"><value>Відновлення перерваної синхронізації · записів журналу: {0}</value></data>
   <data name="EventConflictDetected" xml:space="preserve"><value>Конфлікт {0} — обидві версії збережено</value></data>
+  <data name="EventNameFormCollision" xml:space="preserve"><value>Це ім'я має кілька форм Юнікоду — синхронізується лише одна</value></data>
   <data name="EventPlanSummary" xml:space="preserve"><value>План · операцій: {0}</value></data>
   <data name="EventAppliedBaseline" xml:space="preserve"><value>Застосовано операцій: {0} — еталонний стан оновлено</value></data>
   <data name="EventRunStopped" xml:space="preserve"><value>Синхронізацію зупинено · {0} — застосоване збережено, наступна синхронізація складе новий план</value></data>
