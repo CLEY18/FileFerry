@@ -245,7 +245,7 @@ public sealed class SqliteSyncStateRepositoryTests : IAsyncLifetime, IDisposable
     }
 
     [Fact]
-    public async Task Migration_V4_WipesPreB15RunHistory_AndDropsMessageColumn()
+    public async Task Migration_LegacyDb_Upgrade_WipesHistory_AndFreesStashIndex()
     {
         // Pre-release clarification: a v2-state database (textual run-log, no kind) after
         // migration must have neither old events nor the text column at all — "as if it never existed".
@@ -268,6 +268,16 @@ public sealed class SqliteSyncStateRepositoryTests : IAsyncLifetime, IDisposable
                         outcome INTEGER NOT NULL, message TEXT NOT NULL, PRIMARY KEY (run_id, seq));
                     INSERT INTO sync_log VALUES ('r1', 'p1', '2026-10-01T09:00:00+00:00', NULL, 0, 1);
                     INSERT INTO sync_events VALUES ('r1', 0, '2026-10-01T09:00:00+00:00', NULL, 1, 'Run finished.');
+                    CREATE TABLE folder_pairs (
+                        id TEXT PRIMARY KEY, account_id TEXT NOT NULL, remote_root TEXT NOT NULL,
+                        local_tree_key TEXT NOT NULL, display_name TEXT NOT NULL, schedule INTEGER NOT NULL,
+                        conflict INTEGER NOT NULL, paused INTEGER NOT NULL DEFAULT 0, wifi_only INTEGER NOT NULL DEFAULT 1);
+                    CREATE TABLE stash_meta (
+                        pair_id TEXT NOT NULL REFERENCES folder_pairs(id) ON DELETE CASCADE,
+                        stash_path TEXT NOT NULL, origin TEXT NOT NULL, created_at TEXT NOT NULL,
+                        PRIMARY KEY (pair_id, stash_path));
+                    INSERT INTO folder_pairs VALUES ('p1', 'a1', '/sync', 'tree:p1', 'P1', 0, 0, 0, 1);
+                    INSERT INTO stash_meta VALUES ('p1', 'FileFerry Trash/x.txt', 'x.txt', '2026-10-01T09:00:00+00:00');
                     """;
                 await seed.ExecuteNonQueryAsync(CancellationToken.None);
             }
@@ -290,6 +300,26 @@ public sealed class SqliteSyncStateRepositoryTests : IAsyncLifetime, IDisposable
                     cols.CommandText =
                         "SELECT COUNT(*) FROM pragma_table_info('sync_events') WHERE name IN ('message', 'kind', 'params');";
                     Assert.Equal(2L, Convert.ToInt64(await cols.ExecuteScalarAsync(CancellationToken.None)));
+                }
+
+                await using (var stash = check.CreateCommand())
+                {
+                    // the stash upgrade: the copy row survives and learns the tree of its (still living) pair
+                    stash.CommandText = "SELECT tree_key FROM stash_meta WHERE pair_id = 'p1';";
+                    Assert.Equal("tree:p1", await stash.ExecuteScalarAsync(CancellationToken.None));
+                }
+
+                await using (var orphan = check.CreateCommand())
+                {
+                    // the cascade is gone with the rebuild: erasing the pair must not erase the copy row
+                    orphan.CommandText = "DELETE FROM folder_pairs WHERE id = 'p1';";
+                    await orphan.ExecuteNonQueryAsync(CancellationToken.None);
+                }
+
+                await using (var survivors = check.CreateCommand())
+                {
+                    survivors.CommandText = "SELECT COUNT(*) FROM stash_meta WHERE pair_id = 'p1';";
+                    Assert.Equal(1L, Convert.ToInt64(await survivors.ExecuteScalarAsync(CancellationToken.None)));
                 }
             }
         }

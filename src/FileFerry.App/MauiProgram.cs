@@ -56,6 +56,7 @@ public static class MauiProgram
             new MergePlanner(new KeepBothStrategy(), sp.GetRequiredService<IStashPolicy>()),
             sp.GetRequiredService<IStashPolicy>()));
         builder.Services.AddSingleton<ISyncScopeFactory, AndroidSyncScopeFactory>();
+        builder.Services.AddSingleton<Services.IOrphanedCopySweeper, AndroidOrphanedCopySweeper>();
         builder.Services.AddSingleton<ISyncScheduler, AndroidWorkScheduler>();
         builder.Services.AddSingleton<Services.SyncStatusService>(); // Worker→UI hub (#3)
         // A factory, not auto-resolution: DI hands back an EMPTY (not null)

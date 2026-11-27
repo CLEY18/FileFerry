@@ -169,5 +169,8 @@ public sealed class StashIndexingLocalFileSystemTests
             Removed.Add(stashPath);
             return Task.CompletedTask;
         }
+
+        public Task<IReadOnlyList<OrphanedStashEntry>> ListOrphansAsync(CancellationToken ct) =>
+            Task.FromResult<IReadOnlyList<OrphanedStashEntry>>([]);
     }
 }

@@ -27,8 +27,9 @@ public sealed class SqliteStashRepository : IStashRepository
             await using var connection = await _store.OpenAsync(ct).ConfigureAwait(false);
             await using var command = connection.CreateCommand();
             command.CommandText = """
-                INSERT INTO stash_meta(pair_id, stash_path, origin, created_at)
-                VALUES ($pair, $stash, $origin, $created)
+                INSERT INTO stash_meta(pair_id, stash_path, origin, created_at, tree_key)
+                VALUES ($pair, $stash, $origin, $created,
+                        COALESCE((SELECT local_tree_key FROM folder_pairs WHERE id = $pair), ''))
                 ON CONFLICT(pair_id, stash_path) DO UPDATE SET
                     origin = $origin, created_at = $created;
                 """;
@@ -75,4 +76,30 @@ public sealed class SqliteStashRepository : IStashRepository
             command.Parameters.AddWithValue("$stash", stashPath.ToString());
             await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         });
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<OrphanedStashEntry>> ListOrphansAsync(CancellationToken ct)
+    {
+        await using var connection = await _store.OpenAsync(ct).ConfigureAwait(false);
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT s.pair_id, s.tree_key, s.stash_path, s.created_at FROM stash_meta s
+            LEFT JOIN folder_pairs p ON p.id = s.pair_id
+            WHERE p.id IS NULL
+            ORDER BY s.created_at DESC, s.stash_path;
+            """;
+
+        var entries = new List<OrphanedStashEntry>();
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        while (await reader.ReadAsync(ct).ConfigureAwait(false))
+        {
+            entries.Add(new OrphanedStashEntry(
+                Guid.Parse(reader.GetString(0)),
+                reader.GetString(1),
+                RelativePath.Parse(reader.GetString(2)),
+                DateTimeOffset.Parse(reader.GetString(3), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind)));
+        }
+
+        return entries;
+    }
 }

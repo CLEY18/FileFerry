@@ -39,6 +39,9 @@ public sealed partial class App : Application
     {
         var services = MauiProgram.Application.Services;
         await services.GetRequiredService<DatabaseInitializer>().EnsureReadyAsync();
+        // deleted pairs keep their buffer copies only until the TTL ends — the run purge cannot
+        // see them (their pair is gone), so the moment the schema is ready is their collection day
+        await services.GetRequiredService<Services.IOrphanedCopySweeper>().SweepAsync(CancellationToken.None);
         var accounts = await services.GetRequiredService<IAccountRepository>().ListAsync(CancellationToken.None);
         if (accounts.Count == 0 && services.GetRequiredService<Services.WelcomeGate>().TryOpen())
         {

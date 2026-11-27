@@ -69,4 +69,61 @@ public static class StashPurger
 
         return purged;
     }
+
+    /// <summary>
+    /// One orphan pass: collects buffer copies of deleted pairs whose TTL has ended.
+    /// Same rules as the live pass — inside the buffer only, expired only, a provider refusal
+    /// defers to the next boot — plus one of its own: a tree whose access is gone (revoked
+    /// grant) keeps its rows untouched; the sweep never rewrites an address it cannot prove.
+    /// </summary>
+    /// <param name="orphans">Orphaned indexes (<see cref="IStashRepository.ListOrphansAsync"/>).</param>
+    /// <param name="localForTree">Local side by tree key; <see langword="null"/> — the grant is gone.</param>
+    /// <param name="index">Copy index; rows are removed only after the copy is confirmed gone.</param>
+    /// <param name="policy">Policy: TTL + buffer root (shared with the live pass).</param>
+    /// <param name="clock">Time source — the only "now" allowed (determinism).</param>
+    /// <param name="ct">Pass cancellation (the rest is the next boot's job).</param>
+    public static async Task<int> PurgeOrphansAsync(
+        IReadOnlyList<OrphanedStashEntry> orphans,
+        Func<string, ILocalFileSystem?> localForTree,
+        IStashRepository index,
+        IStashPolicy policy,
+        IClock clock,
+        CancellationToken ct)
+    {
+        var now = clock.UtcNow;
+        var root = policy.StashRoot;
+        var purged = 0;
+        foreach (var entry in orphans)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            // same shield as the live pass: outside the buffer stands the user's own data
+            if (!entry.StashPath.StartsWith(root) || entry.StashPath == root)
+            {
+                continue;
+            }
+
+            if (!policy.IsExpired(entry.CreatedAt, now))
+            {
+                continue; // the promise window is open: the copy must stay retrievable
+            }
+
+            var local = localForTree(entry.TreeKey);
+            if (local is null)
+            {
+                continue; // the tree is unreachable — the row waits for a boot that can reach it
+            }
+
+            var deleted = await local.DeleteAsync(entry.StashPath, ct).ConfigureAwait(false);
+            if (deleted.IsFailure && deleted.Error.Kind != ErrorKind.NotFound)
+            {
+                continue; // the provider said "no" — retry on the next pass
+            }
+
+            await index.RemoveAsync(entry.PairId, entry.StashPath, ct).ConfigureAwait(false);
+            purged++;
+        }
+
+        return purged;
+    }
 }
