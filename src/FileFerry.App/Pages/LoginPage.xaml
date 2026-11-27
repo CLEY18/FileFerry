@@ -3,6 +3,7 @@
     x:Class="FileFerry.App.Pages.LoginPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:conv="clr-namespace:FileFerry.App.Converters"
     xmlns:res="clr-namespace:FileFerry.App.Resources"
     xmlns:tok="clr-namespace:FileFerry.App"
     xmlns:vm="clr-namespace:FileFerry.App.ViewModels"
@@ -48,11 +49,19 @@
                 Text="{x:Static res:AppStrings.LoginWaiting}"
                 Style="{StaticResource Caption13}"
                 HorizontalTextAlignment="Center" />
-            <Label
-                Text="{Binding ErrorText}"
-                Style="{StaticResource Caption13}"
-                TextColor="{DynamicResource StatusError}"
-                HorizontalTextAlignment="Center" />
         </VerticalStackLayout>
+
+        <!-- The error line outlives the waiting overlay: when the poll fails the overlay closes,
+             and the reason must stay on the screen next to the WebView — its own visibility. -->
+        <Label
+            Grid.Row="1"
+            Text="{Binding ErrorText}"
+            Style="{StaticResource Caption13}"
+            TextColor="{DynamicResource StatusError}"
+            IsVisible="{Binding ErrorText, Converter={x:Static conv:HasTextConverter.Instance}}"
+            HorizontalTextAlignment="Center"
+            HorizontalOptions="Center"
+            VerticalOptions="End"
+            Padding="{x:Static tok:DesignTokens.Space16}" />
     </Grid>
 </ContentPage>
