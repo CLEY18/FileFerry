@@ -105,6 +105,16 @@ public sealed class SyncWorker : Worker
         var run = provider.GetRequiredService<SyncRun>();
         var status = provider.GetRequiredService<Services.SyncStatusService>();
         using var registration = status.Begin(pairId); // Worker→UI hub (#3)
+        if (registration is null)
+        {
+            if (context is not null)
+            {
+                SyncForeground.Dismiss(context);
+            }
+
+            return ListenableWorker.Result.InvokeSuccess()!;
+        }
+
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token, registration.Token);
         // a "Now" job is the owner's direct order: it runs a paused pair too (the pause guards the
         // schedule, not the person); the periodic job carries no marker and keeps the guard

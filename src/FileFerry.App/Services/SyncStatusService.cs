@@ -45,14 +45,25 @@ public sealed class SyncStatusService : ISyncRunObserver
 
     /// <summary>
     /// Register the active run of a pair (done by the Worker before <c>RunAsync</c>).
+    /// The first registration owns the pair's display; one while a run is active is
+    /// refused — busy refuses, the same rule as the engine's keyed lock — because the refused
+    /// run's own unregister would otherwise remove the live run's entry: the card loses its
+    /// progress bar mid-run and "Cancel" stops reaching the run that is really working.
     /// </summary>
-    /// <returns>Registration: a cancellation token from the UI + completion in <c>finally</c>.</returns>
-    public RunRegistration Begin(Guid pairId)
+    /// <returns>Registration (a cancellation token from the UI + completion in <c>finally</c>),
+    /// or <see langword="null"/> when a run is already active for the pair.</returns>
+    public RunRegistration? Begin(Guid pairId)
     {
         var entry = new Entry(pairId, new CancellationTokenSource());
         lock (_gate)
         {
-            _active[pairId] = entry; // a repeated trigger overwrites — the SyncRun lock will refuse the second run anyway
+            if (_active.ContainsKey(pairId))
+            {
+                entry.Cancel.Dispose();
+                return null;
+            }
+
+            _active[pairId] = entry;
         }
 
         Fire();
