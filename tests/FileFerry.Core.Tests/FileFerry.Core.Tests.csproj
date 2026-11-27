@@ -21,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\FileFerry.Core\FileFerry.Core.csproj" />
     <ProjectReference Include="..\..\src\FileFerry.Core.Fakes\FileFerry.Core.Fakes.csproj" />
+    <ProjectReference Include="..\..\src\FileFerry.Data\FileFerry.Data.csproj" />
   </ItemGroup>
 
 </Project>
