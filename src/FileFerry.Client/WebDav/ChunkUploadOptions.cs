@@ -2,8 +2,10 @@ namespace FileFerry.Client.WebDav;
 
 /// <summary>
 /// chunked-UPLOAD v2 parameters. The thresholds in <see cref="Defaults"/> match
-/// typical Nextcloud limits; the server may change the chunk maximum via the <c>OC-Chunk-Size</c>
-/// header — we honour it.
+/// typical Nextcloud limits. The chunk size is exactly what is configured here: the uploader
+/// sends offsets and data only and never consults a server-advertised <c>OC-Chunk-Size</c> —
+/// a server that caps chunks below <see cref="ChunkSizeBytes"/> will reject the oversized
+/// chunk as a failed upload, the client does not adapt on its own.
 /// </summary>
 public sealed record ChunkUploadOptions
 {
