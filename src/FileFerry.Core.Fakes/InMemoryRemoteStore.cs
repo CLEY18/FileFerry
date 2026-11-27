@@ -118,7 +118,15 @@ public sealed class InMemoryRemoteStore : IWritableRemoteStore
                     SyncError.Of(ErrorKind.Conflict, $"'{folder}' is a file; MKCOL is impossible.")));
             }
 
-            EnsureParents(folder);
+            var parent = folder.Parent;
+            if (!parent.IsRoot && !_folders.Contains(parent.ToString()))
+            {
+                // a real server answers 409 here; inventing the parent would let the plan
+                // hide its own top-down ordering bug behind the fake's kindness
+                return Task.FromResult(Result<RemoteEntry, SyncError>.Failure(
+                    SyncError.Of(ErrorKind.Conflict, $"Parent collection '{parent}' does not exist; MKCOL is one level.")));
+            }
+
             _folders.Add(key); // idempotent: already there → no-op
             return Task.FromResult(Result<RemoteEntry, SyncError>.Success(new RemoteEntry(folder, EntryKind.Directory, 0)));
         }

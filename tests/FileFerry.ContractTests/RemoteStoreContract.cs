@@ -56,6 +56,18 @@ public abstract class RemoteStoreContract
     public Task Write_MissingParent_Refused() => RemoteStoreContractSuite.WriteMissingParentRefused(Create);
 
     /// <summary>
+    /// An MKCOL into a missing collection is refused and creates nothing (single-level creation).
+    /// </summary>
+    [Fact]
+    public Task CreateFolder_MissingParent_Refused() => RemoteStoreContractSuite.CreateFolderMissingParentRefused(Create);
+
+    /// <summary>
+    /// Creating the same collection twice succeeds — "already exists" is not an error.
+    /// </summary>
+    [Fact]
+    public Task CreateFolder_Twice_SucceedsTwice() => RemoteStoreContractSuite.CreateFolderTwice_SucceedsTwice(Create);
+
+    /// <summary>
     /// MOVE relocates a subtree; occupied target — <see cref="ErrorKind.Conflict"/>.
     /// </summary>
     [Fact]
@@ -221,5 +233,38 @@ public static class RemoteStoreContractSuite
         Assert.True(result.IsFailure);
         Assert.True(result.Error.Kind is ErrorKind.Conflict or ErrorKind.NotFound);
         Assert.True((await store.ReadAsync(RemotePath.Parse("nowhere/file.bin"), CancellationToken.None)).IsFailure);
+    }
+
+    /// <summary>
+    /// A collection is created one level at a time: an MKCOL whose parent does not exist is
+    /// refused and leaves nothing behind — the plan grows the tree top-down, so a store that
+    /// silently materialized ancestors would hide the plan's own ordering bug.
+    /// </summary>
+    public static async Task CreateFolderMissingParentRefused(Func<IWritableRemoteStore> create)
+    {
+        var store = create();
+
+        var result = await store.CreateFolderAsync(RemotePath.Parse("nowhere/deep"), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.True(result.Error.Kind is ErrorKind.Conflict or ErrorKind.NotFound);
+        var root = await store.ListAsync(RemotePath.Root, CancellationToken.None);
+        Assert.True(root.IsSuccess);
+        Assert.DoesNotContain(root.Value, static e => e.Path.ToString().StartsWith("nowhere", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// Idempotent creation: an existing collection answers success, not an error — the plan
+    /// treats "already there" as done.
+    /// </summary>
+    public static async Task CreateFolderTwice_SucceedsTwice(Func<IWritableRemoteStore> create)
+    {
+        var store = create();
+
+        var first = await store.CreateFolderAsync(RemotePath.Parse("trees"), CancellationToken.None);
+        var second = await store.CreateFolderAsync(RemotePath.Parse("trees"), CancellationToken.None);
+
+        Assert.True(first.IsSuccess);
+        Assert.True(second.IsSuccess, second.IsFailure ? second.Error.Message : string.Empty);
     }
 }

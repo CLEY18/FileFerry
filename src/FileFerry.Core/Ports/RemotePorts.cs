@@ -41,7 +41,9 @@ public interface IRemoteWriter
     Task<Result<RemoteEntry, SyncError>> WriteAsync(RemotePath file, Stream content, CancellationToken ct);
 
     /// <summary>
-    /// Create a collection (MKCOL), intermediates included — idempotent: already exists ≡ success.
+    /// Create a collection (MKCOL) — one level: the parent collection must already exist
+    /// (the plan grows the tree top-down; a store that invented ancestors would hide that
+    /// ordering). Idempotent: already exists ≡ success.
     /// </summary>
     Task<Result<RemoteEntry, SyncError>> CreateFolderAsync(RemotePath folder, CancellationToken ct);
 }
