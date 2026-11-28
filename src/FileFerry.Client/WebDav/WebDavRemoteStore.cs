@@ -333,6 +333,9 @@ public sealed class WebDavRemoteStore : IWritableRemoteStore
 
     /// <summary>
     /// PROPFIND with the properties body and a Depth header.
+    /// Headers-only completion: the metadata cap counts bytes AS the caller reads them, and a
+    /// body-complete completion would have the HTTP client buffer and decompress the entire
+    /// answer first - the cap would refuse an inflated listing after its peak already hit memory.
     /// </summary>
     private Task<Result<HttpResponseMessage, SyncError>> PropfindAsync(RemotePath path, string depth, CancellationToken ct)
         => _transport.SendAsync(
@@ -343,6 +346,7 @@ public sealed class WebDavRemoteStore : IWritableRemoteStore
                 request.Content = new StringContent(DavTransport.PropfindBody, Encoding.UTF8, "application/xml");
                 return request;
             },
+            HttpCompletionOption.ResponseHeadersRead,
             ct: ct);
 
     /// <summary>
