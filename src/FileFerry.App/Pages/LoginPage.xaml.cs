@@ -35,5 +35,6 @@ public sealed partial class LoginPage : ContentPage
     {
         base.OnDisappearing();
         AndroidSecureScreen.SetSecure(false);
+        _viewModel.Detach(); // a poll must not outlive the screen that started it (system back included)
     }
 }

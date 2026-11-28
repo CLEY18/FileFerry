@@ -89,6 +89,13 @@ public sealed class LoginViewModel : Mvvm.ObservableObject
     public Mvvm.AsyncRelayCommand CloseCommand { get; }
 
     /// <summary>
+    /// The screen is gone by any path (page.OnDisappearing — close command or system back):
+    /// a surviving poll would still complete the sign-in and navigate to the pair list
+    /// from the abandoned screen, and a fresh visit would grow a second live poll beside it.
+    /// </summary>
+    public void Detach() => _pollCommand?.Cancel();
+
+    /// <summary>
     /// Starts the flow: prepares the WebView and launches background polling. Called once
     /// from code-behind in <c>OnAppearing</c> — the logic itself stays in the VM.
     /// </summary>
