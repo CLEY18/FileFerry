@@ -456,6 +456,9 @@ public sealed class MergePlanner
 
     /// <summary>
     /// Global stable order: phase → depth (deletions from the deepest) → emission order.
+    /// The Move phase skips the depth sort: within it the emission order IS the order —
+    /// the topological pass emitted the target-freeing move first, and sorting by target
+    /// depth would walk a move onto a slot its own plan has not freed yet.
     /// </summary>
     private static IReadOnlyList<SyncOperation> Order(List<PlannedOp> emissions)
     {
@@ -463,7 +466,12 @@ public sealed class MergePlanner
         return emissions
             .Select(e => (e, order: index++))
             .OrderBy(static x => x.e.Phase)
-            .ThenBy(static x => x.e.Phase == Phase.Delete ? -x.e.Depth : x.e.Depth)
+            .ThenBy(static x => x.e.Phase switch
+            {
+                Phase.Move => 0, // depth re-sorting breaks the chain order; emission is the topological one
+                Phase.Delete => -x.e.Depth,
+                _ => x.e.Depth,
+            })
             .ThenBy(static x => x.order)
             .Select(static x => x.e.Op)
             .ToList();

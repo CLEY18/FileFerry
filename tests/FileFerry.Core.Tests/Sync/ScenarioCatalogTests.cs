@@ -245,6 +245,33 @@ public sealed class ScenarioCatalogTests
     }
 
     [Fact]
+    public void Rename_chain_freeing_move_keeps_topological_place_when_it_is_deeper()
+    {
+        // locally deep/x→a and a→deep/y; remote and baseline unchanged. The move that frees the
+        // shallow slot sits deeper than the move entering it — ordering this phase by target
+        // depth walks the shallow MOVE onto the slot its own plan has not freed yet; a failed
+        // step quarantines the journal and the whole pair stalls run after run
+        var plan = Plan(
+            local: [File("a.txt", etag: "e"), File("deep/y.txt", etag: "f")],
+            remote: [File("a.txt", etag: "f"), File("deep/x.txt", etag: "e")],
+            baseline: [File("a.txt", etag: "f"), File("deep/x.txt", etag: "e")]);
+
+        Assert.Collection(plan.Operations,
+            op =>
+            {
+                Assert.Equal(OperationKind.MoveRemote, op.Kind);
+                Assert.Equal("a.txt", op.SourcePath!.ToString());
+                Assert.Equal("deep/y.txt", op.Path.ToString());
+            },
+            op =>
+            {
+                Assert.Equal(OperationKind.MoveRemote, op.Kind);
+                Assert.Equal("deep/x.txt", op.SourcePath!.ToString());
+                Assert.Equal("a.txt", op.Path.ToString());
+            });
+    }
+
+    [Fact]
     public void Case_collision_conflicts_keep_both()
     {
         var plan = Plan(
