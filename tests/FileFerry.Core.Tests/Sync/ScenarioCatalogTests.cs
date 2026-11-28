@@ -665,6 +665,31 @@ public sealed class ScenarioCatalogTests
         Assert.Empty(plan.Conflicts);
     }
 
+    [Fact]
+    public void Quarantined_subtree_keeps_neither_the_deletion_nor_its_buffer_copy()
+    {
+        // the folder "docs" clashes on both sides (the server replaced the collection with a
+        // file, the device changed its own) — its subtree is quarantined. The child whose
+        // deletion the quarantine drops must not leave its buffer copy behind either: a copy
+        // staged for a deletion that never runs is buffer garbage on every single run
+        var plan = Plan(
+            local: [Dir("docs", etag: "L"), File("docs/b.txt", etag: "b1")],
+            remote: [File("docs", etag: "r")],
+            baseline: [Dir("docs"), File("docs/b.txt", etag: "b1")]);
+
+        Assert.All(plan.Operations, op =>
+        {
+            Assert.False(op.Path.ToString().StartsWith("FileFerry Trash/"),
+                $"quarantine left a buffer copy: {op.Kind} {op.Path}");
+            Assert.False(op.SourcePath?.ToString() == "docs/b.txt",
+                $"quarantine left an operation reading the child: {op.Kind} from {op.SourcePath}");
+            Assert.False(op.Path.ToString() == "docs/b.txt",
+                $"quarantine left an operation touching the child: {op.Kind} {op.Path}");
+        });
+        var note = Assert.Single(plan.Conflicts);
+        Assert.True(note.Folder);
+    }
+
     /// <summary>
     /// Runs the three sets through the real pipeline (Diff → Plan) down to the operation list.
     /// </summary>

@@ -204,10 +204,16 @@ public sealed class MergePlanner
         // The quarantine is absolute: whatever pointed inside a folder-conflict subtree (child
         // writes, nested collision copies, nested rows) leaves the plan — the note covers the
         // subtree, and the next run replans from state once the rename action dissolves the shape.
+        // An operation reads the subtree through its SOURCE too: the buffer copy of a quarantined
+        // deletion names a path in the trash, outside the subtree, and without this second leg it
+        // would stage a copy for a deletion the same plan just dropped - buffer garbage per run.
         // An incoming-versus-existing collision covers its own path too: the add itself is the
         // operation that would alias; the existing twin's subtree stays fully plannable.
         var outside = emissions.Where(e =>
-                !IsQuarantined(e.Op.Path, quarantined) && !IsCoveredBy(e.Op.Path, quarantinedIncoming))
+                !IsQuarantined(e.Op.Path, quarantined)
+                && !IsCoveredBy(e.Op.Path, quarantinedIncoming)
+                && !(e.Op.SourcePath is { } source
+                     && (IsQuarantined(source, quarantined) || IsCoveredBy(source, quarantinedIncoming))))
             .ToList();
         var visible = conflicts.Where(c =>
                 !IsQuarantined(c.Path, quarantined)
