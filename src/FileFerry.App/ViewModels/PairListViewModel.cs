@@ -308,9 +308,10 @@ public sealed class PairListViewModel : Mvvm.ObservableObject
     private void OnStatusChanged(object? sender, EventArgs e) =>
         Application.Current?.Dispatcher.Dispatch(() =>
         {
-            // A run finished (was active → gone): the "Synced/Error" chip lives in the DB logs,
-            // so on completion we reload the cards in full (they once showed "Waiting" forever).
-            var wasRunning = _running.Count;
+            // The "Synced/Error" chip lives in the DB logs: every pair that just stopped running
+            // must reload its summary now, not when the last concurrent run also ends - a finished
+            // pair next to a still-running one would otherwise advertise the previous run forever.
+            var wasRunning = _running.ToArray();
             _running.Clear();
             foreach (var card in Items)
             {
@@ -329,7 +330,8 @@ public sealed class PairListViewModel : Mvvm.ObservableObject
                 }
             }
 
-            if (_running.Count == 0 && wasRunning > 0 && !_isRefreshing)
+            var finishedHere = wasRunning.Any(id => !_running.Contains(id));
+            if (finishedHere && !_isRefreshing)
             {
                 _ = RefreshAsync(); // the summary of the finished run comes from the repository
             }
