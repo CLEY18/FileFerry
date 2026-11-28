@@ -56,6 +56,13 @@ public sealed class FakeDavServer : IDisposable
     public int? FailChunkPutAt { get; set; }
 
     /// <summary>
+    /// If set — a DELETE of a transaction directory answers with this status and the leftovers
+    /// stay on the server: the site is NOT wiped, and an uploader that proceeds anyway would
+    /// write its chunks over the remnants of the dead transaction.
+    /// </summary>
+    public HttpStatusCode? RefuseUploadsDelete { get; set; }
+
+    /// <summary>
     /// Start the server on a random free port (both roots: files and uploads).
     /// </summary>
     public FakeDavServer()
@@ -248,6 +255,12 @@ public sealed class FakeDavServer : IDisposable
                 return true;
 
             case "DELETE" when leaf is null:
+                if (RefuseUploadsDelete is { } refusal)
+                {
+                    await RespondAsync(response, refusal).ConfigureAwait(false); // leftovers stay - the site is NOT clean
+                    return true;
+                }
+
                 _transfers.TryRemove(tid, out _);
                 await RespondAsync(response, HttpStatusCode.NoContent).ConfigureAwait(false);
                 return true;

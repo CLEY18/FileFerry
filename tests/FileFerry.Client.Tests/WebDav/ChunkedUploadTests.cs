@@ -1,3 +1,4 @@
+using System.Net;
 using FileFerry.Client.WebDav;
 using FileFerry.ContractTests;
 using FileFerry.Core.Domain;
@@ -125,6 +126,27 @@ public sealed class ChunkedUploadTests : IDisposable
         written.AssertOk();
         await AssertFileBytesAsync(store, "mixed.bin", payload); // bytes of the new file only, no stale head
         Assert.Equal(0, _server.LiveTransferCount);
+    }
+
+    /// <summary>
+    /// A refused "clean the site" answer (locked - 423) is not a clean site: the upload fails
+    /// before a single chunk flies. Staging bytes over the remnants a refusal left behind is
+    /// exactly the half-truth the reset step must never tell - "the site was wiped" has to be
+    /// an accepted deletion, not any answer at all.
+    /// </summary>
+    [Fact]
+    public async Task RefusedSiteWipe_FailsTheUploadBeforeAnyChunk()
+    {
+        var store = _server.CreateStore(TinyChunks);
+        var payload = RandomBytes(500);
+        _server.SeedAbandonedTransfer("wipe.bin", 500, new byte[500]); // a dead transaction's leftovers
+        _server.RefuseUploadsDelete = HttpStatusCode.Locked; // the server will not give the site up
+
+        var written = await store.WriteAsync(RemotePath.Parse("wipe.bin"), new MemoryStream(payload), CT);
+
+        Assert.True(written.IsFailure); // the refusal is an error, not a success with reservations
+        Assert.Equal(0, _server.CountChunkPuts()); // no chunk staged over the remnants
+        Assert.True((await store.ReadAsync(RemotePath.Parse("wipe.bin"), CT)).IsFailure); // the target was never touched
     }
 
     /// <summary>

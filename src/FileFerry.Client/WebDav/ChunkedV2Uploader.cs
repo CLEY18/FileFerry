@@ -119,16 +119,27 @@ internal sealed class ChunkedV2Uploader
     /// Clean-stages the transaction site: any leftover under this transfer name — a dead
     /// transaction's chunks, possibly of another file (same name and size is not the same
     /// content) — is deleted, then an empty directory is <c>MKCOL</c>-ed. Uploads never resume
-    /// from half-written chunks; they start fresh against this stream.
+    /// from half-written chunks; they start fresh against this stream. "Deleted" is earned, not
+    /// assumed: only an accepted deletion (gone, or never there) certifies the site — a refused
+    /// wipe would leave the remnants under chunks staged on top of them.
     /// </summary>
     private async Task<SyncError?> ResetTransferSiteAsync(string transferId, CancellationToken ct)
     {
         var url = _transport.UploadsUrlFor(transferId + "/");
         var wiped = await _transport.SendAsync(
             () => new HttpRequestMessage(HttpMethod.Delete, url), ct: ct).ConfigureAwait(false);
-        if (wiped.IsSuccess)
+        if (wiped.IsFailure)
         {
-            wiped.Value.Dispose(); // 204 gone or 404 never existed — either way the site reads clean after MKCOL
+            return wiped.Error; // no answer at all is the least clean of them
+        }
+
+        using (var wipe = wiped.Value)
+        {
+            var code = (int)wipe.StatusCode;
+            if (code is not (404 or (>= 200 and <= 299)))
+            {
+                return DavTransport.ToSyncError("DELETE uploads", transferId, wipe);
+            }
         }
 
         var sent = await _transport.SendAsync(
