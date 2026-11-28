@@ -53,6 +53,31 @@ public sealed class SyncRunTests
         Assert.Equal(SyncRunOutcome.Success, winner.Value.Outcome);
     }
 
+    /// <summary>
+    /// The one-run rule must be shareable beyond the orchestrator: the buffer restore holds the
+    /// same gate from the UI side while it writes - without an injected registry the rule would
+    /// guard run-vs-run only, and an in-app write could race a run over the same file.
+    /// </summary>
+    [Fact]
+    public async Task ExternalGateHolder_RefusesTheRun_AndReleasesCleanly()
+    {
+        await SeedLocalAsync("a.txt", "A");
+        var locks = new PairLockRegistry();
+        var run = Engine(locks: locks);
+
+        var gate = locks.TryAcquire(_pair.Id, CancellationToken.None);
+        Assert.NotNull(gate);
+
+        var refused = await run.RunAsync(_pair.Id, CancellationToken.None);
+        Assert.True(refused.IsFailure);
+        Assert.Equal(ErrorKind.Conflict, refused.Error.Kind); // the holder is as good as a live run
+        Assert.Equal(0, _scopes.OpenCount); // the refused trigger never even opened the environment
+
+        gate.Dispose();
+        var after = await run.RunAsync(_pair.Id, CancellationToken.None);
+        Assert.True(after.IsSuccess); // a released gate is not a poisoned one
+    }
+
     [Fact]
     public async Task Race_DifferentPairs_AreNotSerialized()
     {
@@ -384,14 +409,18 @@ public sealed class SyncRunTests
         Assert.DoesNotContain("sync/notes.txt.tmp-0123456789abcdef0123456789abcdef", remotePaths); // never uploaded
     }
 
-    private SyncRun Engine(IEnumerable<IOperationHandler>? handlers = null, ISyncStateRepository? state = null) =>
+    private SyncRun Engine(
+        IEnumerable<IOperationHandler>? handlers = null,
+        ISyncStateRepository? state = null,
+        PairLockRegistry? locks = null) =>
         new(
             _scopes,
             new SyncPlanner(new MergePlanner(new KeepBothStrategy(), _stash), _stash),
             state ?? _state,
             _stash,
             _clock,
-            handlers);
+            handlers,
+            locks: locks);
 
     private async Task<IReadOnlyList<string>> LocalNamesAsync() =>
         (await _local.SnapshotAsync(CancellationToken.None)).Value

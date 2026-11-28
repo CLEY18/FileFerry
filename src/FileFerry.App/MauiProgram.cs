@@ -59,6 +59,9 @@ public static class MauiProgram
         builder.Services.AddSingleton<Services.IOrphanedCopySweeper, AndroidOrphanedCopySweeper>();
         builder.Services.AddSingleton<ISyncScheduler, AndroidWorkScheduler>();
         builder.Services.AddSingleton<Services.SyncStatusService>(); // Worker→UI hub (#3)
+        // The keyed one-run gate is shared: the run orchestrator acquires it, and the buffer
+        // restore holds it while writing — the invariant has one address, not two.
+        builder.Services.AddSingleton<PairLockRegistry>();
         // A factory, not auto-resolution: DI hands back an EMPTY (not null)
         // IEnumerable<IOperationHandler> when none is registered — the executor would have no handlers.
         builder.Services.AddSingleton(sp => new SyncRun(
@@ -70,7 +73,8 @@ public static class MauiProgram
             handlers: null,
             observer: sp.GetRequiredService<Services.SyncStatusService>(), // keyed per-pair run locks live in it (invariant)
             hasher: sp.GetRequiredService<IHashProvider>(), // hash for evidence
-            stashIndex: sp.GetRequiredService<IStashRepository>())); // TTL-purges the stash buffer each run
+            stashIndex: sp.GetRequiredService<IStashRepository>(), // TTL-purges the stash buffer each run
+            locks: sp.GetRequiredService<PairLockRegistry>())); // the shared one-run gate
         builder.Services.AddSingleton<IGeneralSettings, PreferencesGeneralSettings>();
         builder.Services.AddSingleton<IBatteryOptimization, AndroidBatteryOptimization>();
 

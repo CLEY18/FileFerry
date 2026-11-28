@@ -24,6 +24,7 @@ public sealed class StashViewModel : Mvvm.ObservableObject
     private readonly ISyncScopeFactory _scopes;
     private readonly IStashPolicy _stashPolicy;
     private readonly SyncStatusService _status;
+    private readonly PairLockRegistry _locks;
     private Guid _pairId;
     private bool _isEmpty = true;
     private bool _isBusy;
@@ -35,7 +36,8 @@ public sealed class StashViewModel : Mvvm.ObservableObject
         StashPolicyOptions options,
         ISyncScopeFactory scopes,
         IStashPolicy stashPolicy,
-        SyncStatusService status)
+        SyncStatusService status,
+        PairLockRegistry locks)
     {
         _stash = stash;
         _clock = clock;
@@ -44,6 +46,7 @@ public sealed class StashViewModel : Mvvm.ObservableObject
         _scopes = scopes;
         _stashPolicy = stashPolicy;
         _status = status;
+        _locks = locks;
 
         RestoreCommand = new Mvvm.AsyncRelayCommand(
             async (param, ct) =>
@@ -168,26 +171,41 @@ public sealed class StashViewModel : Mvvm.ObservableObject
         IsBusy = true;
         try
         {
-            // confirmed work runs to completion even if the screen dies mid-copy (a partial
-            // restore is exactly the half-state the buffer exists to prevent); the token here
-            // governs dialogs only — the user leaving silences the notice, it never aborts bytes
-            var opened = await _scopes.OpenAsync(_pairId, CancellationToken.None).ConfigureAwait(false);
-            if (opened.IsFailure)
+            // The keyed gate, not the friendly status check, is the authority: acquired before any
+            // write and held across the whole copy, it makes the check-then-act window structural -
+            // a run triggered meanwhile is refused by the engine exactly as a second trigger is,
+            // and a run already holding the gate refuses this restore.
+            var gate = _locks.TryAcquire(_pairId, CancellationToken.None);
+            if (gate is null)
             {
                 await _dialogs.ShowAlertAsync(
-                    AppStrings.StashRestoreFailedTitle, Services.ErrorUi.Describe(opened.Error), AppStrings.HelpOk, ct);
+                    AppStrings.StashRestoreFailedTitle, AppStrings.StashRestoreBusyBody, AppStrings.HelpOk, ct);
                 return;
             }
 
-            var copied = await StashRestore.RestoreAsync(
-                    opened.Value.Local, _stashPolicy, _clock,
-                    RelativePath.Parse(row.StashPath), RelativePath.Parse(row.OriginPath), CancellationToken.None)
-                .ConfigureAwait(false);
-            if (copied.IsFailure)
+            using (gate)
             {
-                await _dialogs.ShowAlertAsync(
-                    AppStrings.StashRestoreFailedTitle, Services.ErrorUi.Describe(copied.Error), AppStrings.HelpOk, ct);
-                return;
+                // confirmed work runs to completion even if the screen dies mid-copy (a partial
+                // restore is exactly the half-state the buffer exists to prevent); the token here
+                // governs dialogs only — the user leaving silences the notice, it never aborts bytes
+                var opened = await _scopes.OpenAsync(_pairId, CancellationToken.None).ConfigureAwait(false);
+                if (opened.IsFailure)
+                {
+                    await _dialogs.ShowAlertAsync(
+                        AppStrings.StashRestoreFailedTitle, Services.ErrorUi.Describe(opened.Error), AppStrings.HelpOk, ct);
+                    return;
+                }
+
+                var copied = await StashRestore.RestoreAsync(
+                        opened.Value.Local, _stashPolicy, _clock,
+                        RelativePath.Parse(row.StashPath), RelativePath.Parse(row.OriginPath), CancellationToken.None)
+                    .ConfigureAwait(false);
+                if (copied.IsFailure)
+                {
+                    await _dialogs.ShowAlertAsync(
+                        AppStrings.StashRestoreFailedTitle, Services.ErrorUi.Describe(copied.Error), AppStrings.HelpOk, ct);
+                    return;
+                }
             }
 
             await _dialogs.ShowAlertAsync(

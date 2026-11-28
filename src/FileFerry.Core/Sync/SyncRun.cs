@@ -42,7 +42,7 @@ public sealed class SyncRun
     private readonly ISyncRunObserver? _observer;
     private readonly IHashProvider? _hasher;
     private readonly IStashRepository? _stashIndex;
-    private readonly PairLockRegistry _locks = new();
+    private readonly PairLockRegistry _locks;
 
     /// <summary>
     /// Assemble the orchestrator from pipeline dependencies (a DI singleton for the app).
@@ -58,6 +58,9 @@ public sealed class SyncRun
     /// conservatively conflicts everything not proven by ETag.</param>
     /// <param name="stashIndex">Copy-buffer index for the TTL-purge; <see langword="null"/> disables the
     /// purge (tests only; production DI must pass it — otherwise the trash-buffer promise isn't kept).</param>
+    /// <param name="locks">The keyed one-run gate; <see langword="null"/> — a private registry (tests).
+    /// Production shares one instance: the buffer restore holds the same gate while it writes,
+    /// so "one pair, one active run" guards that write against a run exactly like a second trigger.</param>
     public SyncRun(
         ISyncScopeFactory scopes,
         SyncPlanner planner,
@@ -67,7 +70,8 @@ public sealed class SyncRun
         IEnumerable<IOperationHandler>? handlers = null,
         ISyncRunObserver? observer = null,
         IHashProvider? hasher = null,
-        IStashRepository? stashIndex = null)
+        IStashRepository? stashIndex = null,
+        PairLockRegistry? locks = null)
     {
         _scopes = scopes;
         _planner = planner;
@@ -78,6 +82,7 @@ public sealed class SyncRun
         _observer = observer;
         _hasher = hasher;
         _stashIndex = stashIndex;
+        _locks = locks ?? new PairLockRegistry();
         _baseline = new BaselineUpdater(state, stash);
     }
 
