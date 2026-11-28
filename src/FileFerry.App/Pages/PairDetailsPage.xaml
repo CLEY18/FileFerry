@@ -59,6 +59,7 @@
                         <Switch
                             Style="{StaticResource TokenSwitch}"
                             IsToggled="{Binding PauseSync, Mode=TwoWay}"
+                            IsEnabled="{Binding IsPauseReady}"
                             SemanticProperties.Description="{x:Static res:AppStrings.DetailsPauseSwitch}" />
                         <Label
                             Text="{x:Static res:AppStrings.DetailsPauseSwitch}"

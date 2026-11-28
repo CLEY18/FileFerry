@@ -21,6 +21,7 @@
   <data name="WelcomeHttpsFailedBody" xml:space="preserve"><value>The server didn't answer over HTTPS. Try without encryption? Your sign-in and every sync run would then cross the network in plain text — continue only on a network you trust.</value></data>
   <data name="WelcomeCleartextAccept" xml:space="preserve"><value>Connect unencrypted</value></data>
   <data name="ErrorSessionExpired" xml:space="preserve"><value>The sign-in session has expired. Start connecting again.</value></data>
+  <data name="ErrorAlertTitle" xml:space="preserve"><value>Something went wrong</value></data>
   <data name="HelpTitle" xml:space="preserve"><value>Need help?</value></data>
   <data name="HelpBody" xml:space="preserve"><value>If the server isn't found by name, enable private DNS in your Wi-Fi settings or enter the address manually — as an IP, e.g. 192.0.2.1.</value></data>
   <data name="HelpOk" xml:space="preserve"><value>Got it</value></data>

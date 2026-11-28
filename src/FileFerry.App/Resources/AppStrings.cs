@@ -95,6 +95,7 @@ public static class AppStrings
     /// WebView screen with no active flow session (Activity restart etc.).
     /// </summary>
     public static string ErrorSessionExpired => Get();
+    public static string ErrorAlertTitle => Get();
 
     /// <summary>
     /// Title of the help dialog on the welcome screen (DNS/Private DNS/IP).

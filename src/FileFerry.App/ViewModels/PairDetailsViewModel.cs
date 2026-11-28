@@ -37,6 +37,9 @@ public sealed class PairDetailsViewModel : Mvvm.ObservableObject
     private string _stashLine = "0";
     private string _intervalValue = string.Empty;
     private bool _pauseSync;
+    private bool _pauseSavePending;
+    private bool? _pauseDesired;
+    private bool _pauseUiOnly;
     private bool _runWasActive;
     private bool _isBusy;
     private bool _isRunActive;
@@ -190,17 +193,109 @@ public sealed class PairDetailsViewModel : Mvvm.ObservableObject
     }
 
     /// <summary>
-    /// Pause toggle: two-way; the repository write happens on change.
+    /// Pause toggle: two-way; the last user choice wins and persists serialized — a change
+    /// arriving mid-save is queued, never interleaved with the running repository/scheduler pair.
     /// </summary>
     public bool PauseSync
     {
         get => _pauseSync;
         set
         {
+            if (_pauseUiOnly)
+            {
+                Set(ref _pauseSync, value); // a projection/revert, not the user's hand — no write-back
+                return;
+            }
+
             if (Set(ref _pauseSync, value) && _pair is { } pair && pair.Paused != value)
             {
-                _ = SaveAsync(pair with { Paused = value }, CancellationToken.None);
+                _pauseDesired = value;
+                _ = ApplyPauseDesiredAsync();
             }
+        }
+    }
+
+    /// <summary>
+    /// The pause switch is free (no persistence in flight) — the view gates the toggle on it,
+    /// so rapid double taps cannot overtake each other's write.
+    /// </summary>
+    public bool IsPauseReady => !_pauseSavePending;
+
+    /// <summary>
+    /// Persists the newest pause choice until the stored state matches it: one save at a time,
+    /// a choice made mid-save lands as the next save, a failed save reverts the switch to the
+    /// stored truth (a switch that lies about the schedule is worse than one that moves back).
+    /// </summary>
+    private async Task ApplyPauseDesiredAsync()
+    {
+        if (_pauseSavePending)
+        {
+            return; // the running loop re-reads _pauseDesired after each pass
+        }
+
+        _pauseSavePending = true;
+        Raise(nameof(IsPauseReady));
+        try
+        {
+            while (_pauseDesired is { } desired && _pair is { } pair && pair.Paused != desired)
+            {
+                _pauseDesired = null;
+                try
+                {
+                    await SavePauseAsync(pair with { Paused = desired }, CancellationToken.None);
+                }
+                catch (Exception ex)
+                {
+                    _pauseDesired = null; // the stored state never moved — stop, revert, say so
+                    var stored = pair.Paused;
+                    _pauseUiOnly = true;
+                    try
+                    {
+                        Set(ref _pauseSync, stored);
+                    }
+                    finally
+                    {
+                        _pauseUiOnly = false;
+                    }
+
+                    var reason = Services.ErrorUi.Describe(
+                        Core.Domain.SyncError.Of(Core.Domain.ErrorKind.Unknown, ex.Message));
+                    await Application.Current!.Dispatcher.DispatchAsync(() => _dialogs.ShowAlertAsync(
+                        AppStrings.ErrorAlertTitle, reason, AppStrings.HelpOk, CancellationToken.None));
+                }
+            }
+        }
+        finally
+        {
+            _pauseSavePending = false;
+            Raise(nameof(IsPauseReady));
+        }
+    }
+
+    /// <summary>
+    /// Pause-only save: write plus scheduler swap, then a reload that keeps the switch under
+    /// the user's hand (the generic reload would re-read the stored value mid-loop).
+    /// </summary>
+    private async Task SavePauseAsync(FolderPair pair, CancellationToken ct)
+    {
+        IsBusy = true;
+        try
+        {
+            await _pairs.SaveAsync(pair, ct);
+            if (pair.Paused)
+            {
+                await _scheduler.CancelAsync(pair.Id, ct);
+            }
+            else
+            {
+                await _scheduler.ScheduleAsync(pair.Id, pair.Schedule, ct);
+            }
+
+            await ReloadAsync(ct, rebindPause: false);
+        }
+        finally
+        {
+            await Application.Current!.Dispatcher.DispatchAsync(() => IsBusy = false);
         }
     }
 
@@ -320,6 +415,7 @@ public sealed class PairDetailsViewModel : Mvvm.ObservableObject
         });
     }
 
+
     /// <summary>
     /// Projects <see cref="PairRunStatus"/> onto the pair details progress-bar properties.
     /// </summary>
@@ -345,7 +441,9 @@ public sealed class PairDetailsViewModel : Mvvm.ObservableObject
     /// <summary>
     /// Reloads the pair, the last 10 runs, and the conflict and stash counters.
     /// </summary>
-    private async Task ReloadAsync(CancellationToken ct)
+    /// <param name="rebindPause">Whether the switch re-reads the stored value; a pending
+    /// user choice must survive a reload fired by its own save.</param>
+    private async Task ReloadAsync(CancellationToken ct, bool rebindPause = true)
     {
         IsBusy = true;
         try
@@ -366,7 +464,7 @@ public sealed class PairDetailsViewModel : Mvvm.ObservableObject
             var stashCount = (await _stash.ListAsync(_pairId, ct)).Count;
             var now = _clock.UtcNow;
 
-            await Application.Current!.Dispatcher.DispatchAsync(() => Apply(pair, runs, stashCount, now));
+            await Application.Current!.Dispatcher.DispatchAsync(() => Apply(pair, runs, stashCount, now, rebindPause));
         }
         catch (OperationCanceledException)
         {
@@ -381,7 +479,7 @@ public sealed class PairDetailsViewModel : Mvvm.ObservableObject
     /// <summary>
     /// Projects the loaded state onto the properties (UI thread only).
     /// </summary>
-    private void Apply(FolderPair pair, IReadOnlyList<SyncRunLog> runs, int stashCount, DateTimeOffset now)
+    private void Apply(FolderPair pair, IReadOnlyList<SyncRunLog> runs, int stashCount, DateTimeOffset now, bool rebindPause = true)
     {
         _pair = pair;
         // Regression: MAUI gestures/buttons cache CanExecute at binding
@@ -399,8 +497,11 @@ public sealed class PairDetailsViewModel : Mvvm.ObservableObject
         LocalLine = $"{AppStrings.PairCardLocalPrefix} › {(localName.Length > 0 ? localName : pair.DisplayName)}";
 
         IntervalValue = ScheduleLabel(pair.Schedule);
-        _pauseSync = pair.Paused; // system load, not a user change — no write-back
-        Raise(nameof(PauseSync));
+        if (rebindPause)
+        {
+            _pauseSync = pair.Paused; // system load, not a user change — no write-back
+            Raise(nameof(PauseSync));
+        }
 
         var latest = runs.Count > 0 ? runs[0] : null;
         LastRunLine = latest is null

@@ -21,6 +21,7 @@
   <data name="WelcomeHttpsFailedBody" xml:space="preserve"><value>Сервер не відповів через HTTPS. Спробувати без шифрування? Вхід і кожен прогін синхронізації йтимуть мережею відкритим текстом — продовжуйте лише в мережі, якій довіряєте.</value></data>
   <data name="WelcomeCleartextAccept" xml:space="preserve"><value>Під'єднатися без шифрування</value></data>
   <data name="ErrorSessionExpired" xml:space="preserve"><value>Сесію входу вичерпано. Почніть підключення спочатку.</value></data>
+  <data name="ErrorAlertTitle" xml:space="preserve"><value>Дещо не вдалося</value></data>
   <data name="HelpTitle" xml:space="preserve"><value>Потрібна допомога?</value></data>
   <data name="HelpBody" xml:space="preserve"><value>Якщо сервер не знаходиться за іменем, увімкніть приватний DNS у Wi-Fi або введіть адресу вручну — у форматі IP, наприклад 192.0.2.1.</value></data>
   <data name="HelpOk" xml:space="preserve"><value>Зрозуміло</value></data>
