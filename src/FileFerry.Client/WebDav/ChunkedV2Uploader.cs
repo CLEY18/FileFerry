@@ -179,7 +179,9 @@ internal sealed class ChunkedV2Uploader
     private async Task<SyncError?> FinalizeAsync(string transferId, RemotePath destination, long totalLength, CancellationToken ct)
     {
         var url = _transport.UploadsUrlFor(transferId + "/end");
-        var destinationUrl = _transport.UrlFor(destination).ToString();
+        // the escaped wire form (see the MOVE header): the assembly lands under the exact name,
+        // not under the bytes a header survives a display-form URI with
+        var destinationUrl = _transport.UrlFor(destination).AbsoluteUri;
         var sent = await _transport.SendAsync(
             () =>
             {

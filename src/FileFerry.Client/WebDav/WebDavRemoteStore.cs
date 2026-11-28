@@ -166,7 +166,10 @@ public sealed class WebDavRemoteStore : IWritableRemoteStore
             () =>
             {
                 var request = new HttpRequestMessage(new HttpMethod("MOVE"), _transport.UrlFor(from));
-                request.Headers.TryAddWithoutValidation("Destination", _transport.UrlFor(to).ToString());
+                // the wire form, not the display form: the display one decodes the escapes,
+                // and a header line turns every non-Latin byte into '?' (a name would move
+                // under a mangled spelling, "successfully")
+                request.Headers.TryAddWithoutValidation("Destination", _transport.UrlFor(to).AbsoluteUri);
                 request.Headers.TryAddWithoutValidation("Overwrite", "F"); // occupied target → 412, not a silent overwrite
                 return request;
             },

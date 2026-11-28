@@ -132,6 +132,12 @@ public sealed class WebDavRemoteStoreIntegration : IAsyncLifetime
     public Task Move_RelocatesSubtree_AndRejectsOccupiedTarget() => RemoteStoreContractSuite.MoveRelocatesSubtree(Create);
 
     /// <summary>
+    /// The MOVE header carries the escaped URI: a spaced, non-Latin name lands exactly on the server.
+    /// </summary>
+    [IntegrationFact]
+    public Task Move_EscapedNames_LandsExactly() => RemoteStoreContractSuite.MoveEscapedNamesLandsExactly(Create);
+
+    /// <summary>
     /// DELETE removes a subtree, siblings stay intact.
     /// </summary>
     [IntegrationFact]

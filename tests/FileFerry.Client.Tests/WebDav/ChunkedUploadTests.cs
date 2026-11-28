@@ -63,6 +63,24 @@ public sealed class ChunkedUploadTests : IDisposable
     }
 
     /// <summary>
+    /// The chunked finalization names its target through a Destination header: a spaced,
+    /// non-Latin name must arrive at assembly exactly as spelled, not as the header-mangled bytes.
+    /// </summary>
+    [Fact]
+    public async Task Chunked_finalize_carries_a_non_ascii_name_exactly()
+    {
+        var store = _server.CreateStore(TinyChunks);
+        var payload = RandomBytes(500);
+
+        (await store.CreateFolderAsync(RemotePath.Parse("папки"), CT)).AssertOk();
+        var written = await store.WriteAsync(RemotePath.Parse("папки/документ 2026.pdf"), new MemoryStream(payload), CT);
+
+        written.AssertOk();
+        Assert.True(_server.TouchedUploads); // the chunked path — it is the finalize header that carries the name
+        await AssertFileBytesAsync(store, "папки/документ 2026.pdf", payload);
+    }
+
+    /// <summary>
     /// Interrupted on chunk 3 → the retry does not trust what survived: it clears the site and
     /// writes all 8 chunks again (3 + 8 = 11 PUTs; chunks of a half-dead transaction may carry
     /// another file's bytes, so nothing is reused).

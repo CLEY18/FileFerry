@@ -75,6 +75,12 @@ public abstract class RemoteStoreContract
         RemoteStoreContractSuite.MoveRelocatesSubtree(Create);
 
     /// <summary>
+    /// The MOVE header carries the escaped URI: spaces and non-Latin names move exactly, not mangled.
+    /// </summary>
+    [Fact]
+    public Task Move_EscapedNames_LandsExactly() => RemoteStoreContractSuite.MoveEscapedNamesLandsExactly(Create);
+
+    /// <summary>
     /// DELETE removes a subtree; deleting a deep descendant leaves siblings untouched.
     /// </summary>
     [Fact]
@@ -200,6 +206,35 @@ public static class RemoteStoreContractSuite
         var conflict = await store.MoveAsync(RemotePath.Parse("x"), RemotePath.Parse("y"), CancellationToken.None);
         Assert.True(conflict.IsFailure);
         Assert.Equal(ErrorKind.Conflict, conflict.Error.Kind);
+    }
+
+    /// <summary>
+    /// The MOVE target travels the wire as an escaped URI: a name with spaces and non-Latin
+    /// characters lands under exactly that name. The URI's display form decodes the percent
+    /// escapes back, and a header line writes everything beyond Latin-1 as '?' — the display
+    /// form therefore moves such a file to a mangled name, "successfully".
+    /// </summary>
+    public static async Task MoveEscapedNamesLandsExactly(Func<IWritableRemoteStore> create)
+    {
+        var store = create();
+        var from = RemotePath.Parse("папки/документ 2026.pdf");
+        var to = RemotePath.Parse("папки/Звіт за 2026.pdf");
+        var payload = new byte[] { 9, 8, 7, 6 };
+
+        Assert.True((await store.CreateFolderAsync(RemotePath.Parse("папки"), CancellationToken.None)).IsSuccess);
+        Assert.True((await store.WriteAsync(from, new MemoryStream(payload), CancellationToken.None)).IsSuccess);
+
+        Assert.True((await store.MoveAsync(from, to, CancellationToken.None)).IsSuccess);
+
+        var listing = (await store.ListAsync(RemotePath.Parse("папки"), CancellationToken.None)).Value;
+        Assert.Contains(listing, static e => e.Path.ToString() == "папки/Звіт за 2026.pdf");
+        Assert.DoesNotContain(listing, static e => e.Path.ToString() == "папки/документ 2026.pdf");
+        using (var read = (await store.ReadAsync(to, CancellationToken.None)).Value)
+        {
+            using var buffer = new MemoryStream();
+            await read.CopyToAsync(buffer, CancellationToken.None);
+            Assert.Equal(payload, buffer.ToArray());
+        }
     }
 
     /// <summary>
