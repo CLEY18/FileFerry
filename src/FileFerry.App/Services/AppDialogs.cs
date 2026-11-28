@@ -46,34 +46,58 @@ public interface IAppDialogs
 public sealed class MauiAppDialogs : IAppDialogs
 {
     /// <inheritdoc />
-    public Task ShowAlertAsync(string title, string message, string close, CancellationToken ct) =>
-        OnMainThreadAsync(async () =>
+    public Task ShowAlertAsync(string title, string message, string close, CancellationToken ct)
+    {
+        if (ct.IsCancellationRequested)
         {
+            return Task.CompletedTask; // the requesting screen is gone — nothing to interrupt
+        }
+
+        return OnMainThreadAsync(async () =>
+        {
+            if (ct.IsCancellationRequested)
+            {
+                return;
+            }
+
             var page = CurrentPage();
             if (page is not null)
             {
                 await page.DisplayAlertAsync(title, message, close);
             }
         });
+    }
 
     /// <inheritdoc />
     public Task<bool> ConfirmAsync(string title, string message, string accept, string cancel, CancellationToken ct, bool destructive = false)
     {
         if (!destructive)
         {
+            if (ct.IsCancellationRequested)
+            {
+                return Task.FromResult(false);
+            }
+
             return OnMainThreadAsync(async () =>
             {
                 var page = CurrentPage();
-                return page is not null && await page.DisplayAlertAsync(title, message, accept, cancel);
+                return page is not null
+                    && !ct.IsCancellationRequested
+                    && await page.DisplayAlertAsync(title, message, accept, cancel);
             });
         }
 #if ANDROID
         // a destructive confirmation goes to the platform dialog so its accept carries the
         // error tone - the caution reads before the tap, not after
+        if (ct.IsCancellationRequested)
+        {
+            return Task.FromResult(false);
+        }
+
         return OnMainThreadAsync(() =>
         {
             var context = Microsoft.Maui.ApplicationModel.Platform.CurrentActivity;
-            if (context is null)
+            if (context is null || ct.IsCancellationRequested)
             {
                 return Task.FromResult(false);
             }
@@ -94,6 +118,7 @@ public sealed class MauiAppDialogs : IAppDialogs
                     .SetTextColor(new Android.Graphics.Color(error));
             }
 
+            DismissOnCancellation(ct, completion, () => dialog.Dismiss());
             return completion.Task;
         });
 #else
@@ -106,11 +131,17 @@ public sealed class MauiAppDialogs : IAppDialogs
     }
 
     /// <inheritdoc />
-    public Task<int> ShowActionAsync(string title, string cancel, IReadOnlyList<string> options, CancellationToken ct) =>
-        OnMainThreadAsync(async () =>
+    public Task<int> ShowActionAsync(string title, string cancel, IReadOnlyList<string> options, CancellationToken ct)
+    {
+        if (ct.IsCancellationRequested)
+        {
+            return Task.FromResult(-1);
+        }
+
+        return OnMainThreadAsync(async () =>
         {
             var page = CurrentPage();
-            if (page is null)
+            if (page is null || ct.IsCancellationRequested)
             {
                 return -1;
             }
@@ -119,15 +150,21 @@ public sealed class MauiAppDialogs : IAppDialogs
             var choice = await page.DisplayActionSheetAsync(title, cancel, null, buttons);
             return choice is null ? -1 : Array.IndexOf(buttons, choice);
         });
+    }
 
     /// <inheritdoc />
     public Task<int> ShowChoiceAsync(string title, IReadOnlyList<string> options, int selectedIndex, CancellationToken ct)
     {
 #if ANDROID
+        if (ct.IsCancellationRequested)
+        {
+            return Task.FromResult(-1);
+        }
+
         return OnMainThreadAsync(() =>
         {
             var context = Microsoft.Maui.ApplicationModel.Platform.CurrentActivity;
-            if (context is null)
+            if (context is null || ct.IsCancellationRequested)
             {
                 return Task.FromResult(-1);
             }
@@ -150,6 +187,7 @@ public sealed class MauiAppDialogs : IAppDialogs
             builder.SetOnCancelListener(new DismissNotice(() => completion.TrySetResult(-1)));
             var dialog = builder.Create();
             dialog.Show();
+            DismissOnCancellation(ct, completion, () => dialog.Dismiss(), -1);
             return completion.Task;
         });
 #else
@@ -162,9 +200,19 @@ public sealed class MauiAppDialogs : IAppDialogs
     /// <inheritdoc />
     public Task NotifyAsync(string message, CancellationToken ct)
     {
+        if (ct.IsCancellationRequested)
+        {
+            return Task.CompletedTask; // the result belongs to a screen the user already left
+        }
+
 #if ANDROID
         return OnMainThreadAsync(() =>
         {
+            if (ct.IsCancellationRequested)
+            {
+                return Task.CompletedTask;
+            }
+
             var decor = Microsoft.Maui.ApplicationModel.Platform.CurrentActivity?.Window?.DecorView;
             if (decor is null)
             {
@@ -201,6 +249,28 @@ public sealed class MauiAppDialogs : IAppDialogs
     private sealed class DismissNotice(Action onCancel) : Java.Lang.Object, Android.Content.IDialogInterfaceOnCancelListener
     {
         public void OnCancel(Android.Content.IDialogInterface? dialog) => onCancel();
+    }
+
+    /// <summary>
+    /// A dialog whose requesting screen vanished is dismissed by the caller's token:
+    /// the open result falls to the dismissal default and the dialog leaves whatever
+    /// screen the user navigated to in the meantime.
+    /// </summary>
+    private static void DismissOnCancellation<T>(
+        CancellationToken ct, TaskCompletionSource<T> completion, Action dismiss, T? dismissed = default)
+    {
+        if (!ct.CanBeCanceled)
+        {
+            return; // nothing to watch: the dialog answers on its own
+        }
+
+        var registration = ct.Register(() =>
+        {
+            completion.TrySetResult(dismissed!);
+            Application.Current?.Dispatcher.Dispatch(dismiss);
+        });
+        _ = completion.Task.ContinueWith(
+            _ => registration.Dispose(), TaskScheduler.Default);
     }
 
     /// <summary>

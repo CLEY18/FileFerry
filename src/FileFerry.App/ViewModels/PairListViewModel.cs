@@ -205,15 +205,17 @@ public sealed class PairListViewModel : Mvvm.ObservableObject
         var pair = await _pairs.FindAsync(pairId, ct);
         if (pair is not null)
         {
+            // the flip itself runs un-cancellable: stored state and scheduler must move together
+            // (a pause written but a job left behind is the half-state this split prevents)
             var paused = !pair.Paused;
-            await _pairs.SaveAsync(pair with { Paused = paused }, ct);
+            await _pairs.SaveAsync(pair with { Paused = paused }, CancellationToken.None);
             if (paused)
             {
-                await _scheduler.CancelAsync(pairId, ct);
+                await _scheduler.CancelAsync(pairId, CancellationToken.None);
             }
             else
             {
-                await _scheduler.ScheduleAsync(pairId, pair.Schedule, ct);
+                await _scheduler.ScheduleAsync(pairId, pair.Schedule, CancellationToken.None);
             }
 
             await ReloadAsync(ct);
@@ -226,8 +228,10 @@ public sealed class PairListViewModel : Mvvm.ObservableObject
             AppStrings.DeletePairTitle, AppStrings.DeletePairBody, AppStrings.DeletePairAccept, AppStrings.DialogCancel, ct, destructive: true);
         if (confirmed)
         {
-            await _scheduler.CancelAsync(pairId, ct); // cancel periodic/one-shot jobs before deleting the config
-            await _pairs.DeleteAsync(pairId, ct); // config-only delete; files and the stash are untouched
+            // confirmed once, done always: leaving the screen afterwards silences dialogs,
+            // it cannot leave the pair half-deleted (config gone, jobs alive, or the reverse)
+            await _scheduler.CancelAsync(pairId, CancellationToken.None); // cancel periodic/one-shot jobs before deleting the config
+            await _pairs.DeleteAsync(pairId, CancellationToken.None); // config-only delete; files and the stash are untouched
             await ReloadAsync(ct);
         }
     }
@@ -298,9 +302,16 @@ public sealed class PairListViewModel : Mvvm.ObservableObject
 
     /// <summary>
     /// Unsubscribes from the status hub (page.OnDisappearing) — the VM is transient, otherwise
-    /// the subscription would outlive the screen.
+    /// the subscription would outlive the screen. Card commands that own a dialog for THIS screen
+    /// are cancelled with it (their alert must not follow the user to another screen); a run
+    /// handed to the scheduler (sync now) is not a screen's property and keeps going.
     /// </summary>
-    public void Detach() => _status.StateChanged -= OnStatusChanged;
+    public void Detach()
+    {
+        _status.StateChanged -= OnStatusChanged;
+        PauseCommand.Cancel();
+        DeleteCommand.Cancel();
+    }
 
     /// <summary>
     /// Hub event: refresh the card progress bars; replacing the record in the collection rebinds the cell.

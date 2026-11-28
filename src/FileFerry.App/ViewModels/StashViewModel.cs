@@ -85,6 +85,12 @@ public sealed class StashViewModel : Mvvm.ObservableObject
     }
 
     /// <summary>
+    /// The screen is gone (page.OnDisappearing): a restore in flight dies with it — its
+    /// confirmation must not block another screen and its result notice has no addressee anymore.
+    /// </summary>
+    public void Detach() => RestoreCommand.Cancel();
+
+    /// <summary>
     /// Loads the pair's stash indexes and computes TTL arithmetic as of <c>now</c>.
     /// </summary>
     /// <param name="pairId">Pair taken from the route.</param>
@@ -162,7 +168,10 @@ public sealed class StashViewModel : Mvvm.ObservableObject
         IsBusy = true;
         try
         {
-            var opened = await _scopes.OpenAsync(_pairId, ct).ConfigureAwait(false);
+            // confirmed work runs to completion even if the screen dies mid-copy (a partial
+            // restore is exactly the half-state the buffer exists to prevent); the token here
+            // governs dialogs only — the user leaving silences the notice, it never aborts bytes
+            var opened = await _scopes.OpenAsync(_pairId, CancellationToken.None).ConfigureAwait(false);
             if (opened.IsFailure)
             {
                 await _dialogs.ShowAlertAsync(
@@ -172,7 +181,7 @@ public sealed class StashViewModel : Mvvm.ObservableObject
 
             var copied = await StashRestore.RestoreAsync(
                     opened.Value.Local, _stashPolicy, _clock,
-                    RelativePath.Parse(row.StashPath), RelativePath.Parse(row.OriginPath), ct)
+                    RelativePath.Parse(row.StashPath), RelativePath.Parse(row.OriginPath), CancellationToken.None)
                 .ConfigureAwait(false);
             if (copied.IsFailure)
             {

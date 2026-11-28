@@ -36,4 +36,11 @@ public sealed partial class StashPage : ContentPage, IQueryAttributable
             _ = _viewModel.LoadAsync(id, CancellationToken.None);
         }
     }
+
+    /// <inheritdoc />
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+        _viewModel.Detach(); // a restore dialog or notice must not outlive this screen
+    }
 }

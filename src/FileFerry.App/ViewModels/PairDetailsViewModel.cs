@@ -391,9 +391,17 @@ public sealed class PairDetailsViewModel : Mvvm.ObservableObject
 
     /// <summary>
     /// Unsubscribes from the status hub (page.OnDisappearing) — the VM is transient, otherwise
-    /// the subscription would leak past the screen.
+    /// the subscription would leak past the screen. Commands whose dialogs belong to THIS screen
+    /// are cancelled with it: an alert requested here must not pop over the screen the user
+    /// moved to; scheduler-bound commands (sync now, cancel run) keep running past the departure.
     /// </summary>
-    public void Detach() => _status.StateChanged -= OnStatusChanged;
+    public void Detach()
+    {
+        _status.StateChanged -= OnStatusChanged;
+        ChangeIntervalCommand.Cancel();
+        ChangeFolderCommand.Cancel();
+        DeleteCommand.Cancel();
+    }
 
     /// <summary>
     /// Hub event: brings the state snapshot onto the UI thread; the grid re-reads only when
@@ -595,7 +603,9 @@ public sealed class PairDetailsViewModel : Mvvm.ObservableObject
             AppStrings.DetailsIntervalTitle, known.Select(k => k.Label).ToList(), ChoiceOption.IndexOf(pair.Schedule), ct);
         if (choice >= 0 && known[choice].Value != pair.Schedule)
         {
-            await SaveAsync(pair with { Schedule = known[choice].Value }, ct);
+            // the chosen interval lands even if this screen dies on the way back:
+            // stored schedule and the periodic job must move together
+            await SaveAsync(pair with { Schedule = known[choice].Value }, CancellationToken.None);
         }
     }
 
@@ -632,11 +642,12 @@ public sealed class PairDetailsViewModel : Mvvm.ObservableObject
             // cancel the schedule before wiping: a periodic run must not walk into the half-changed state;
             // SaveAsync re-arms it for the new tree. Wiping before saving the pair is the safe order:
             // an interrupted change leaves the old folder with an empty baseline — an honest rescan,
-            // never a deletion storm built on the old tree's ghost
-            await _scheduler.CancelAsync(_pairId, ct);
-            await _state.ClearJournalAsync(_pairId, ct); // resume records name paths of the old tree — dead operations after the rebind
-            await _state.ReplaceBaselineAsync(_pairId, [], ct);
-            await SaveAsync(pair with { LocalTreeKey = picked.TreeUri }, ct);
+            // never a deletion storm built on the old tree's ghost. The whole sequence is un-cancellable:
+            // a folder rebind left half-applied (baseline wiped, old tree still stored) is the worst door
+            await _scheduler.CancelAsync(_pairId, CancellationToken.None);
+            await _state.ClearJournalAsync(_pairId, CancellationToken.None); // resume records name paths of the old tree — dead operations after the rebind
+            await _state.ReplaceBaselineAsync(_pairId, [], CancellationToken.None);
+            await SaveAsync(pair with { LocalTreeKey = picked.TreeUri }, CancellationToken.None);
         }
         finally
         {
@@ -653,8 +664,10 @@ public sealed class PairDetailsViewModel : Mvvm.ObservableObject
             AppStrings.DetailsDeletePair, AppStrings.DetailsDeletePairBody, AppStrings.DeletePairAccept, AppStrings.DialogCancel, ct, destructive: true);
         if (confirmed)
         {
-            await _scheduler.CancelAsync(_pairId, ct); // cancel periodic/one-shot jobs before deleting the config
-            await _pairs.DeleteAsync(_pairId, ct);
+            // confirmed — the deletion completes even if the screen vanishes mid-flight;
+            // only the return navigation still belongs to this screen's lifetime
+            await _scheduler.CancelAsync(_pairId, CancellationToken.None); // cancel periodic/one-shot jobs before deleting the config
+            await _pairs.DeleteAsync(_pairId, CancellationToken.None);
             await _navigation.BackAsync(ct);
         }
     }
