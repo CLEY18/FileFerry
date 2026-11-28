@@ -37,6 +37,7 @@ public sealed class PairDetailsViewModel : Mvvm.ObservableObject
     private string _stashLine = "0";
     private string _intervalValue = string.Empty;
     private bool _pauseSync;
+    private bool _runWasActive;
     private bool _isBusy;
     private bool _isRunActive;
     private string _runProgressText = AppStrings.SyncPreparing;
@@ -288,6 +289,7 @@ public sealed class PairDetailsViewModel : Mvvm.ObservableObject
         _pairId = pairId;
         _status.StateChanged -= OnStatusChanged; // the subscription is idempotent: OnAppearing may fire more than once
         _status.StateChanged += OnStatusChanged;
+        _runWasActive = _status.StatusFor(pairId) is not null; // the edge is measured from here
         ApplyRunStatus(_status.StatusFor(pairId));
         await ReloadAsync(ct);
     }
@@ -299,15 +301,19 @@ public sealed class PairDetailsViewModel : Mvvm.ObservableObject
     public void Detach() => _status.StateChanged -= OnStatusChanged;
 
     /// <summary>
-    /// Hub event: brings the state snapshot onto the UI thread; a finished run re-reads the status grid.
+    /// Hub event: brings the state snapshot onto the UI thread; the grid re-reads only when
+    /// THIS pair's run just ended — a foreign pair's tick leaves the idle screen untouched
+    /// (it used to cost three repository reads and a busy flicker per tick).
     /// </summary>
     private void OnStatusChanged(object? sender, EventArgs e)
     {
         var snapshot = _status.StatusFor(_pairId);
+        var justFinished = _runWasActive && snapshot is null;
+        _runWasActive = snapshot is not null;
         Application.Current?.Dispatcher.Dispatch(() =>
         {
             ApplyRunStatus(snapshot);
-            if (snapshot is null)
+            if (justFinished)
             {
                 _ = ReloadAsync(CancellationToken.None); // the run ended — fresh run-log into the grid
             }
